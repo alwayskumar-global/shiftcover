@@ -17,7 +17,8 @@
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.ts",
-    "worker": "tsx src/worker.ts"
+    "worker": "tsx src/worker.ts",
+    "db:verify-rls": "tsx scripts/verify-rls.ts"
   },
   "dependencies": {
     "@google/genai": "2.28.0",
