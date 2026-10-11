@@ -19,7 +19,10 @@ function checkDatabaseUrl(value: string, ctx: z.RefinementCtx): void {
   try {
     url = new URL(value);
   } catch {
-    ctx.addIssue({ code: 'custom', message: 'not a valid connection URL (percent-encode special characters in the password)' });
+    ctx.addIssue({
+      code: 'custom',
+      message: 'not a valid connection URL (percent-encode special characters in the password)',
+    });
     return;
   }
   if (url.protocol !== 'postgres:' && url.protocol !== 'postgresql:') {
@@ -147,7 +150,9 @@ export function envWarnings(env: ServerEnv): string[] {
   if (env.NODE_ENV === 'production') {
     const host = new URL(env.DATABASE_URL).hostname;
     if (!SUPABASE_POOLER_HOST.test(host)) {
-      warnings.push('DATABASE_URL: host is not *.pooler.supabase.com (expected Supabase Session pooler)');
+      warnings.push(
+        'DATABASE_URL: host is not *.pooler.supabase.com (expected Supabase Session pooler)',
+      );
     }
   }
   return warnings;

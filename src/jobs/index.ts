@@ -1,4 +1,5 @@
 import { PgBoss } from 'pg-boss';
+import { getPool } from '../db/client';
 import { buildPoolConfig } from '../db/connection';
 import { JOB_NAMES, SCHEDULES, type JobName } from './names';
 
@@ -18,6 +19,16 @@ const stub =
     console.log(`[job:${name}] stub handler id=${job.id}`);
   };
 
+type Query = (sql: string) => Promise<unknown>;
+
+/** Cheapest possible activity on the database. Throws on failure so pg-boss records and retries it. */
+export function makeDbHeartbeat(query: Query): JobHandler {
+  return async () => {
+    await query('select 1');
+    console.log('[job:db_heartbeat] ok');
+  };
+}
+
 export const handlers: Record<JobName, JobHandler> = {
   send_wave: stub('send_wave'),
   expire_offer: stub('expire_offer'),
@@ -25,6 +36,7 @@ export const handlers: Record<JobName, JobHandler> = {
   reconcile_payments: stub('reconcile_payments'),
   process_webhook: stub('process_webhook'),
   notify: stub('notify'),
+  db_heartbeat: makeDbHeartbeat((sql) => getPool().query(sql)),
 };
 
 /** Worker-side pg-boss: same Supabase session-pooler URL, small pool (see src/db/connection.ts budget). */

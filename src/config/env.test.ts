@@ -9,7 +9,8 @@ import {
 } from './env';
 
 const SECRET = 's'.repeat(32);
-const POOLER = 'postgres://postgres.abcdefgh:pw@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres';
+const POOLER =
+  'postgres://postgres.abcdefgh:pw@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres';
 const base = {
   DATABASE_URL: POOLER,
   SESSION_SECRET: SECRET,
@@ -135,7 +136,10 @@ describe('DATABASE_URL (Supabase session pooler)', () => {
     };
     expect(envWarnings(parseServerEnv(prod))).toEqual([]);
     const w = envWarnings(
-      parseServerEnv({ ...prod, DATABASE_URL: 'postgres://u:topsecret@db.internal.example:5432/x' }),
+      parseServerEnv({
+        ...prod,
+        DATABASE_URL: 'postgres://u:topsecret@db.internal.example:5432/x',
+      }),
     );
     expect(w).toHaveLength(1);
     expect(w[0]).toContain('DATABASE_URL');
