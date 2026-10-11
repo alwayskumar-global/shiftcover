@@ -1,4 +1,4 @@
-# ShiftCover Pay: Build Plan v0.4
+# ShiftCover Pay: Build Plan v0.5
 
 PayPal AI Hackathon entry. Submission deadline **Nov 12, 2026 12:00 PM PST (= Nov 13, 01:30 AM IST)**. Target submit: **Nov 11 evening IST**.
 Plan date: Oct 11, 2026. Build window: 31 days.
@@ -16,6 +16,7 @@ Hackathon: https://paypalaihackathon.devpost.com/
 5. **LLM spend guardrails are mandatory** (Section 9.3). No loop, job, or webhook handler may call the LLM unguarded.
 6. **Small commits, green tests.** Run the acceptance tests (Section 14) as they become relevant.
 7. If blocked on UI, secrets, or a decision, say so and re-sequence headless work. Do not fill the gap with improvised UI.
+8. **Supabase is Postgres only** (Section 6A). Do not install `@supabase/supabase-js`, use Supabase Auth, Storage, Realtime, or Edge Functions, or use any anon, publishable, or service-role key. Schema changes go only through Drizzle migrations. If the Supabase MCP is available to you, use it read-only (advisors, list tables, logs); never `apply_migration` or `execute_sql` for schema or data changes. Never use the transaction pooler (port 6543).
 
 ---
 
@@ -26,7 +27,7 @@ Hackathon: https://paypalaihackathon.devpost.com/
 | A1 | Money model: **authorize, partial capture, instant payout**. Employer approves a max-cost PayPal authorization when a gap is posted; on completion we capture the actual amount, then pay the worker via Payouts. | **Confirmed** |
 | A2 | Demo vertical: **hospitality** (restaurants, cafes, catering, event crews). | **Confirmed** |
 | A3 | Manager roster uses **Bryntum Scheduler** (public trial npm packages). Wrapper: `@bryntum/scheduler-react` (no Vue). | **Confirmed** |
-| A4 | One **Next.js (App Router, React, TypeScript)** app, **Postgres**, jobs via **pg-boss**. Host on **Render**: web service, background worker, Postgres. | **Confirmed** |
+| A4 | One **Next.js (App Router, React, TypeScript)** app, **Postgres on Supabase** (database only, Section 6A), jobs via **pg-boss**. Host the web service and background worker on **Render**. | **Confirmed** |
 | A5 | **No WhatsApp or SMS.** Notifications: in-app + email + Web Push behind a `Notifier` interface. Demo mode has an in-app **Outbox**. | Locked |
 | A6 | **Sandbox only, USD only.** Payout recipients use `EMAIL` (PHONE is unsupported in sandbox). | Locked |
 | A7 | License **Apache-2.0**, visible in repo About at submission. | Locked |
@@ -167,6 +168,33 @@ Money is integer cents plus `currency = 'USD'`. Never floats.
 - Atomic claim: `UPDATE shift_slots SET status='CONFIRMED', worker_id=$w, version=version+1 WHERE id=$s AND status='OFFERING' RETURNING *`. Zero rows means "taken". Back it with a partial unique index so a slot has one confirmed offer.
 - Webhook idempotency: `paypal_events.event_id` unique; process once.
 - Payout idempotency: deterministic `sender_batch_id` plus `PayPal-Request-Id`. A duplicate `sender_batch_id` within 30 days is rejected by PayPal; a 5xx may be retried with the same id.
+
+---
+
+## 6A. Supabase database rules (verified against Supabase docs and the account, Oct 11, 2026)
+
+**Scope:** Supabase provides **Postgres only**. App auth stays with Auth.js or Better Auth. No Supabase client library, Auth, Storage, Realtime, or Edge Functions.
+
+**Project:** name `shiftcover`, in the organization "test@studioq.co.in's Org". Creating it costs $0 (checked with the Supabase MCP `get_cost`). The org already has one project, `triallensdb` (Mumbai, `ap-south-1`); **do not touch it**. The free plan allows 2 active projects, so this is the last free slot. Region: see Section 17 item 1 (cannot be changed after creation).
+
+**Connections (Supabase "Connect to your database" doc):**
+- Render web, Render worker, local dev, and migrations all use the **Shared pooler, session mode**: `postgres.[PROJECT-REF]@aws-…pooler.supabase.com:5432`. It is IPv4-compatible on every plan and supports prepared statements, advisory locks, and LISTEN/NOTIFY, which pg-boss needs.
+- The **direct connection is IPv6-only** on free and paid plans unless the IPv4 add-on is enabled, so do not use it unless IPv6 is confirmed from the machine.
+- **Never use transaction mode (port 6543)** for pg-boss, the worker, or migrations: it drops session state and does not support prepared statements.
+- Copy the exact string from Dashboard, Connect, Session pooler. Never compose the host from the region. The username is `postgres.[PROJECT-REF]`. Percent-encode special characters in the password. Set SSL to `require` (`sslmode=require`).
+- Keep total app connections small (target 10 or fewer across web, worker, and pg-boss) because the free plan's pooler pool is small. Confirm the pool size in Dashboard, Database settings.
+- The database password is set or reset in the Dashboard and goes only into local `.env` and Render env vars. It never appears in chat, the repo, or logs.
+
+**Security (mandatory before the first deploy and before the repo goes public):**
+1. **Disable the Data API** in the Dashboard (Integrations, Data API, Enable Data API off). The app never uses it. Without this, new tables in `public` receive default grants for `anon`, `authenticated`, and `service_role` on existing projects.
+2. Enable **RLS on every app table** in a Drizzle migration (no policies means deny-all for `anon` and `authenticated`). The app connects as `postgres`, which bypasses RLS, so this is defense in depth.
+3. Revoke default privileges on `public` for `anon`, `authenticated`, `service_role` per Supabase's securing-your-API guide, and revoke existing grants on app tables. Make this migration **conditional** (only when those roles exist) so it also runs on plain Postgres.
+4. Run `get_advisors` (security) after migrating. No ERROR-level findings. Re-run after every DDL change.
+5. No anon, publishable, or service-role key anywhere in the repo or env.
+
+**Free-plan limits that matter:** 500 MB database; **projects pause after 1 week of inactivity**; no automatic backups; 2 active projects per org. Judging runs Dec 1 to 15, so a paused project would break the hosted demo. Mitigations: a daily heartbeat job (a cheap query from the worker), a calendar reminder, and a decision by Nov 25 on upgrading the org to Pro (from $25/month; Pro projects never pause; additional projects from $10/month) for the judging window. A paused project can be restored from the Dashboard.
+
+**Migrations and tests:** `db:migrate` runs from Kumar's machine with the session-pooler `DATABASE_URL`. Integration tests that need a clean database must use a throwaway schema (`test_<run>`) created and dropped by the harness, or a local Postgres if available. Never run tests, seeds, or experiments against the `public` data of the demo database.
 
 ---
 
@@ -329,7 +357,7 @@ If a gate is late, keep building headless work from later milestones. Never subs
 - Manager routes behind session auth; worker session scoped to their own records (row-level checks in every query).
 - Verify every webhook signature; never trust the body alone.
 - Idempotency keys on every PayPal write.
-- Server computes all amounts; client-supplied amounts are ignored. Authorization cap enforced server-side; capture clamps to authorized.
+- Server computes all amounts; client-supplied amounts are ignored. Authorization cap enforced server-side; a capture above the authorized amount is rejected.
 - PII minimization; seed data is synthetic. Nothing real goes to the LLM.
 - LLM guardrails (Section 9.3).
 - `npm audit` before freeze; no secrets in logs.
@@ -345,7 +373,7 @@ If a gate is late, keep building headless work from later milestones. Never subs
 |----------|---------|
 | `APP_BASE_URL` | Public HTTPS base; used to build links |
 | `NODE_ENV`, `DEMO_MODE` | Mode flags |
-| `DATABASE_URL` | Postgres connection |
+| `DATABASE_URL` | Supabase **Session pooler** string (port 5432, SSL required), copied from Dashboard Connect. Never commit. See Section 6A |
 | `SESSION_SECRET`, `CLAIM_TOKEN_PEPPER` | Session signing; token hashing pepper |
 | `PAYPAL_ENV` | `sandbox` |
 | `PAYPAL_API_BASE` | `https://api-m.sandbox.paypal.com` |
@@ -379,7 +407,7 @@ If `CLAUDE.md` was already committed: `git rm --cached CLAUDE.md`, commit, and c
 2. PayPal: create sandbox accounts (7.1) and a sandbox REST app; confirm **Payouts** is enabled on the app; copy client ID and secret into local `.env`.
 3. Gemini: in AI Studio, create a dedicated project and key; confirm the project is on the **paid tier** (billing linked) so content is not used to improve products; confirm the prepaid balance; set a **project spend cap**; leave auto-reload off.
 4. **Spike script** `scripts/spike-paypal.ts`: token, create AUTHORIZE order, approve with a sandbox buyer, authorize, partial capture with `final_capture: true`, payout to a worker account, GET batch, confirm balances. Add `scripts/spike-gemini.ts`: structured intake on 20 seeded phrases with `gemini-3.5-flash-lite`, validate with Zod, record schema-valid rate, accuracy, tokens, and cost. **Go/no-go gate: end of Oct 13.**
-5. Deploy hello-world to Render (web, worker, Postgres) to get a public HTTPS URL. Claim the Render credits via the hackathon page.
+5. **Supabase:** create the `shiftcover` project (Section 6A). In the Dashboard reset or copy the DB password (never in chat), copy the **Session pooler** string into local `.env` as `DATABASE_URL`, and **turn the Data API off**. Run migrations, then the security advisors. Then deploy hello-world to Render (web and worker only; Postgres is Supabase) to get a public HTTPS URL, and claim the Render credits via the hackathon page.
 6. Register the PayPal webhook (7.6) on that URL; set `PAYPAL_WEBHOOK_ID`; test with the simulator and one real event.
 7. Generate VAPID keys: `npx web-push generate-vapid-keys`.
 8. Install the Bryntum **public trial** packages (Bryntum's docs state the trial npm packages are public, so no registry login; requires Node >= 20 and React >= 16). Commands, to be **confirmed against Bryntum's current React quick-start before running**: core `npm install @bryntum/scheduler@npm:@bryntum/scheduler-trial`; wrapper `npm install @bryntum/scheduler-react`. In Next.js render Bryntum client-only (`'use client'` plus a dynamic import with `ssr: false`) and verify against Bryntum's React guide. Check trial expiry against judging dates (Section 16).
@@ -416,6 +444,7 @@ Each milestone ends with a deployed build and a short written status (what works
 10. LLM disabled (`LLM_ENABLED=false`) or over cap: intake falls back to the rules parser and the demo flow completes.
 11. No secret appears in the repo or its git history (secret scan clean).
 12. Judge path: fresh clone, follow README, reach a completed paid shift in demo mode in under 10 minutes.
+13. Supabase: Data API disabled, RLS enabled on every app table, `anon` and `authenticated` cannot read any app table, and security advisors show no ERROR findings.
 
 ---
 
@@ -461,6 +490,8 @@ Each milestone ends with a deployed build and a short written status (what works
 | **Gemini abuse on the hosted demo** | Auth on intake, per-session limits, daily cap, kill switch |
 | **Gemini API shape changes** | SDK pinned; all calls in `src/llm/gemini.ts` |
 | Judges cannot run it | Demo mode, hosted URL, Outbox, seeded accounts, README tested from a clean clone |
+| **Supabase free project pauses after 1 week of inactivity (breaks the demo during judging)** | Daily heartbeat job, calendar reminder, decide by Nov 25 on Pro for Dec 1 to 15; restore from the Dashboard if paused |
+| **Supabase Data API exposes `public` tables** | Disable the Data API, RLS on all tables, revoke default grants, advisors clean (Section 6A) |
 | Webhook delays | Reconciliation job |
 | Web Push on iOS | Email and in-app are the reliable channels; push is progressive |
 | `CLAUDE.md` missing in cloud sessions | Agent rules live in this file |
@@ -470,13 +501,14 @@ Each milestone ends with a deployed build and a short written status (what works
 
 ## 17. Decisions log and remaining items
 
-**Resolved (Oct 11, 2026):** A1 authorize-capture-payout; A2 hospitality; A3 Bryntum with `@bryntum/scheduler-react`; A4 Next.js (React) on Render for web, worker, and Postgres; A8 UI from Claude Design at gates; A9 Gemini with guardrails; A10 `CLAUDE.md` gitignored; A11 private repo until submission.
+**Resolved (Oct 11, 2026):** A1 authorize-capture-payout; A2 hospitality; A3 Bryntum with `@bryntum/scheduler-react`; A4 Next.js (React) with web and worker on Render and Postgres on Supabase; A8 UI from Claude Design at gates; A9 Gemini with guardrails; A10 `CLAUDE.md` gitignored; A11 private repo until submission.
 
 **Remaining:**
-1. Confirm `gemini-3.5-flash-lite` intake quality after the Oct 13 spike.
-2. Design handoff format from Claude Design (HTML/CSS/React export, tokens, screenshots). Agree before G1.
-3. Ask Bryntum for a trial extension through Dec 15.
-4. Decide whether `PLAN.md` stays in the public repo (it holds no secrets).
+1. **Supabase region and plan (confirm before the project is created; region cannot be changed later):** recommended `ap-southeast-1` (Singapore), paired with Render Singapore, on the free plan ($0, pauses after 1 week idle, see 6A). Alternative for judge latency: a US East region paired with Render Ohio.
+2. Confirm `gemini-3.5-flash-lite` intake quality after the Oct 13 spike.
+3. Design handoff format from Claude Design (HTML/CSS/React export, tokens, screenshots). Agree before G1.
+4. Ask Bryntum for a trial extension through Dec 15.
+5. Decide whether `PLAN.md` stays in the public repo (it holds no secrets).
 
 ---
 
@@ -521,6 +553,12 @@ Each milestone ends with a deployed build and a short written status (what works
 - Model page (gemini-3.5-flash-lite): https://ai.google.dev/gemini-api/docs/models/gemini-3.5-flash-lite
 - AI Studio usage: https://aistudio.google.com/usage
 - AI Studio spend caps: https://aistudio.google.com/spend
+
+**Supabase**
+- Connect to your database (session pooler vs direct): https://supabase.com/docs/guides/database/connecting-to-postgres
+- Securing your API (Data API, grants, RLS): https://supabase.com/docs/guides/api/securing-your-api
+- Drizzle quickstart: https://supabase.com/docs/guides/database/drizzle
+- Pricing and free-plan limits: https://supabase.com/pricing
 
 **Repo**
 - https://github.com/alwayskumar-global/shiftcover
