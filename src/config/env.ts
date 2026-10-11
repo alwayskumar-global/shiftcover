@@ -8,6 +8,39 @@ import { z } from 'zod';
 const SANDBOX_BASE = 'https://api-m.sandbox.paypal.com';
 export const ALLOWED_LLM_MODEL = 'gemini-3.5-flash-lite';
 
+const SUPABASE_POOLER_HOST = /\.pooler\.supabase\.com$/i;
+const SUPABASE_DIRECT_HOST = /^db\.[^.]+\.supabase\.co$/i;
+
+/**
+ * Section 6A: Supabase Session pooler only (port 5432). Messages are fixed strings and never echo the value.
+ */
+function checkDatabaseUrl(value: string, ctx: z.RefinementCtx): void {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    ctx.addIssue({ code: 'custom', message: 'not a valid connection URL (percent-encode special characters in the password)' });
+    return;
+  }
+  if (url.protocol !== 'postgres:' && url.protocol !== 'postgresql:') {
+    ctx.addIssue({ code: 'custom', message: 'must be a postgres:// URL' });
+    return;
+  }
+  const port = url.port === '' ? '5432' : url.port;
+  if (port === '6543') {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'port 6543 is the transaction pooler; use the Session pooler on port 5432',
+    });
+  }
+  if (SUPABASE_DIRECT_HOST.test(url.hostname)) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'direct db.<ref>.supabase.co host is IPv6-only; use the Session pooler host',
+    });
+  }
+}
+
 const int = (def: number, min = 0) => z.coerce.number().int().min(min).default(def);
 
 const serverSchema = z
@@ -16,7 +49,7 @@ const serverSchema = z
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
     DEMO_MODE: z.stringbool().default(false),
 
-    DATABASE_URL: z.string().min(1),
+    DATABASE_URL: z.string().min(1).superRefine(checkDatabaseUrl),
     SESSION_SECRET: z.string().min(32),
     CLAIM_TOKEN_PEPPER: z.string().min(32),
 
@@ -88,7 +121,10 @@ function parse<T extends z.ZodType>(schema: T, source: Source): z.infer<T> {
   const result = schema.safeParse(clean(source));
   if (!result.success) {
     throw new EnvError(
-      result.error.issues.map((i) => `${i.path.join('.') || '(root)'}: ${i.code}`),
+      result.error.issues.map(
+        // Custom messages are fixed strings written in this file; built-in Zod messages may echo input.
+        (i) => `${i.path.join('.') || '(root)'}: ${i.code === 'custom' ? i.message : i.code}`,
+      ),
     );
   }
   return result.data;
@@ -102,11 +138,30 @@ export function parsePublicEnv(source: Source): PublicEnv {
   return parse(publicSchema, source);
 }
 
+/**
+ * Non-fatal findings. Never includes values. In production DATABASE_URL should be the Supabase
+ * Session pooler (*.pooler.supabase.com).
+ */
+export function envWarnings(env: ServerEnv): string[] {
+  const warnings: string[] = [];
+  if (env.NODE_ENV === 'production') {
+    const host = new URL(env.DATABASE_URL).hostname;
+    if (!SUPABASE_POOLER_HOST.test(host)) {
+      warnings.push('DATABASE_URL: host is not *.pooler.supabase.com (expected Supabase Session pooler)');
+    }
+  }
+  return warnings;
+}
+
 let cachedServer: ServerEnv | undefined;
 let cachedPublic: PublicEnv | undefined;
 
 export function getServerEnv(): ServerEnv {
-  return (cachedServer ??= parseServerEnv(process.env));
+  if (!cachedServer) {
+    cachedServer = parseServerEnv(process.env);
+    for (const w of envWarnings(cachedServer)) console.warn(`[env] warning: ${w}`);
+  }
+  return cachedServer;
 }
 
 export function getPublicEnv(): PublicEnv {

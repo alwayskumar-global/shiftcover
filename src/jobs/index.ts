@@ -1,4 +1,5 @@
 import { PgBoss } from 'pg-boss';
+import { buildPoolConfig } from '../db/connection';
 import { JOB_NAMES, SCHEDULES, type JobName } from './names';
 
 export { JOB_NAMES, SCHEDULES } from './names';
@@ -26,8 +27,10 @@ export const handlers: Record<JobName, JobHandler> = {
   notify: stub('notify'),
 };
 
-export function createBoss(connectionString: string): PgBoss {
-  const boss = new PgBoss(connectionString);
+/** Worker-side pg-boss: same Supabase session-pooler URL, small pool (see src/db/connection.ts budget). */
+export function createBoss(databaseUrl: string): PgBoss {
+  const { connectionString, max, ssl } = buildPoolConfig(databaseUrl, 'boss');
+  const boss = new PgBoss({ connectionString, max, ssl });
   boss.on('error', (err: Error) => console.error('[pg-boss] error:', err.message));
   return boss;
 }

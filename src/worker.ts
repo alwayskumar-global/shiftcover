@@ -1,10 +1,12 @@
 import 'dotenv/config';
 import { getServerEnv } from './config/env';
+import { configurePool } from './db/client';
 import { createBoss, startJobs } from './jobs';
 
 /** Separate entrypoint for the Render background worker: `npm run worker`. */
 async function main() {
   const env = getServerEnv();
+  configurePool('worker');
   const boss = createBoss(env.DATABASE_URL);
   await startJobs(boss);
   console.log('worker started');
