@@ -1,0 +1,21 @@
+.env
+.env.*
+!.env.example
+CLAUDE.md
+CLAUDE.local.md
+node_modules/
+.next/
+
+# Node / Next / tooling
+out/
+build/
+dist/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+npm-debug.log*
+.DS_Store
+.vercel
+*.pem
+.idea/
+.vscode/
