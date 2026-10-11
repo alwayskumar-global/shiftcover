@@ -1,0 +1,6 @@
+.next
+node_modules
+drizzle
+package-lock.json
+PLAN.md
+LICENSE
