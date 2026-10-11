@@ -95,10 +95,14 @@ describe('token cache', () => {
     const { client, fetchMock } = setup((url) => {
       if (url.endsWith('/v1/oauth2/token')) return tokenRes();
       apiCalls++;
-      return apiCalls === 1 ? json({ name: 'AUTHENTICATION_FAILURE' }, { status: 401 }) : json({ ok: 1 });
+      return apiCalls === 1
+        ? json({ name: 'AUTHENTICATION_FAILURE' }, { status: 401 })
+        : json({ ok: 1 });
     });
     await expect(client.request({ method: 'GET', path: '/v1/a' })).resolves.toEqual({ ok: 1 });
-    expect(fetchMock.mock.calls.filter(([u]) => String(u).includes('oauth2/token'))).toHaveLength(2);
+    expect(fetchMock.mock.calls.filter(([u]) => String(u).includes('oauth2/token'))).toHaveLength(
+      2,
+    );
   });
 });
 
@@ -107,7 +111,12 @@ describe('request helper', () => {
     const { client, fetchMock } = setup((url) =>
       url.endsWith('/v1/oauth2/token') ? tokenRes() : json({ id: 'x' }),
     );
-    await client.request({ method: 'POST', path: '/v2/checkout/orders', body: { a: 1 }, requestId: 'req-1' });
+    await client.request({
+      method: 'POST',
+      path: '/v2/checkout/orders',
+      body: { a: 1 },
+      requestId: 'req-1',
+    });
     const [, init] = fetchMock.mock.calls.find(([u]) => String(u).endsWith('/v2/checkout/orders'))!;
     const h = init!.headers as Record<string, string>;
     expect(h['PayPal-Request-Id']).toBe('req-1');
@@ -118,7 +127,9 @@ describe('request helper', () => {
 
   it('refuses a write without a request id', async () => {
     const { client } = setup(() => tokenRes());
-    await expect(client.request({ method: 'POST', path: '/v1/x', body: {} })).rejects.toThrow(/requestId/);
+    await expect(client.request({ method: 'POST', path: '/v1/x', body: {} })).rejects.toThrow(
+      /requestId/,
+    );
   });
 });
 
@@ -156,14 +167,18 @@ describe('error mapping', () => {
     [503, 'server', true],
   ] as const)('maps %i to %s (retryable=%s)', async (status, kind, retryable) => {
     const client = failWith(status, { name: 'X' });
-    const err = (await client.request({ method: 'GET', path: '/v1/x' }).catch((e: unknown) => e)) as PaypalError;
+    const err = (await client
+      .request({ method: 'GET', path: '/v1/x' })
+      .catch((e: unknown) => e)) as PaypalError;
     expect(err.kind).toBe(kind);
     expect(err.retryable).toBe(retryable);
   });
 
   it('maps duplicate-id 422s to conflict', async () => {
     const client = failWith(422, { name: 'X', details: [{ issue: 'DUPLICATE_BATCH_ID' }] });
-    const err = (await client.request({ method: 'GET', path: '/v1/x' }).catch((e: unknown) => e)) as PaypalError;
+    const err = (await client
+      .request({ method: 'GET', path: '/v1/x' })
+      .catch((e: unknown) => e)) as PaypalError;
     expect(err.kind).toBe('conflict');
   });
 
@@ -175,7 +190,9 @@ describe('error mapping', () => {
         throw new Error('ECONNRESET topsecret');
       }) as unknown as typeof fetch,
     });
-    const err = (await client.request({ method: 'GET', path: '/v1/x' }).catch((e: unknown) => e)) as PaypalError;
+    const err = (await client
+      .request({ method: 'GET', path: '/v1/x' })
+      .catch((e: unknown) => e)) as PaypalError;
     expect(err.kind).toBe('network');
     expect(err.retryable).toBe(true);
     expect(err.message).not.toContain('topsecret');

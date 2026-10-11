@@ -56,7 +56,9 @@ async function main() {
   });
   const approve = order.links?.find((l) => l.rel === 'payer-action' || l.rel === 'approve')?.href;
   console.log(`order ${order.id} status=${order.status}`);
-  console.log(`\nApprove as a SANDBOX BUYER in a browser:\n${approve ?? '(no approval link returned)'}\n`);
+  console.log(
+    `\nApprove as a SANDBOX BUYER in a browser:\n${approve ?? '(no approval link returned)'}\n`,
+  );
 
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   await rl.question('Press Enter after approving... ');
@@ -93,17 +95,23 @@ async function main() {
 
   for (let i = 0; i < 12; i++) {
     const b = await getPayoutBatch(client, payoutBatchId);
-    const items = (b.items ?? []).map((it) => `${it.payout_item_id}:${it.transaction_status}`).join(', ');
+    const items = (b.items ?? [])
+      .map((it) => `${it.payout_item_id}:${it.transaction_status}`)
+      .join(', ');
     console.log(`batch status=${b.batch_header.batch_status} items=[${items}]`);
     if (['SUCCESS', 'DENIED'].includes(b.batch_header.batch_status)) break;
     await new Promise((r) => setTimeout(r, 5000));
   }
-  console.log('\nNext: confirm balances in the sandbox dashboard (buyer -$6.00, platform +$6.00 -$5.00, worker +$5.00).');
+  console.log(
+    '\nNext: confirm balances in the sandbox dashboard (buyer -$6.00, platform +$6.00 -$5.00, worker +$5.00).',
+  );
 }
 
 main().catch((e: unknown) => {
   if (e instanceof PaypalError) {
-    console.error(`PayPal error kind=${e.kind} status=${e.status} code=${e.code} debug_id=${e.debugId}`);
+    console.error(
+      `PayPal error kind=${e.kind} status=${e.status} code=${e.code} debug_id=${e.debugId}`,
+    );
   } else {
     console.error('spike failed:', e instanceof Error ? e.message : 'unknown error');
   }

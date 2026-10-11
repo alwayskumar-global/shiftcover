@@ -51,7 +51,12 @@ describe('platformFeeCents (7.8)', () => {
 describe('maxAuthorization (flow 4B)', () => {
   it('matches hours * base * (1+premium) * (1+fee)', () => {
     // 8h at $20.00 base, 20% cap, 5% fee: 8*20*1.2 = 192.00; fee 9.60; total 201.60
-    const a = maxAuthorization({ baseRateCents: 2000, maxPremiumPct: 20, minutes: 480, feeBps: 500 });
+    const a = maxAuthorization({
+      baseRateCents: 2000,
+      maxPremiumPct: 20,
+      minutes: 480,
+      feeBps: 500,
+    });
     expect(a).toEqual({
       maxRateCents: 2400,
       maxWorkerPayCents: 19_200,
@@ -73,7 +78,12 @@ describe('maxAuthorization (flow 4B)', () => {
 });
 
 describe('computeSettlement', () => {
-  const cap = maxAuthorization({ baseRateCents: 2000, maxPremiumPct: 20, minutes: 480, feeBps: 500 });
+  const cap = maxAuthorization({
+    baseRateCents: 2000,
+    maxPremiumPct: 20,
+    minutes: 480,
+    feeBps: 500,
+  });
 
   it('captures worker pay plus fee for actual minutes', () => {
     const s = computeSettlement({
@@ -139,7 +149,9 @@ describe('computeSettlement', () => {
 
 describe('assertCaptureWithinAuthorization', () => {
   it('rejects capture above authorization', () => {
-    expect(() => assertCaptureWithinAuthorization(101, 100)).toThrow(CaptureExceedsAuthorizationError);
+    expect(() => assertCaptureWithinAuthorization(101, 100)).toThrow(
+      CaptureExceedsAuthorizationError,
+    );
     expect(() => assertCaptureWithinAuthorization(100, 100)).not.toThrow();
   });
 });

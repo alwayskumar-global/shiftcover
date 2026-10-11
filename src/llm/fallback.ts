@@ -30,8 +30,10 @@ export const rulesGapParser: GapParser = {
 
 /** Stub templates; amounts are injected by code, never generated. */
 export const templateExplainer: Explainer = {
-  explainRanking: ({ workerName }) => `${workerName} ranked by reliability, response speed, and distance.`,
-  offerCopy: ({ role, venue, startsAt, payUsd }) => `${role} shift at ${venue}, ${startsAt}. Pay: $${payUsd}.`,
+  explainRanking: ({ workerName }) =>
+    `${workerName} ranked by reliability, response speed, and distance.`,
+  offerCopy: ({ role, venue, startsAt, payUsd }) =>
+    `${role} shift at ${venue}, ${startsAt}. Pay: $${payUsd}.`,
   shiftRecap: ({ role, hours, payUsd }) => `${role}, ${hours}h, $${payUsd}.`,
 };
 
@@ -40,5 +42,7 @@ export function withFallback<T>(
   result: { ok: true; data: T } | { ok: false; reason: LlmFailureReason },
   fallback: () => T,
 ): { value: T; source: 'llm' | 'fallback' } {
-  return result.ok ? { value: result.data, source: 'llm' } : { value: fallback(), source: 'fallback' };
+  return result.ok
+    ? { value: result.data, source: 'llm' }
+    : { value: fallback(), source: 'fallback' };
 }

@@ -50,9 +50,9 @@ describe('parseServerEnv', () => {
   });
 
   it('refuses a non-sandbox PayPal base URL', () => {
-    expect(() =>
-      parseServerEnv({ ...base, PAYPAL_API_BASE: 'https://api-m.paypal.com' }),
-    ).toThrow(EnvError);
+    expect(() => parseServerEnv({ ...base, PAYPAL_API_BASE: 'https://api-m.paypal.com' })).toThrow(
+      EnvError,
+    );
   });
 
   it('refuses any model other than gemini-3.5-flash-lite', () => {

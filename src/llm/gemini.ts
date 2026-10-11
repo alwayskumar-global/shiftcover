@@ -44,11 +44,7 @@ export interface UsageStore {
 }
 
 export type LlmFailureReason =
-  | 'disabled'
-  | 'daily_cap'
-  | 'user_cap'
-  | 'provider_error'
-  | 'invalid_output';
+  'disabled' | 'daily_cap' | 'user_cap' | 'provider_error' | 'invalid_output';
 
 export interface LlmUsageInfo {
   inputTokens: number;
@@ -57,15 +53,18 @@ export interface LlmUsageInfo {
 }
 
 export type LlmResult<T> =
-  | { ok: true; data: T; usage: LlmUsageInfo; raw: string }
-  | { ok: false; reason: LlmFailureReason };
+  { ok: true; data: T; usage: LlmUsageInfo; raw: string } | { ok: false; reason: LlmFailureReason };
 
 /** Minimal slice of the SDK we rely on; lets tests inject a fake. */
 export interface InteractionsClient {
   interactions: {
     create(params: Record<string, unknown>): Promise<{
       output_text?: string;
-      usage?: { total_input_tokens?: number; total_output_tokens?: number; total_thought_tokens?: number };
+      usage?: {
+        total_input_tokens?: number;
+        total_output_tokens?: number;
+        total_thought_tokens?: number;
+      };
     }>;
   };
 }
@@ -173,7 +172,8 @@ export function createLlm(opts: LlmOptions) {
         try {
           const res = await getClient().interactions.create(params);
           const input = res.usage?.total_input_tokens ?? 0;
-          const output = (res.usage?.total_output_tokens ?? 0) + (res.usage?.total_thought_tokens ?? 0);
+          const output =
+            (res.usage?.total_output_tokens ?? 0) + (res.usage?.total_thought_tokens ?? 0);
           await store.addTokens(bucket, input, output).catch(() => undefined);
           const raw = res.output_text ?? '';
           let parsed: T;
@@ -186,7 +186,11 @@ export function createLlm(opts: LlmOptions) {
             ok: true,
             data: parsed,
             raw,
-            usage: { inputTokens: input, outputTokens: output, estimatedCostUsd: estimateCostUsd(input, output) },
+            usage: {
+              inputTokens: input,
+              outputTokens: output,
+              estimatedCostUsd: estimateCostUsd(input, output),
+            },
           };
         } catch (err) {
           if (attempt === 0 && isTransient(err)) {

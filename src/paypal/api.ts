@@ -105,7 +105,11 @@ export function captureAuthorization(
   });
 }
 
-export function voidAuthorization(client: PaypalClient, authorizationId: string, requestId: string) {
+export function voidAuthorization(
+  client: PaypalClient,
+  authorizationId: string,
+  requestId: string,
+) {
   return client.request<void>({
     method: 'POST',
     path: `/v2/payments/authorizations/${encodeURIComponent(authorizationId)}/void`,

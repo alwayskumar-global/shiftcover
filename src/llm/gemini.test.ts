@@ -32,7 +32,11 @@ describe('createLlm guardrails', () => {
   it('kill switch: no store access, no provider call', async () => {
     const create = vi.fn();
     const { store } = memStore();
-    const llm = createLlm({ limits: { ...limits, enabled: false }, store, client: { interactions: { create } } });
+    const llm = createLlm({
+      limits: { ...limits, enabled: false },
+      store,
+      client: { interactions: { create } },
+    });
     expect(await llm.generateStructured(args)).toEqual({ ok: false, reason: 'disabled' });
     expect(create).not.toHaveBeenCalled();
   });
@@ -40,9 +44,17 @@ describe('createLlm guardrails', () => {
   it('refuses over the daily cap and per-user hourly cap', async () => {
     const create = vi.fn();
     const client = { interactions: { create } };
-    const daily = createLlm({ limits, store: memStore({ dailyCalls: 2, userHourlyCalls: 0 }).store, client });
+    const daily = createLlm({
+      limits,
+      store: memStore({ dailyCalls: 2, userHourlyCalls: 0 }).store,
+      client,
+    });
     expect(await daily.generateStructured(args)).toEqual({ ok: false, reason: 'daily_cap' });
-    const user = createLlm({ limits, store: memStore({ dailyCalls: 0, userHourlyCalls: 1 }).store, client });
+    const user = createLlm({
+      limits,
+      store: memStore({ dailyCalls: 0, userHourlyCalls: 1 }).store,
+      client,
+    });
     expect(await user.generateStructured(args)).toEqual({ ok: false, reason: 'user_cap' });
     expect(create).not.toHaveBeenCalled();
   });
@@ -99,7 +111,11 @@ describe('createLlm guardrails', () => {
 
   it('does not retry non-transient errors', async () => {
     const create = vi.fn().mockRejectedValue(Object.assign(new Error('x'), { status: 402 }));
-    const llm = createLlm({ limits, store: memStore().store, client: { interactions: { create } } });
+    const llm = createLlm({
+      limits,
+      store: memStore().store,
+      client: { interactions: { create } },
+    });
     expect(await llm.generateStructured(args)).toEqual({ ok: false, reason: 'provider_error' });
     expect(create).toHaveBeenCalledTimes(1);
   });
@@ -107,7 +123,11 @@ describe('createLlm guardrails', () => {
   it('rejects schema-invalid output without retrying', async () => {
     for (const bad of ['not json', '{"role":5}', '']) {
       const create = vi.fn(async () => okRes(bad));
-      const llm = createLlm({ limits, store: memStore().store, client: { interactions: { create } } });
+      const llm = createLlm({
+        limits,
+        store: memStore().store,
+        client: { interactions: { create } },
+      });
       expect(await llm.generateStructured(args)).toEqual({ ok: false, reason: 'invalid_output' });
       expect(create).toHaveBeenCalledTimes(1);
     }
@@ -115,7 +135,10 @@ describe('createLlm guardrails', () => {
 
   it('does not spend when caps cannot be verified', async () => {
     const create = vi.fn();
-    const store: UsageStore = { ...memStore().store, counts: async () => Promise.reject(new Error('db down')) };
+    const store: UsageStore = {
+      ...memStore().store,
+      counts: async () => Promise.reject(new Error('db down')),
+    };
     const llm = createLlm({ limits, store, client: { interactions: { create } } });
     expect(await llm.generateStructured(args)).toEqual({ ok: false, reason: 'provider_error' });
     expect(create).not.toHaveBeenCalled();
@@ -124,7 +147,13 @@ describe('createLlm guardrails', () => {
 
 describe('withFallback', () => {
   it('uses the fallback when the LLM fails', () => {
-    expect(withFallback({ ok: false, reason: 'disabled' }, () => 'tpl')).toEqual({ value: 'tpl', source: 'fallback' });
-    expect(withFallback({ ok: true, data: 'llm' }, () => 'tpl')).toEqual({ value: 'llm', source: 'llm' });
+    expect(withFallback({ ok: false, reason: 'disabled' }, () => 'tpl')).toEqual({
+      value: 'tpl',
+      source: 'fallback',
+    });
+    expect(withFallback({ ok: true, data: 'llm' }, () => 'tpl')).toEqual({
+      value: 'llm',
+      source: 'llm',
+    });
   });
 });

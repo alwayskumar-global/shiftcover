@@ -101,8 +101,14 @@ export const workers = pgTable(
     name: text('name').notNull(),
     email: text('email').notNull(),
     paypalEmail: text('paypal_email'),
-    skills: text('skills').array().notNull().default(sql`'{}'::text[]`),
-    certs: text('certs').array().notNull().default(sql`'{}'::text[]`),
+    skills: text('skills')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    certs: text('certs')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
     homeLat: doublePrecision('home_lat'),
     homeLng: doublePrecision('home_lng'),
     /** 0..1 */
@@ -183,7 +189,9 @@ export const offers = pgTable(
       .where(sql`${t.status} = 'CLAIMED'`),
     index('offers_slot_status_idx').on(t.slotId, t.status),
     index('offers_worker_status_idx').on(t.workerId, t.status),
-    index('offers_expires_idx').on(t.expiresAt).where(sql`${t.status} in ('SENT', 'OPENED')`),
+    index('offers_expires_idx')
+      .on(t.expiresAt)
+      .where(sql`${t.status} in ('SENT', 'OPENED')`),
     check('offers_wave_ck', sql`${t.wave} between 1 and 3`),
     check('offers_rate_ck', sql`${t.rateCents} >= 0`),
   ],
@@ -216,11 +224,15 @@ export const payments = pgTable(
   },
   (t) => [
     uniqueIndex('payments_slot_attempt_uq').on(t.slotId, t.attempt),
-    uniqueIndex('payments_order_uq').on(t.paypalOrderId).where(sql`${t.paypalOrderId} is not null`),
+    uniqueIndex('payments_order_uq')
+      .on(t.paypalOrderId)
+      .where(sql`${t.paypalOrderId} is not null`),
     uniqueIndex('payments_auth_uq')
       .on(t.authorizationId)
       .where(sql`${t.authorizationId} is not null`),
-    uniqueIndex('payments_capture_uq').on(t.captureId).where(sql`${t.captureId} is not null`),
+    uniqueIndex('payments_capture_uq')
+      .on(t.captureId)
+      .where(sql`${t.captureId} is not null`),
     uniqueIndex('payments_sender_batch_uq')
       .on(t.senderBatchId)
       .where(sql`${t.senderBatchId} is not null`),
@@ -269,7 +281,9 @@ export const paypalEvents = pgTable(
   },
   (t) => [
     uniqueIndex('paypal_events_event_id_uq').on(t.eventId),
-    index('paypal_events_unprocessed_idx').on(t.receivedAt).where(sql`${t.processedAt} is null`),
+    index('paypal_events_unprocessed_idx')
+      .on(t.receivedAt)
+      .where(sql`${t.processedAt} is null`),
   ],
 );
 
@@ -301,10 +315,7 @@ export const pushSubscriptions = pgTable(
     keys: jsonb('keys').notNull(),
     createdAt: createdAt(),
   },
-  (t) => [
-    uniqueIndex('push_endpoint_uq').on(t.endpoint),
-    index('push_worker_idx').on(t.workerId),
-  ],
+  (t) => [uniqueIndex('push_endpoint_uq').on(t.endpoint), index('push_worker_idx').on(t.workerId)],
 );
 
 /**

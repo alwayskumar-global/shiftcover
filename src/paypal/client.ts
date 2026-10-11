@@ -144,7 +144,14 @@ export function createPaypalClient(opts: PaypalClientOptions): PaypalClient {
     try {
       return await doFetch(url, { ...init, signal: AbortSignal.timeout(timeoutMs) });
     } catch {
-      throw new PaypalError('PayPal request failed (network)', 'network', undefined, undefined, [], undefined);
+      throw new PaypalError(
+        'PayPal request failed (network)',
+        'network',
+        undefined,
+        undefined,
+        [],
+        undefined,
+      );
     }
   }
 
@@ -161,7 +168,14 @@ export function createPaypalClient(opts: PaypalClientOptions): PaypalClient {
     if (!res.ok) throw await toPaypalError(res);
     const json = (await res.json()) as { access_token?: string; expires_in?: number };
     if (!json.access_token || typeof json.expires_in !== 'number') {
-      throw new PaypalError('PayPal token response malformed', 'unknown', res.status, undefined, [], undefined);
+      throw new PaypalError(
+        'PayPal token response malformed',
+        'unknown',
+        res.status,
+        undefined,
+        [],
+        undefined,
+      );
     }
     token = { value: json.access_token, expiresAt: now() + json.expires_in * 1000 - TOKEN_SKEW_MS };
     return token.value;

@@ -22,7 +22,10 @@ const parsedEnv = envSchema.safeParse(
   Object.fromEntries(Object.entries(process.env).filter(([, v]) => v !== '')),
 );
 if (!parsedEnv.success) {
-  console.error('Missing/invalid env:', parsedEnv.error.issues.map((i) => i.path.join('.')).join(', '));
+  console.error(
+    'Missing/invalid env:',
+    parsedEnv.error.issues.map((i) => i.path.join('.')).join(', '),
+  );
   process.exit(1);
 }
 const env = parsedEnv.data;
@@ -104,7 +107,9 @@ async function main() {
   for (const f of GAP_FIELDS) console.log(`  ${f}: ${fieldHits[f]}/${n} (${pct(fieldHits[f])})`);
   console.log(`all fields correct: ${fullyCorrect}/${n} (${pct(fullyCorrect)})`);
   console.log(`tokens: input ${inputTokens}, output (incl. thinking) ${outputTokens}`);
-  console.log(`estimated cost: $${cost.toFixed(5)}  (~$${(cost / Math.max(valid, 1)).toFixed(5)}/call)`);
+  console.log(
+    `estimated cost: $${cost.toFixed(5)}  (~$${(cost / Math.max(valid, 1)).toFixed(5)}/call)`,
+  );
   if (failures.length) console.log('failures:', failures.join('; '));
 }
 
