@@ -1,0 +1,57 @@
+import { PgBoss } from 'pg-boss';
+import { JOB_NAMES, SCHEDULES, type JobName } from './names';
+
+export { JOB_NAMES, SCHEDULES } from './names';
+export type { JobName } from './names';
+
+/**
+ * Job handlers. M0 ships stubs only: they log the job name and id, never payloads.
+ * Real handlers arrive with M1 (waves, expiry, deadline), M2 (webhook, reconcile), M3 (notify).
+ * Rule (Section 9.3): no LLM calls inside webhook handlers or per-item loops.
+ */
+export type JobHandler = (job: { id: string; data: unknown }) => Promise<void>;
+
+const stub =
+  (name: JobName): JobHandler =>
+  async (job) => {
+    console.log(`[job:${name}] stub handler id=${job.id}`);
+  };
+
+export const handlers: Record<JobName, JobHandler> = {
+  send_wave: stub('send_wave'),
+  expire_offer: stub('expire_offer'),
+  fill_deadline: stub('fill_deadline'),
+  reconcile_payments: stub('reconcile_payments'),
+  process_webhook: stub('process_webhook'),
+  notify: stub('notify'),
+};
+
+export function createBoss(connectionString: string): PgBoss {
+  const boss = new PgBoss(connectionString);
+  boss.on('error', (err: Error) => console.error('[pg-boss] error:', err.message));
+  return boss;
+}
+
+/** Starts pg-boss, creates queues, schedules recurring jobs, registers handlers. */
+export async function startJobs(boss: PgBoss): Promise<void> {
+  await boss.start();
+  for (const name of JOB_NAMES) {
+    await boss.createQueue(name);
+    await boss.work(name, async (jobs) => {
+      for (const job of jobs) await handlers[name]({ id: job.id, data: job.data });
+    });
+  }
+  for (const [name, cron] of Object.entries(SCHEDULES)) {
+    await boss.schedule(name, cron);
+  }
+}
+
+/** Enqueue helper for web/worker code. */
+export async function enqueue(
+  boss: PgBoss,
+  name: JobName,
+  data: object,
+  options?: { singletonKey?: string; startAfter?: number },
+): Promise<string | null> {
+  return boss.send(name, data, options);
+}

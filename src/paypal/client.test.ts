@@ -220,6 +220,7 @@ describe('api wrappers', () => {
       message: 'm',
       requestId: 'po-1',
     });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const call = (request.mock.calls[0] as unknown as [{ body: any; requestId: string }])[0];
     expect(call.body.sender_batch_header.sender_batch_id).toBe('sc-pay-1');
     expect(call.body.items[0]).toMatchObject({
