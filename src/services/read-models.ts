@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, inArray, lt, sql } from 'drizzle-orm';
+import { and, asc, eq, gte, inArray, lt, max, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import {
   avatarTint,
@@ -19,7 +19,7 @@ import { MATCHING, WAVES } from '../config/matching';
 import { offers, shiftSlots, venues, workers } from '../db/schema';
 import { rankCandidates } from '../domain/matching';
 import { isShiftRole } from '../domain/roles';
-import { localDateString, localDayBounds } from '../lib/time';
+import { addDaysToDateString, localDateString, localDayBounds, localWeekKey } from '../lib/time';
 import { loadCandidates, loadGapFacts } from './candidates';
 import { latestPayment } from './payment-queries';
 import { ServiceError, type DbLike } from './types';
@@ -44,6 +44,7 @@ export function toSlotDto(
   venue: Pick<VenueRow, 'name' | 'area' | 'timezone' | 'searchRadiusMi'>,
   worker: Pick<WorkerRow, 'id' | 'name' | 'skills'> | null,
   replacesWorker: Pick<WorkerRow, 'id' | 'name'> | null = null,
+  currentWave: number | null = null,
 ): SlotDto {
   return {
     id: slot.id,
@@ -63,9 +64,21 @@ export function toSlotDto(
     gap_reason: slot.gapReason,
     replaces_worker: replacesWorker ? { id: replacesWorker.id, name: replacesWorker.name } : null,
     search_radius_mi: slot.searchRadiusMi ?? venue.searchRadiusMi,
+    current_wave: currentWave === 1 || currentWave === 2 || currentWave === 3 ? currentWave : null,
     cancelled_at: slot.cancelledAt?.toISOString() ?? null,
     cancelled_by: slot.cancelledBy,
   };
+}
+
+/** Highest wave sent per slot, for the given slots. */
+async function currentWaves(h: DbLike, slotIds: string[]) {
+  if (slotIds.length === 0) return new Map<string, number>();
+  const rows = await h
+    .select({ slotId: offers.slotId, wave: max(offers.wave) })
+    .from(offers)
+    .where(inArray(offers.slotId, slotIds))
+    .groupBy(offers.slotId);
+  return new Map(rows.map((r) => [r.slotId, r.wave ?? 0]));
 }
 
 export async function primaryVenue(h: DbLike, orgId: string) {
@@ -93,7 +106,8 @@ export async function slotDto(h: DbLike, orgId: string, slotId: string): Promise
     .leftJoin(replacedWorker, eq(replacedWorker.id, replacedSlot.workerId))
     .where(and(eq(shiftSlots.id, slotId), eq(venues.orgId, orgId)));
   if (!row) throw new ServiceError('not_found', 'gap not found');
-  return toSlotDto(row.slot, row.venue, row.worker, row.rw);
+  const waves = await currentWaves(h, [slotId]);
+  return toSlotDto(row.slot, row.venue, row.worker, row.rw, waves.get(slotId) ?? null);
 }
 
 export async function paymentDto(h: DbLike, slotId: string) {
@@ -107,10 +121,19 @@ export async function roster(
   orgId: string,
   date: string | undefined,
   now: Date,
+  days: 1 | 7 = 1,
 ): Promise<RosterResponse> {
   const venue = await primaryVenue(h, orgId);
-  const day = date ?? localDateString(now, venue.timezone);
-  const { start, end } = localDayBounds(day, venue.timezone);
+  const anchor = date ?? localDateString(now, venue.timezone);
+  // Week = Monday to Sunday containing the anchor day, in venue-local time.
+  const first =
+    days === 7
+      ? localWeekKey(localDayBounds(anchor, venue.timezone).start, venue.timezone)
+      : anchor;
+  const last = addDaysToDateString(first, days - 1);
+  const start = localDayBounds(first, venue.timezone).start;
+  const end = localDayBounds(last, venue.timezone).end;
+  const day = first;
 
   const ws = await h
     .select()
@@ -132,14 +155,19 @@ export async function roster(
     )
     .orderBy(asc(shiftSlots.startAt));
 
+  const waves = await currentWaves(
+    h,
+    rows.map((r) => r.slot.id),
+  );
   const live = rows.filter((r) => r.slot.status !== 'CANCELLED');
   const assigned = ['CONFIRMED', 'IN_PROGRESS', 'PENDING_APPROVAL', 'SETTLING', 'SETTLED'];
   return {
     date: day,
+    end_date: last,
     timezone: venue.timezone,
     server_time: now.toISOString(),
     resources: ws.map((w) => workerRef(w)),
-    events: rows.map((r) => toSlotDto(r.slot, venue, r.worker, r.rw)),
+    events: rows.map((r) => toSlotDto(r.slot, venue, r.worker, r.rw, waves.get(r.slot.id) ?? null)),
     summary: {
       open_gaps: live.filter((r) => r.slot.status === 'OPEN').length,
       offering: live.filter((r) => r.slot.status === 'OFFERING').length,

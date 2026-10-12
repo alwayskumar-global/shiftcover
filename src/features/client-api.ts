@@ -64,8 +64,12 @@ export const resendLink = async (email: string) =>
 
 // ---- manager ----
 export const fetchMe = async () => ok(await call<MeResponse>('/api/manager/me'));
-export const fetchRoster = async (date?: string) =>
-  ok(await call<RosterResponse>(`/api/manager/roster${date ? `?date=${date}` : ''}`));
+export const fetchRoster = async (date?: string, days: 1 | 7 = 1) =>
+  ok(
+    await call<RosterResponse>(
+      `/api/manager/roster?${new URLSearchParams({ ...(date ? { date } : {}), days: String(days) })}`,
+    ),
+  );
 export const parseGap = async (text: string) =>
   ok(await post('/api/manager/gaps/parse', { text })) as ParseResultDto;
 export const createGap = async (body: CreateGapRequest) =>

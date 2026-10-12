@@ -41,6 +41,7 @@ const DEVIATIONS = {
   slot: [
     'cancelled_at',
     'cancelled_by',
+    'current_wave',
     'gap_reason',
     'replaces_worker',
     'search_radius_mi',
@@ -68,7 +69,7 @@ const DEVIATIONS = {
     'replaces_slot_id',
     'start_at',
   ],
-  roster: ['date', 'server_time', 'timezone'],
+  roster: ['date', 'end_date', 'server_time', 'timezone'],
   states: ['claimed', 'declined'],
 };
 const extrasOf = (all: string[], listed: string[]) => all.filter((k) => !listed.includes(k));
@@ -178,6 +179,7 @@ describe('response schemas reject unlisted fields', () => {
     gap_reason: null,
     replaces_worker: null,
     search_radius_mi: 10,
+    current_wave: null,
     cancelled_at: null,
     cancelled_by: null,
   };

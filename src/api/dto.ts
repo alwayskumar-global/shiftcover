@@ -91,6 +91,8 @@ export const SlotDto = z
     gap_reason: z.string().nullable(),
     replaces_worker: z.object({ id: z.uuid(), name: z.string() }).strict().nullable(),
     search_radius_mi: z.number().int().positive(),
+    /** Highest wave sent so far (offering slots; null before the first wave). */
+    current_wave: z.number().int().min(1).max(3).nullable(),
     cancelled_at: iso.nullable(),
     cancelled_by: z.string().nullable(),
   })
@@ -192,7 +194,11 @@ export const WorkerOfferDto = z
 export type WorkerOfferDto = z.infer<typeof WorkerOfferDto>;
 
 // ---------------------------------------------------------------- 10.6 Roster
-export const RosterQuery = z.object({ date: z.iso.date().optional() });
+/** `days=7` returns the Monday-to-Sunday week containing `date` (additive: the Week toggle). */
+export const RosterQuery = z.object({
+  date: z.iso.date().optional(),
+  days: z.enum(['1', '7']).optional(),
+});
 
 export const RosterResourceDto = z
   .object({
@@ -208,6 +214,8 @@ export const RosterResponse = z
   .object({
     /** Additive (Deviations): the venue-local day shown and its IANA zone, needed to render UTC timestamps. */
     date: z.iso.date(),
+    /** Additive: last day of the range (equals `date` for a single day). */
+    end_date: z.iso.date(),
     timezone: z.string(),
     server_time: iso,
     resources: z.array(RosterResourceDto),

@@ -89,40 +89,45 @@ const slotId = (id: string) => {
 };
 
 // ---------------------------------------------------------------- manager: me (nav + form config)
-export async function getMe(d: ApiDeps, req: Request) {
-  const ctx = await mgr(d, req);
+export async function buildMe(d: ApiDeps, ctx: { orgId: string; email: string; name: string }) {
   const venue = await primaryVenue(d.svc.db, ctx.orgId);
   const [org] = await d.svc.db.select({ name: orgs.name }).from(orgs).where(eq(orgs.id, ctx.orgId));
-  return json(
-    MeResponse.parse({
-      manager: { email: ctx.email, name: ctx.name, role: 'manager' },
-      org: { name: org?.name ?? '' },
-      venue: {
-        id: venue.id,
-        name: venue.name,
-        area: venue.area,
-        address: venue.address,
-        timezone: venue.timezone,
-      },
-      config: {
-        platform_fee_pct: d.svc.config.platformFeeBps / 100,
-        premium_min_pct: PREMIUM_RANGE.minPct,
-        premium_max_pct: PREMIUM_RANGE.maxPct,
-        max_days_ahead: GAP_DATE_LIMITS.maxDaysAhead,
-        link_ttl_minutes: MAGIC_LINK_TTL_MINUTES,
-        role_default_rate_cents: ROLE_DEFAULT_RATE_CENTS,
-        paypal_env: 'sandbox',
-        payments_mode: d.paymentsMode,
-      },
-    }),
-  );
+  return MeResponse.parse({
+    manager: { email: ctx.email, name: ctx.name, role: 'manager' },
+    org: { name: org?.name ?? '' },
+    venue: {
+      id: venue.id,
+      name: venue.name,
+      area: venue.area,
+      address: venue.address,
+      timezone: venue.timezone,
+    },
+    config: {
+      platform_fee_pct: d.svc.config.platformFeeBps / 100,
+      premium_min_pct: PREMIUM_RANGE.minPct,
+      premium_max_pct: PREMIUM_RANGE.maxPct,
+      max_days_ahead: GAP_DATE_LIMITS.maxDaysAhead,
+      link_ttl_minutes: MAGIC_LINK_TTL_MINUTES,
+      role_default_rate_cents: ROLE_DEFAULT_RATE_CENTS,
+      paypal_env: 'sandbox',
+      payments_mode: d.paymentsMode,
+    },
+  });
+}
+
+export async function getMe(d: ApiDeps, req: Request) {
+  return json(await buildMe(d, await mgr(d, req)));
 }
 
 // ---------------------------------------------------------------- manager: roster
 export async function getRoster(d: ApiDeps, req: Request) {
   const ctx = await mgr(d, req);
-  const q = RosterQuery.parse({ date: new URL(req.url).searchParams.get('date') ?? undefined });
-  const data = await roster(d.svc.db, ctx.orgId, q.date, d.svc.now());
+  const sp = new URL(req.url).searchParams;
+  const q = RosterQuery.parse({
+    date: sp.get('date') ?? undefined,
+    days: sp.get('days') ?? undefined,
+  });
+  const data = await roster(d.svc.db, ctx.orgId, q.date, d.svc.now(), q.days === '7' ? 7 : 1);
   return json(RosterResponse.parse(data));
 }
 

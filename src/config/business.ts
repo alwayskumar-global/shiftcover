@@ -3,7 +3,7 @@ import type { ShiftRole } from '../domain/roles';
 /** Business rules the manager UI needs (design data-gaps). One place; synthetic defaults. */
 export const PREMIUM_RANGE = { minPct: 0, maxPct: 50 } as const;
 export const GAP_DATE_LIMITS = { maxDaysAhead: 14 } as const;
-export const MAGIC_LINK_TTL_MINUTES = 10;
+export const MAGIC_LINK_TTL_MINUTES = 15;
 
 /** Prefill for the base rate after a parse (M3 "Role default" tag). Hourly USD cents. */
 export const ROLE_DEFAULT_RATE_CENTS: Record<ShiftRole, number> = {

@@ -89,3 +89,12 @@ export function localWeekKey(date: Date, timeZone: string): string {
   const dateStr = `${p.year}-${String(p.month).padStart(2, '0')}-${String(p.day).padStart(2, '0')}`;
   return addDaysToDateString(dateStr, -daysSinceMonday);
 }
+
+/**
+ * A local `Date` whose wall-clock fields equal the instant's wall clock in `timeZone`. Bryntum renders in the
+ * browser's zone, so feeding it these keeps the roster on VENUE time for a manager in any zone.
+ */
+export function wallClockDate(iso: string | Date, timeZone: string): Date {
+  const p = localParts(typeof iso === 'string' ? new Date(iso) : iso, timeZone);
+  return new Date(p.year, p.month - 1, p.day, p.hour, p.minute);
+}

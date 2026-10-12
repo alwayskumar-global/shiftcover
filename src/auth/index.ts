@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import { getServerEnv } from '../config/env';
 import { getDb, type Db } from '../db/client';
 import { authAccount, authSession, authUser, authVerification, users } from '../db/schema';
+import { MAGIC_LINK_TTL_MINUTES } from '../config/business';
 import { outboxNotifier, type Notifier } from '../services/notifier';
 
 /**
@@ -62,7 +63,7 @@ export function createAuth(o: AuthOptions) {
     plugins: [
       magicLink({
         disableSignUp: true,
-        expiresIn: o.magicLinkTtl ?? 600,
+        expiresIn: o.magicLinkTtl ?? MAGIC_LINK_TTL_MINUTES * 60,
         sendMagicLink: async ({ email, url }) => {
           // Only provisioned managers get a link; unknown emails get nothing (and no hint either way).
           const [m] = await o.db
@@ -74,7 +75,7 @@ export function createAuth(o: AuthOptions) {
             recipient: `email:${email.toLowerCase()}`,
             channels: ['email'],
             kind: 'sign_in_link',
-            payload: { url, expiresInSeconds: o.magicLinkTtl ?? 600 },
+            payload: { url, expiresInSeconds: o.magicLinkTtl ?? MAGIC_LINK_TTL_MINUTES * 60 },
           });
         },
       }),
