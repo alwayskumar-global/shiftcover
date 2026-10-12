@@ -1,0 +1,3 @@
+/* Additions the design uses but does not define. Kept apart so the design CSS stays byte-identical to design/g1.
+   Listed in docs/ui-g1-fidelity.md. */
+.sc-alert--pending { background: var(--sc-st-pending-bg); color: var(--sc-st-pending-fg); border-color: var(--sc-st-pending-border); }
