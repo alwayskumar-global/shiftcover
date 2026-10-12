@@ -17,8 +17,18 @@ describe('RLS lockdown migration (static; live check is `npm run db:verify-rls`)
 
   it('every app table lives in the public schema, so the loop covers it', () => {
     const tables = Object.values(schema).filter((v): v is typeof schema.orgs => is(v, PgTable));
-    expect(tables.length).toBe(13);
+    expect(tables.length).toBeGreaterThanOrEqual(19);
+    const allSql = migrations.map((m) => m.sql).join('\n');
+    for (const t of tables) expect(allSql).toContain(`CREATE TABLE "${getTableConfig(t).name}"`);
     for (const t of tables) expect(getTableConfig(t).schema).toBeUndefined();
+  });
+
+  it('RLS guard is automatic: the last migration that creates tables (or a later one) enables RLS', () => {
+    const sorted = [...migrations].sort((a, b) => a.f.localeCompare(b.f));
+    const lastCreate = sorted.map((m) => /CREATE TABLE/i.test(m.sql)).lastIndexOf(true);
+    expect(lastCreate).toBeGreaterThanOrEqual(0);
+    const covered = sorted.slice(lastCreate).some((m) => /ENABLE ROW LEVEL SECURITY/i.test(m.sql));
+    expect(covered).toBe(true);
   });
 
   it('revokes from anon, authenticated and service_role only when they exist', () => {
