@@ -90,7 +90,6 @@ export function ClaimExperience({ token: urlToken }: { token?: string }) {
   }, []);
 
   const load = useCallback(async () => {
-    setView('loading');
     if (!token.current) {
       try {
         token.current = sessionStorage.getItem(STORAGE_KEY) ?? undefined;
@@ -436,7 +435,15 @@ export function ClaimExperience({ token: urlToken }: { token?: string }) {
             )}
             {view === 'errorLoad' && (
               <div className="sc-notice__actions">
-                <Button variant="primary" size="lg" block onClick={() => void load()}>
+                <Button
+                  variant="primary"
+                  size="lg"
+                  block
+                  onClick={() => {
+                    setView('loading');
+                    void load();
+                  }}
+                >
                   <Icon name="i-retry" />
                   Try again
                 </Button>
