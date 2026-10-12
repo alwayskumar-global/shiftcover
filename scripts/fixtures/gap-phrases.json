@@ -130,7 +130,7 @@
     {
       "text": "bar back tomorrow evening 7pm-1am, $18/hr, willing to go 40% higher",
       "expected": {
-        "role": "bartender",
+        "role": "bar_back",
         "date_offset_days": 1,
         "start_time": "19:00",
         "end_time": "01:00",

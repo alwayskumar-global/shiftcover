@@ -5,6 +5,7 @@ export const HOSPITALITY_ROLES = [
   'prep_cook',
   'server',
   'bartender',
+  'bar_back',
   'dishwasher',
   'barista',
   'host',
