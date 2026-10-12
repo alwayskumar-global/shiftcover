@@ -1,7 +1,6 @@
 import { latestPayment } from './payment-queries';
 import { randomUUID } from 'node:crypto';
-import { eq } from 'drizzle-orm';
-import { ledgerEntries, payments } from '../db/schema';
+import { ledgerEntries } from '../db/schema';
 import { movePayment } from './transitions';
 import type { Db } from '../db/client';
 import { ServiceError } from './types';
