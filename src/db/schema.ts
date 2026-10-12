@@ -147,6 +147,8 @@ export const shiftSlots = pgTable(
     /** Whole percent, 0..100. */
     maxPremiumPct: integer('max_premium_pct').notNull().default(0),
     offeredRateCents: integer('offered_rate_cents'),
+    /** The shift this gap replaces (a worker called in sick); that worker is never offered the cover. */
+    replacesSlotId: uuid('replaces_slot_id'),
     /** Defaults to start_at minus 30 min when the gap is posted. */
     fillBy: ts('fill_by'),
     /** Optimistic-lock counter; incremented on every state change. */

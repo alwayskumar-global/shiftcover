@@ -285,6 +285,7 @@ describe.skipIf(!hasTestDb)('M1 HTTP API (handlers on live Postgres)', () => {
     );
     expect(detail1.slot.status).toBe('OFFERING');
     expect(detail1.offers).toHaveLength(3);
+    expect(detail1.offers.map((o) => o.workerName)).not.toContain('Maria Alvarez'); // she called out
     expect(detail1.waves).toEqual([
       expect.objectContaining({ wave: 1, sent: 3, rateCents: 2200, claimed: 0 }),
     ]);

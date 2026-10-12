@@ -29,9 +29,12 @@ export function buildPoolConfig(databaseUrl: string, role: PoolRole): PoolConfig
   const url = new URL(databaseUrl);
   url.searchParams.delete('sslmode');
   url.searchParams.delete('uselibpqcompat');
+  // TLS is mandatory for every remote database. Only a loopback host (the throwaway local test/seed
+  // database, scripts/test-db.sh) may skip it.
+  const loopback = ['localhost', '127.0.0.1', '::1', '[::1]'].includes(url.hostname);
   return {
     connectionString: url.toString(),
     max: POOL_MAX[role],
-    ssl: { rejectUnauthorized: false },
+    ssl: loopback ? false : { rejectUnauthorized: false },
   };
 }

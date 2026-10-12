@@ -36,6 +36,13 @@
       "when": 1791795659697,
       "tag": "0004_m1_auth_availability",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791796416453,
+      "tag": "0005_m1_replaces_slot",
+      "breakpoints": true
     }
   ]
 }

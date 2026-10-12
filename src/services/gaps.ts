@@ -85,6 +85,7 @@ export async function createGap(deps: ServiceDeps, ctx: ManagerCtx, input: Creat
         baseRateCents: input.baseRateCents,
         maxPremiumPct: input.maxPremiumPct,
         fillBy: defaultFillBy(input.startAt, now),
+        replacesSlotId: input.replacesSlotId ?? null,
       })
       .returning();
     const slot = await moveSlot(tx, created!.id, 'OPEN', { actor, meta: { source: 'createGap' } });

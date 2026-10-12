@@ -110,5 +110,20 @@ export async function loadCandidates(
 export async function matchForSlot(h: DbLike, slot: SlotRow): Promise<MatchResult> {
   const gap = await loadGapFacts(h, slot);
   const cands = await loadCandidates(h, slot, gap);
-  return rankCandidates(cands, gap, MATCHING);
+  const result = rankCandidates(cands, gap, MATCHING);
+  if (!slot.replacesSlotId) return result;
+  // The worker who called out of the replaced shift is never offered its cover.
+  const [orig] = await h
+    .select({ workerId: shiftSlots.workerId })
+    .from(shiftSlots)
+    .where(eq(shiftSlots.id, slot.replacesSlotId));
+  const out = orig?.workerId;
+  if (!out) return result;
+  const gone = result.ranked.find((r) => r.workerId === out);
+  return {
+    ranked: result.ranked.filter((r) => r.workerId !== out),
+    excluded: gone
+      ? [...result.excluded, { workerId: out, name: gone.name, reasons: ['called_out' as const] }]
+      : result.excluded,
+  };
 }

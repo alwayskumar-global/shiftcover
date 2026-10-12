@@ -36,7 +36,8 @@ export type FilterReason =
   | 'not_available'
   | 'overlapping_shift'
   | 'insufficient_rest'
-  | 'weekly_hours_exceeded';
+  | 'weekly_hours_exceeded'
+  | 'called_out';
 
 const HOUR_MS = 3_600_000;
 const MIN_MS = 60_000;
