@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { handlers, JOB_NAMES, makeDbHeartbeat, SCHEDULES } from './index';
+import { handlers, JOB_NAMES, makeDbHeartbeat, processWebhookStub, SCHEDULES } from './index';
 
 describe('jobs', () => {
   it('has a handler for every job name', () => {
@@ -38,5 +38,19 @@ describe('db_heartbeat', () => {
       throw new Error('db down');
     });
     await expect(makeDbHeartbeat(query)({ id: 'j1', data: null })).rejects.toThrow('db down');
+  });
+});
+
+describe('process_webhook stub', () => {
+  it('only logs the event type and id', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    await processWebhookStub({
+      id: 'j1',
+      data: { eventId: 'WH-1', eventType: 'PAYMENT.CAPTURE.COMPLETED', secret: 'nope' },
+    });
+    expect(log).toHaveBeenCalledExactlyOnceWith(
+      '[job:process_webhook] type=PAYMENT.CAPTURE.COMPLETED id=WH-1',
+    );
+    log.mockRestore();
   });
 });

@@ -74,6 +74,8 @@ export interface RequestOptions {
   /** Path beginning with "/", e.g. "/v2/checkout/orders". */
   path: string;
   body?: unknown;
+  /** Pre-serialized JSON body, sent byte-for-byte (use when a value must not be re-serialized). */
+  rawBody?: string;
   /** Required for POST/PATCH: PayPal idempotency key. Reuse the same value when retrying. */
   requestId?: string;
   headers?: Record<string, string>;
@@ -195,12 +197,13 @@ export function createPaypalClient(opts: PaypalClientOptions): PaypalClient {
       Accept: 'application/json',
       ...o.headers,
     };
-    if (o.body !== undefined) headers['Content-Type'] = 'application/json';
+    if (o.body !== undefined || o.rawBody !== undefined)
+      headers['Content-Type'] = 'application/json';
     if (o.requestId) headers['PayPal-Request-Id'] = o.requestId;
     return send(`${baseUrl}${o.path}`, {
       method: o.method,
       headers,
-      body: o.body === undefined ? undefined : JSON.stringify(o.body),
+      body: o.rawBody ?? (o.body === undefined ? undefined : JSON.stringify(o.body)),
     });
   }
 

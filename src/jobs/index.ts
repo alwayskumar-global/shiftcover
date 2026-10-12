@@ -29,12 +29,20 @@ export function makeDbHeartbeat(query: Query): JobHandler {
   };
 }
 
+/** Stub (no business logic yet): logs only the event type and id. */
+export const processWebhookStub: JobHandler = async (job) => {
+  const d = (job.data ?? {}) as { eventId?: string; eventType?: string };
+  console.log(
+    `[job:process_webhook] type=${d.eventType ?? 'unknown'} id=${d.eventId ?? 'unknown'}`,
+  );
+};
+
 export const handlers: Record<JobName, JobHandler> = {
   send_wave: stub('send_wave'),
   expire_offer: stub('expire_offer'),
   fill_deadline: stub('fill_deadline'),
   reconcile_payments: stub('reconcile_payments'),
-  process_webhook: stub('process_webhook'),
+  process_webhook: processWebhookStub,
   notify: stub('notify'),
   db_heartbeat: makeDbHeartbeat((sql) => getPool().query(sql)),
 };
