@@ -11,6 +11,7 @@ describe('jobs', () => {
         'notify',
         'process_webhook',
         'reconcile_payments',
+        'recover_dispatch',
         'send_wave',
       ].sort(),
     );

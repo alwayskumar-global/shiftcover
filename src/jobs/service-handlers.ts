@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { expireOffer, fillDeadline, sendWave } from '../services/offers';
+import { expireOffer, fillDeadline, recoverDispatch, sendWave } from '../services/offers';
 import type { ServiceDeps } from '../services/types';
 import type { JobHandler } from './index';
 import type { JobName } from './names';
@@ -21,6 +21,11 @@ export function serviceHandlers(deps: ServiceDeps): Partial<Record<JobName, JobH
     expire_offer: async (job) => {
       const expired = await expireOffer(deps, offerJob.parse(job.data));
       console.log(`[job:expire_offer] id=${job.id} expired=${expired}`);
+    },
+    recover_dispatch: async (job) => {
+      const r = await recoverDispatch(deps);
+      if (r.slots > 0)
+        console.log(`[job:recover_dispatch] id=${job.id} slots=${r.slots} enqueued=${r.enqueued}`);
     },
     fill_deadline: async (job) => {
       const unfilled = await fillDeadline(deps, slotJob.parse(job.data));

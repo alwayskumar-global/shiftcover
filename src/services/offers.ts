@@ -172,3 +172,88 @@ export async function fillDeadline(deps: ServiceDeps, input: { slotId: string })
     return true;
   });
 }
+
+const RECOVER_GRACE_SECONDS = 45;
+
+/**
+ * Safety net for dispatch (runs as the `recover_dispatch` job every minute). `startOffering`, `sendWave` and
+ * friends commit state first and enqueue afterwards, so a crash or queue outage between the two would leave an
+ * OFFERING slot with no job behind it. For every OFFERING slot this re-enqueues, with the SAME singleton keys the
+ * normal path uses (so it is idempotent and never double-sends):
+ *  - the fill deadline (immediately if `fill_by` has passed),
+ *  - the next wave that is due (wave 1 if none was sent; wave n+1 once the interval has elapsed),
+ *  - an expiry for any open offer that is past its expiry.
+ * Slots changed within the grace window are skipped so the normal path is not raced.
+ */
+export async function recoverDispatch(deps: ServiceDeps) {
+  const now = deps.now();
+  const grace = RECOVER_GRACE_SECONDS * 1000;
+  const slots = await deps.db.select().from(shiftSlots).where(eq(shiftSlots.status, 'OFFERING'));
+  let enqueued = 0;
+  const run = async (fn: () => Promise<unknown>) => {
+    try {
+      await fn();
+      enqueued++;
+    } catch {
+      console.error('[recover_dispatch] enqueue failed; will retry next minute');
+    }
+  };
+
+  for (const slot of slots) {
+    if (now.getTime() - slot.updatedAt.getTime() < grace) continue;
+    const os = await deps.db
+      .select({
+        id: offers.id,
+        wave: offers.wave,
+        status: offers.status,
+        createdAt: offers.createdAt,
+        expiresAt: offers.expiresAt,
+      })
+      .from(offers)
+      .where(eq(offers.slotId, slot.id));
+
+    const fillBy = slot.fillBy ?? slot.startAt;
+    await run(() =>
+      deps.enqueue(
+        'fill_deadline',
+        { slotId: slot.id },
+        {
+          singletonKey: `deadline:${slot.id}`,
+          startAfter: Math.max(0, Math.ceil((fillBy.getTime() - now.getTime()) / 1000)),
+        },
+      ),
+    );
+
+    const lastWave = os.reduce((m, o) => Math.max(m, o.wave), 0);
+    const lastSent = os.reduce((m, o) => Math.max(m, o.createdAt.getTime()), 0);
+    const nextDue =
+      lastWave === 0
+        ? 1
+        : lastWave < WAVES.length &&
+            now.getTime() - lastSent >=
+              (deps.config.waveIntervalSeconds + RECOVER_GRACE_SECONDS) * 1000
+          ? lastWave + 1
+          : null;
+    if (nextDue !== null) {
+      await run(() =>
+        deps.enqueue(
+          'send_wave',
+          { slotId: slot.id, wave: nextDue },
+          { singletonKey: `wave:${slot.id}:${nextDue}` },
+        ),
+      );
+    }
+
+    for (const o of os) {
+      if (
+        (o.status === 'SENT' || o.status === 'OPENED') &&
+        o.expiresAt.getTime() + grace <= now.getTime()
+      ) {
+        await run(() =>
+          deps.enqueue('expire_offer', { offerId: o.id }, { singletonKey: `expire:${o.id}` }),
+        );
+      }
+    }
+  }
+  return { slots: slots.length, enqueued };
+}

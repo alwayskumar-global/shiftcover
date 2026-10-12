@@ -45,6 +45,7 @@ export const handlers: Record<JobName, JobHandler> = {
   process_webhook: processWebhookStub,
   notify: stub('notify'),
   db_heartbeat: makeDbHeartbeat((sql) => getPool().query(sql)),
+  recover_dispatch: stub('recover_dispatch'),
 };
 
 /** Worker-side pg-boss: same Supabase session-pooler URL, small pool (see src/db/connection.ts budget). */

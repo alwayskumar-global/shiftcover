@@ -110,7 +110,7 @@ describe.skipIf(!hasTestDb)('worker claim (live Postgres)', () => {
       JSON.stringify([
         await db().select().from(offers).where(eq(offers.slotId, s.slotId)),
         await db().select().from(shiftSlots).where(eq(shiftSlots.id, s.slotId)),
-        (await db().select().from(auditLog)).length,
+        (await db().select().from(auditLog).where(eq(auditLog.entityId, s.slotId))).length, // this slot only: other tests share the DB
       ]);
     const before = await snapshot();
     for (let i = 0; i < 5; i++) expect((await viewOffer(s.deps, tok)).state).toBe('available');

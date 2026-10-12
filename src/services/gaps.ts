@@ -125,13 +125,34 @@ export async function startOffering(deps: ServiceDeps, ctx: ManagerCtx, slotId: 
     return moveSlot(tx, slotId, 'OFFERING', { actor });
   });
 
-  await deps.enqueue('send_wave', { slotId, wave: 1 }, { singletonKey: `wave:${slotId}:1` });
+  // The slot is already OFFERING and committed. A dispatch failure here must not become a failed request or a
+  // stuck slot: log it and let recoverDispatch (the `recover_dispatch` job, every minute) re-enqueue. Enqueueing
+  // uses singleton keys, so retries and the recovery job can never double-send.
   const fillBy = result.fillBy ?? result.startAt;
   const delay = Math.max(0, Math.ceil((fillBy.getTime() - deps.now().getTime()) / 1000));
-  await deps.enqueue(
-    'fill_deadline',
-    { slotId },
-    { singletonKey: `deadline:${slotId}`, startAfter: delay },
-  );
+  const attempts: Array<[string, () => Promise<unknown>]> = [
+    [
+      'send_wave',
+      () => deps.enqueue('send_wave', { slotId, wave: 1 }, { singletonKey: `wave:${slotId}:1` }),
+    ],
+    [
+      'fill_deadline',
+      () =>
+        deps.enqueue(
+          'fill_deadline',
+          { slotId },
+          { singletonKey: `deadline:${slotId}`, startAfter: delay },
+        ),
+    ],
+  ];
+  for (const [name, run] of attempts) {
+    try {
+      await run();
+    } catch {
+      console.error(
+        `[startOffering] dispatch of ${name} failed for slot ${slotId}; recover_dispatch will retry`,
+      );
+    }
+  }
   return result;
 }
