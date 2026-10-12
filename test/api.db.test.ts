@@ -4,9 +4,9 @@ import {
   ClaimResponse,
   CreateGapResponse,
   GapDetailResponse,
-  OfferViewResponse,
-  ParsedCardDto,
+  ParseResultDto,
   RosterResponse,
+  WorkerOfferDto,
   WorkerShiftsResponse,
 } from '../src/api/dto';
 import {
@@ -174,24 +174,23 @@ describe.skipIf(!hasTestDb)('M1 HTTP API (handlers on live Postgres)', () => {
       }),
     );
     expect(res.status).toBe(200);
-    const card = ParsedCardDto.parse(await res.json());
+    const card = ParseResultDto.parse(await res.json());
     expect(card).toMatchObject({
       source: 'rules',
       role: 'line_cook',
-      calledOutName: 'Maria',
-      replacesSlotId: slot.id,
-      baseRateCents: 2200,
-      baseRateSource: 'replaced_shift',
-      maxPremiumPct: 20,
-      maxPremiumSource: 'default',
+      date: '2026-10-14',
+      start: '07:00',
+      end: '15:00',
+      called_out_name: 'Maria',
+      replaces_slot_id: slot.id,
+      base_rate_cents: 2200, // borrowed from the replaced shift
+      max_premium_pct: 20, // org default
       missing: [],
-    });
-    expect(card.startAt).toBe('2026-10-14T14:00:00.000Z');
-    expect(card.endAt).toBe('2026-10-14T22:00:00.000Z');
-    expect(card.hold).toMatchObject({
-      currency: 'USD',
-      maxRateCents: 2640,
-      authorizedCents: 22_176,
+      worker_pay_at_cap_cents: 21_120, // 8h x $26.40 (22.00 + 20%)
+      platform_fee_cents: 1056, // 5%
+      total_hold_cents: 22_176,
+      start_at: '2026-10-14T14:00:00.000Z',
+      end_at: '2026-10-14T22:00:00.000Z',
     });
   });
 
@@ -204,9 +203,13 @@ describe.skipIf(!hasTestDb)('M1 HTTP API (handlers on live Postgres)', () => {
         body: JSON.stringify({ text: 'we need someone tomorrow' }),
       }),
     );
-    const card = ParsedCardDto.parse(await res.json());
-    expect(card.missing).toEqual(['role', 'time', 'baseRate']);
-    expect(card.hold).toBeNull();
+    const card = ParseResultDto.parse(await res.json());
+    expect(card.missing).toEqual(['role', 'time', 'base_rate']);
+    expect([card.worker_pay_at_cap_cents, card.platform_fee_cents, card.total_hold_cents]).toEqual([
+      null,
+      null,
+      null,
+    ]);
   });
 
   it('END TO END: create gap -> authorize (stub) -> offer -> worker views -> claims -> manager sees CONFIRMED', async () => {
@@ -223,12 +226,11 @@ describe.skipIf(!hasTestDb)('M1 HTTP API (handlers on live Postgres)', () => {
       await (await handle(getRoster)(w.api, w.req('/api/manager/roster'))).json(),
     );
     expect(r0.date).toBe('2026-10-14');
-    expect(r0.summary).toEqual({ openGaps: 0, offering: 0, shiftsToday: 1 });
+    expect(r0.summary).toEqual({ open_gaps: 0, offering: 0, shifts_today: 1 });
     expect(r0.resources.map((r) => r.name)).toContain('Maria Alvarez');
     expect(r0.events[0]).toMatchObject({
-      status: 'CONFIRMED',
-      isGap: false,
-      workerName: 'Maria Alvarez',
+      status: 'confirmed',
+      worker: { name: 'Maria Alvarez', role: 'line_cook' },
     });
 
     // create the gap (replacing Maria's shift)
@@ -237,21 +239,21 @@ describe.skipIf(!hasTestDb)('M1 HTTP API (handlers on live Postgres)', () => {
       w.req('/api/manager/gaps', {
         method: 'POST',
         body: JSON.stringify({
-          venueId: w.o.venue.id,
+          venue_id: w.o.venue.id,
           role: 'line_cook',
-          startAt: '2026-10-14T14:00:00.000Z',
-          endAt: '2026-10-14T22:00:00.000Z',
-          baseRateCents: 2200,
-          maxPremiumPct: 20,
-          replacesSlotId: original.id,
+          start_at: '2026-10-14T14:00:00.000Z',
+          end_at: '2026-10-14T22:00:00.000Z',
+          base_rate_cents: 2200,
+          max_premium_pct: 20,
+          replaces_slot_id: original.id,
         }),
       }),
     );
     expect(created.status).toBe(201);
     const c = CreateGapResponse.parse(await created.json());
-    expect(c.slot.status).toBe('OPEN');
-    expect(c.payment.status).toBe('AUTH_PENDING_APPROVAL');
-    expect(c.hold.authorizedCents).toBe(22_176);
+    expect(c.slot.status).toBe('open');
+    expect(c.payment.status).toBe('awaiting_approval');
+    expect(c.hold.total_hold_cents).toBe(22_176);
 
     // cannot offer before the payment is authorized
     const early = await handle(postStartOffering)(
@@ -283,13 +285,14 @@ describe.skipIf(!hasTestDb)('M1 HTTP API (handlers on live Postgres)', () => {
     const detail1 = GapDetailResponse.parse(
       await (await handle(getGap)(w.api, w.req('/x'), c.slot.id)).json(),
     );
-    expect(detail1.slot.status).toBe('OFFERING');
+    expect(detail1.slot.status).toBe('offering');
     expect(detail1.offers).toHaveLength(3);
-    expect(detail1.offers.map((o) => o.workerName)).not.toContain('Maria Alvarez'); // she called out
+    expect(detail1.offers.map((o) => o.worker.name)).not.toContain('Maria Alvarez'); // she called out
     expect(detail1.waves).toEqual([
-      expect.objectContaining({ wave: 1, sent: 3, rateCents: 2200, claimed: 0 }),
+      expect.objectContaining({ wave: 1, audience_count: 3, rate_cents: 2200, capped: false }),
     ]);
-    expect(detail1.payment).toMatchObject({ status: 'AUTHORIZED', authorizedCents: 22_176 });
+    expect(detail1.payment).toMatchObject({ status: 'authorized', authorized_cents: 22_176 });
+    expect(detail1.payment!.paypal_references.authorization).toMatch(/^STUB-AUTH-/);
 
     // fetch the raw link from the Outbox like the future email would carry it
     const { notifications } = await import('../src/db/schema');
@@ -316,10 +319,25 @@ describe.skipIf(!hasTestDb)('M1 HTTP API (handlers on live Postgres)', () => {
     const setCookie = view.headers.get('set-cookie')!;
     expect(setCookie).toMatch(/HttpOnly/);
     expect(setCookie).toMatch(/SameSite=Lax/);
-    const viewDto = OfferViewResponse.parse(await view.json());
+    const viewDto = WorkerOfferDto.parse(await view.json());
     expect(viewDto.state).toBe('available');
-    expect(viewDto.offer!.estimatedPayCents).toBe(17_600); // 8h x $22.00
-    expect(JSON.stringify(viewDto)).not.toContain('workerId');
+    expect(viewDto).toEqual({
+      role: 'line_cook',
+      venue_name: 'Test Venue',
+      venue_area: '',
+      start_at: '2026-10-14T14:00:00.000Z',
+      end_at: '2026-10-14T22:00:00.000Z',
+      hours: 8,
+      distance_mi: expect.any(Number),
+      rate_cents: 2200,
+      pay_total_cents: 17_600,
+      expires_at: '2026-10-14T13:55:00.000Z', // 15 min after "now"
+      state: 'available',
+    });
+    expect(viewDto.pay_total_cents).toBe(17_600); // 8h x $22.00
+    expect(viewDto.hours).toBe(8);
+    expect(viewDto.venue_area).toBe('');
+    expect(JSON.stringify(viewDto)).not.toMatch(/worker_?id/i);
     const winnerCookie = setCookie.split(';')[0]!;
 
     // claim without our Origin is blocked (CSRF); with it, it works
@@ -351,7 +369,7 @@ describe.skipIf(!hasTestDb)('M1 HTTP API (handlers on live Postgres)', () => {
       new Request(`${BASE}/api/c/${links.get(loserId)}`),
       links.get(loserId)!,
     );
-    expect(OfferViewResponse.parse(await lateView.json()).state).toBe('taken');
+    expect(WorkerOfferDto.parse(await lateView.json()).state).toBe('taken');
 
     // my shifts (cookie) shows only my own offer
     const mine = WorkerShiftsResponse.parse(
@@ -364,9 +382,9 @@ describe.skipIf(!hasTestDb)('M1 HTTP API (handlers on live Postgres)', () => {
     );
     expect(mine.shifts).toHaveLength(1);
     expect(mine.shifts[0]).toMatchObject({
-      isMine: true,
-      slotStatus: 'CONFIRMED',
-      offerStatus: 'CLAIMED',
+      is_mine: true,
+      slot_status: 'confirmed',
+      offer_status: 'claimed',
     });
     expect((await handle(getWorkerShifts)(w.api, new Request(`${BASE}/api/w/shifts`))).status).toBe(
       401,
@@ -376,16 +394,17 @@ describe.skipIf(!hasTestDb)('M1 HTTP API (handlers on live Postgres)', () => {
     const detail2 = GapDetailResponse.parse(
       await (await handle(getGap)(w.api, w.req('/x'), c.slot.id)).json(),
     );
-    expect(detail2.slot).toMatchObject({ status: 'CONFIRMED' });
+    expect(detail2.slot).toMatchObject({ status: 'confirmed' });
     expect(detail2.slot.worker!.id).toBe(winnerId);
-    expect(detail2.waves[0]).toMatchObject({ claimed: 1 });
+    expect(detail2.offers.filter((o) => o.status === 'claimed')).toHaveLength(1);
+    expect(detail2.offers.filter((o) => o.status === 'withdrawn')).toHaveLength(2);
     const r1 = RosterResponse.parse(
       await (await handle(getRoster)(w.api, w.req('/api/manager/roster?date=2026-10-14'))).json(),
     );
-    expect(r1.summary.shiftsToday).toBe(1); // Maria's cancelled shift is gone; the new one is confirmed
+    expect(r1.summary.shifts_today).toBe(1); // Maria's cancelled shift is gone; the new one is confirmed
     expect(r1.events.find((e) => e.id === c.slot.id)).toMatchObject({
-      isGap: false,
-      resourceId: winnerId,
+      status: 'confirmed',
+      worker: { id: winnerId },
     });
     void others;
   });
@@ -400,12 +419,12 @@ describe.skipIf(!hasTestDb)('M1 HTTP API (handlers on live Postgres)', () => {
           w.req('/api/manager/gaps', {
             method: 'POST',
             body: JSON.stringify({
-              venueId: w.o.venue.id,
+              venue_id: w.o.venue.id,
               role: 'line_cook',
-              startAt: '2026-10-14T14:00:00.000Z',
-              endAt: '2026-10-14T22:00:00.000Z',
-              baseRateCents: 2200,
-              maxPremiumPct: 20,
+              start_at: '2026-10-14T14:00:00.000Z',
+              end_at: '2026-10-14T22:00:00.000Z',
+              base_rate_cents: 2200,
+              max_premium_pct: 20,
             }),
           }),
         )
@@ -442,7 +461,7 @@ describe.skipIf(!hasTestDb)('M1 HTTP API (handlers on live Postgres)', () => {
       b,
     );
     expect(steal.status).toBe(404);
-    expect(OfferViewResponse.parse({ ...(await steal.json()), offer: null }).state).toBe('invalid');
+    expect(WorkerOfferDto.parse(await steal.json()).state).toBe('invalid');
   });
 
   it('unknown or garbage tokens answer 404 invalid, never 500', async () => {
@@ -509,12 +528,12 @@ describe.skipIf(!hasTestDb)('M1 HTTP API (handlers on live Postgres)', () => {
           b.req('/api/manager/gaps', {
             method: 'POST',
             body: JSON.stringify({
-              venueId: b.o.venue.id,
+              venue_id: b.o.venue.id,
               role: 'line_cook',
-              startAt: '2026-10-14T14:00:00.000Z',
-              endAt: '2026-10-14T22:00:00.000Z',
-              baseRateCents: 2200,
-              maxPremiumPct: 20,
+              start_at: '2026-10-14T14:00:00.000Z',
+              end_at: '2026-10-14T22:00:00.000Z',
+              base_rate_cents: 2200,
+              max_premium_pct: 20,
             }),
           }),
         )
@@ -544,12 +563,12 @@ describe.skipIf(!hasTestDb)('M1 HTTP API (handlers on live Postgres)', () => {
       a.req('/api/manager/gaps', {
         method: 'POST',
         body: JSON.stringify({
-          venueId: b.o.venue.id,
+          venue_id: b.o.venue.id,
           role: 'line_cook',
-          startAt: '2026-10-14T14:00:00.000Z',
-          endAt: '2026-10-14T22:00:00.000Z',
-          baseRateCents: 2200,
-          maxPremiumPct: 20,
+          start_at: '2026-10-14T14:00:00.000Z',
+          end_at: '2026-10-14T22:00:00.000Z',
+          base_rate_cents: 2200,
+          max_premium_pct: 20,
         }),
       }),
     );
@@ -564,7 +583,7 @@ describe.skipIf(!hasTestDb)('M1 HTTP API (handlers on live Postgres)', () => {
       w.api,
       w.req('/api/manager/gaps', {
         method: 'POST',
-        body: JSON.stringify({ venueId: 'nope', role: 'astronaut' }),
+        body: JSON.stringify({ venue_id: 'nope', role: 'astronaut' }),
       }),
     );
     expect(bad.status).toBe(400);

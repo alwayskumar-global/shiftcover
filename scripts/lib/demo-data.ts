@@ -11,7 +11,13 @@ export const ORG_NAME = 'Maple & Rye';
 export const MANAGER = { name: 'Dana Whitfield', email: 'dana.whitfield@example.com' };
 export const TZ = 'America/Los_Angeles';
 // Synthetic downtown-Portland coordinates.
-export const VENUE = { name: 'Maple & Rye', lat: 45.5231, lng: -122.6765, radiusM: 150 };
+export const VENUE = {
+  name: 'Maple & Rye',
+  area: 'Pearl District',
+  lat: 45.5231,
+  lng: -122.6765,
+  radiusM: 150,
+};
 
 export type DemoWorker = {
   name: string;

@@ -43,6 +43,13 @@
       "when": 1791796416453,
       "tag": "0005_m1_replaces_slot",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791813449404,
+      "tag": "0006_m1_venue_area",
+      "breakpoints": true
     }
   ]
 }

@@ -1,10 +1,22 @@
 import { and, asc, eq, gte, inArray, lt, sql } from 'drizzle-orm';
+import { hoursBetween, primaryRole, publicSlotStatus, toPaymentDto } from '../api/adapters';
+import type {
+  GapDetailResponse,
+  OfferDto,
+  RosterResponse,
+  SlotDto,
+  WaveSummaryDto,
+} from '../api/dto';
+import { WAVES } from '../config/matching';
 import { offers, payments, shiftSlots, venues, workers } from '../db/schema';
-import { ROLE_LABELS, isShiftRole, type ShiftRole } from '../domain/roles';
+import { isShiftRole } from '../domain/roles';
 import { localDateString, localDayBounds } from '../lib/time';
 import { ServiceError, type DbLike } from './types';
 
-const label = (r: string) => (isShiftRole(r) ? ROLE_LABELS[r] : r);
+type SlotRow = typeof shiftSlots.$inferSelect;
+type WorkerRow = typeof workers.$inferSelect;
+
+const slotRole = (r: string) => (isShiftRole(r) ? r : 'event_staff');
 const initials = (name: string) =>
   name
     .split(/\s+/)
@@ -12,6 +24,29 @@ const initials = (name: string) =>
     .join('')
     .slice(0, 2)
     .toUpperCase();
+
+/** Public Section 10.6 Slot from rows. */
+export function toSlotDto(
+  slot: SlotRow,
+  venue: { name: string; area: string },
+  worker: Pick<WorkerRow, 'id' | 'name' | 'skills'> | null,
+): SlotDto {
+  return {
+    id: slot.id,
+    role: slotRole(slot.role),
+    venue_name: venue.name,
+    venue_area: venue.area,
+    start_at: slot.startAt.toISOString(),
+    end_at: slot.endAt.toISOString(),
+    hours: hoursBetween(slot.startAt, slot.endAt),
+    status: publicSlotStatus(slot.status),
+    worker: worker ? { id: worker.id, name: worker.name, role: primaryRole(worker.skills) } : null,
+    base_rate_cents: slot.baseRateCents,
+    max_premium_pct: slot.maxPremiumPct,
+    offered_rate_cents: slot.offeredRateCents,
+    fill_by: slot.fillBy?.toISOString() ?? null,
+  };
+}
 
 export async function primaryVenue(h: DbLike, orgId: string) {
   const [v] = await h
@@ -24,8 +59,30 @@ export async function primaryVenue(h: DbLike, orgId: string) {
   return v;
 }
 
+/** One slot (org-scoped) as a public Slot DTO. */
+export async function slotDto(h: DbLike, orgId: string, slotId: string): Promise<SlotDto> {
+  const [row] = await h
+    .select({ slot: shiftSlots, venue: venues, worker: workers })
+    .from(shiftSlots)
+    .innerJoin(venues, eq(venues.id, shiftSlots.venueId))
+    .leftJoin(workers, eq(workers.id, shiftSlots.workerId))
+    .where(and(eq(shiftSlots.id, slotId), eq(venues.orgId, orgId)));
+  if (!row) throw new ServiceError('not_found', 'gap not found');
+  return toSlotDto(row.slot, row.venue, row.worker);
+}
+
+export async function paymentDto(h: DbLike, slotId: string) {
+  const [pay] = await h.select().from(payments).where(eq(payments.slotId, slotId));
+  return pay ? toPaymentDto(pay) : null;
+}
+
 /** Roster for one venue-local day, shaped for the Bryntum Scheduler (resources + events + summary). */
-export async function roster(h: DbLike, orgId: string, date: string | undefined, now: Date) {
+export async function roster(
+  h: DbLike,
+  orgId: string,
+  date: string | undefined,
+  now: Date,
+): Promise<RosterResponse> {
   const venue = await primaryVenue(h, orgId);
   const day = date ?? localDateString(now, venue.timezone);
   const { start, end } = localDayBounds(day, venue.timezone);
@@ -35,8 +92,8 @@ export async function roster(h: DbLike, orgId: string, date: string | undefined,
     .from(workers)
     .where(and(eq(workers.orgId, orgId), inArray(workers.status, ['active', 'invited'])))
     .orderBy(asc(workers.name));
-  const slots = await h
-    .select({ slot: shiftSlots, workerName: workers.name })
+  const rows = await h
+    .select({ slot: shiftSlots, worker: workers })
     .from(shiftSlots)
     .leftJoin(workers, eq(workers.id, shiftSlots.workerId))
     .where(
@@ -48,120 +105,69 @@ export async function roster(h: DbLike, orgId: string, date: string | undefined,
     )
     .orderBy(asc(shiftSlots.startAt));
 
-  const gapStatuses = ['OPEN', 'OFFERING', 'UNFILLED'];
+  const live = rows.filter((r) => r.slot.status !== 'CANCELLED');
   const assigned = ['CONFIRMED', 'IN_PROGRESS', 'PENDING_APPROVAL', 'SETTLING', 'SETTLED'];
-  const live = slots.filter((s) => s.slot.status !== 'CANCELLED');
   return {
     date: day,
     timezone: venue.timezone,
-    venue: { id: venue.id, name: venue.name },
-    summary: {
-      openGaps: live.filter((s) => s.slot.status === 'OPEN').length,
-      offering: live.filter((s) => s.slot.status === 'OFFERING').length,
-      shiftsToday: live.filter((s) => assigned.includes(s.slot.status)).length,
-    },
     resources: ws.map((w) => ({
       id: w.id,
-      kind: 'worker' as const,
       name: w.name,
+      role: primaryRole(w.skills),
       initials: initials(w.name),
-      roles: w.skills,
-      reliabilityScore: w.reliabilityScore,
     })),
-    events: slots.map(({ slot, workerName }) => ({
-      id: slot.id,
-      resourceId: slot.workerId,
-      workerName,
-      role: slot.role as ShiftRole,
-      roleLabel: label(slot.role),
-      status: slot.status,
-      isGap: gapStatuses.includes(slot.status),
-      startDate: slot.startAt.toISOString(),
-      endDate: slot.endAt.toISOString(),
-      baseRateCents: slot.baseRateCents,
-      offeredRateCents: slot.offeredRateCents,
-    })),
+    events: rows.map((r) => toSlotDto(r.slot, venue, r.worker)),
+    summary: {
+      open_gaps: live.filter((r) => r.slot.status === 'OPEN').length,
+      offering: live.filter((r) => r.slot.status === 'OFFERING').length,
+      shifts_today: live.filter((r) => assigned.includes(r.slot.status)).length,
+    },
   };
 }
 
-export async function gapDetail(h: DbLike, orgId: string, slotId: string) {
-  const [row] = await h
-    .select({ slot: shiftSlots, venueName: venues.name, workerName: workers.name })
-    .from(shiftSlots)
-    .innerJoin(venues, eq(venues.id, shiftSlots.venueId))
-    .leftJoin(workers, eq(workers.id, shiftSlots.workerId))
-    .where(and(eq(shiftSlots.id, slotId), eq(venues.orgId, orgId)));
-  if (!row) throw new ServiceError('not_found', 'gap not found');
-  const { slot } = row;
+export async function gapDetail(
+  h: DbLike,
+  orgId: string,
+  slotId: string,
+): Promise<GapDetailResponse> {
+  const slot = await slotDto(h, orgId, slotId);
+  const [slotRow] = await h.select().from(shiftSlots).where(eq(shiftSlots.id, slotId));
 
   const os = await h
-    .select({ offer: offers, workerName: workers.name })
+    .select({ offer: offers, worker: workers })
     .from(offers)
     .innerJoin(workers, eq(workers.id, offers.workerId))
     .where(eq(offers.slotId, slotId))
     .orderBy(asc(offers.wave), asc(offers.createdAt));
-  const [pay] = await h.select().from(payments).where(eq(payments.slotId, slotId));
 
   const waveNums = [...new Set(os.map((o) => o.offer.wave))];
-  const waves = waveNums.map((wave) => {
+  const waves: WaveSummaryDto[] = waveNums.map((wave) => {
     const rows = os.filter((o) => o.offer.wave === wave).map((o) => o.offer);
-    const count = (s: string) => rows.filter((o) => o.status === s).length;
+    const plan = WAVES.find((w) => w.wave === wave);
     return {
       wave,
-      rateCents: rows[0]!.rateCents,
-      sent: rows.length,
-      // "opened" counts every offer that was opened at some point (opened, claimed, or since withdrawn)
-      opened: rows.filter((o) => o.openedAt !== null).length,
-      claimed: count('CLAIMED'),
-      expired: count('EXPIRED'),
-      withdrawn: count('WITHDRAWN'),
-      declined: count('DECLINED'),
-      sentAt: rows
+      sent_at: rows
         .reduce((min, o) => (o.createdAt < min ? o.createdAt : min), rows[0]!.createdAt)
         .toISOString(),
+      audience_count: rows.length,
+      rate_cents: rows[0]!.rateCents,
+      capped: !!plan && plan.premiumPct > slotRow!.maxPremiumPct,
     };
   });
 
-  return {
-    slot: {
-      id: slot.id,
-      venueId: slot.venueId,
-      venueName: row.venueName,
-      role: slot.role as ShiftRole,
-      roleLabel: label(slot.role),
-      status: slot.status,
-      startAt: slot.startAt.toISOString(),
-      endAt: slot.endAt.toISOString(),
-      fillBy: slot.fillBy?.toISOString() ?? null,
-      baseRateCents: slot.baseRateCents,
-      maxPremiumPct: slot.maxPremiumPct,
-      offeredRateCents: slot.offeredRateCents,
-      version: slot.version,
-      worker: slot.workerId && row.workerName ? { id: slot.workerId, name: row.workerName } : null,
-    },
-    waves,
-    offers: os.map(({ offer, workerName }) => ({
-      id: offer.id,
-      workerId: offer.workerId,
-      workerName,
-      wave: offer.wave,
-      rateCents: offer.rateCents,
-      status: offer.status,
-      expiresAt: offer.expiresAt.toISOString(),
-      openedAt: offer.openedAt?.toISOString() ?? null,
-      claimedAt: offer.claimedAt?.toISOString() ?? null,
-    })),
-    payment: pay
-      ? {
-          status: pay.status,
-          currency: 'USD' as const,
-          authorizedCents: pay.authorizedCents,
-          capturedCents: pay.capturedCents,
-          workerPayCents: pay.workerPayCents,
-          platformFeeCents: pay.platformFeeCents,
-        }
-      : null,
-  };
+  const offerDtos: OfferDto[] = os.map(({ offer, worker }) => ({
+    id: offer.id,
+    worker: { name: worker.name, role: primaryRole(worker.skills) },
+    wave: offer.wave,
+    rate_cents: offer.rateCents,
+    status: offer.status.toLowerCase() as OfferDto['status'],
+    sent_at: offer.createdAt.toISOString(),
+    opened_at: offer.openedAt?.toISOString() ?? null,
+    claimed_at: offer.claimedAt?.toISOString() ?? null,
+    expires_at: offer.expiresAt.toISOString(),
+  }));
+
+  return { slot, waves, offers: offerDtos, payment: await paymentDto(h, slotId) };
 }
 
 export async function findRecognisedSlot(

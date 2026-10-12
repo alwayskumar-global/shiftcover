@@ -19,6 +19,7 @@ export interface OfferView {
     role: string;
     roleLabel: string;
     venueName: string;
+    venueArea: string;
     startAt: string;
     endAt: string;
     rateCents: number;
@@ -52,6 +53,7 @@ function toView(r: Loaded, now: Date): OfferView {
     role: slot.role,
     roleLabel: isShiftRole(slot.role) ? ROLE_LABELS[slot.role] : slot.role,
     venueName: venue.name,
+    venueArea: venue.area,
     startAt: slot.startAt.toISOString(),
     endAt: slot.endAt.toISOString(),
     rateCents: o.rateCents,

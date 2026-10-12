@@ -89,6 +89,8 @@ export const venues = pgTable(
     radiusM: integer('radius_m').notNull().default(150),
     /** IANA zone; availability windows and "today" are evaluated in venue local time. */
     timezone: text('timezone').notNull().default('America/Los_Angeles'),
+    /** Neighbourhood shown next to the venue name (PLAN.md 10.6 venue_area), e.g. "Pearl District". */
+    area: text('area').notNull().default(''),
     createdAt: createdAt(),
   },
   (t) => [index('venues_org_idx').on(t.orgId), check('venues_radius_ck', sql`${t.radiusM} > 0`)],

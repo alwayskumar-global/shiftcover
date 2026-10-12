@@ -10,27 +10,35 @@ import {
   workerCookieHeader,
 } from '../auth/worker-session';
 import { maxAuthorization } from '../domain/money';
-import { ROLE_LABELS, isShiftRole, type ShiftRole } from '../domain/roles';
-import { localDateString, localDayBounds } from '../lib/time';
+import { isShiftRole, type ShiftRole } from '../domain/roles';
+import { localDateString, localDayBounds, localParts } from '../lib/time';
 import { rulesGapParser } from '../llm/fallback';
-import { claimOffer, viewOffer, type OfferView } from '../services/claim';
+import { claimOffer, viewOffer } from '../services/claim';
 import { createGap, startOffering } from '../services/gaps';
 import { stubAuthorize } from '../services/payments-stub';
-import { findRecognisedSlot, gapDetail, primaryVenue, roster } from '../services/read-models';
-import { workerShifts } from '../services/worker-data';
+import {
+  findRecognisedSlot,
+  gapDetail,
+  paymentDto,
+  primaryVenue,
+  roster,
+  slotDto,
+} from '../services/read-models';
 import type { ServiceDeps } from '../services/types';
+import { workerShifts } from '../services/worker-data';
+import { toWorkerOfferDto } from './adapters';
 import {
   ClaimResponse,
   CreateGapRequest,
   CreateGapResponse,
   GapDetailResponse,
-  OfferViewResponse,
   ParseGapRequest,
-  ParsedCardDto,
+  ParseResultDto,
   RosterQuery,
   RosterResponse,
   StartOfferingResponse,
   StubAuthorizeResponse,
+  WorkerOfferDto,
   WorkerShiftsResponse,
 } from './dto';
 import { assertSameOrigin, HttpError, noStore, parseBody } from './http';
@@ -52,6 +60,11 @@ const json = (body: unknown, init: ResponseInit = {}) =>
 
 const mgr = (d: ApiDeps, req: Request) => requireManager(d.auth, d.svc.db, req.headers);
 const managerPost = (d: ApiDeps, req: Request) => assertSameOrigin(req, d.svc.config.appBaseUrl);
+
+const hhmm = (date: Date, tz: string) => {
+  const p = localParts(date, tz);
+  return `${String(p.hour).padStart(2, '0')}:${String(p.minute).padStart(2, '0')}`;
+};
 
 // ---------------------------------------------------------------- manager: roster
 export async function getRoster(d: ApiDeps, req: Request) {
@@ -91,39 +104,44 @@ export async function postParseGap(d: ApiDeps, req: Request) {
   const role: ShiftRole | null =
     p.role ?? (replaced && isShiftRole(replaced.role) ? replaced.role : null);
   const baseRateCents = p.baseRateCents ?? replaced?.baseRateCents ?? null;
-  const missing = p.missing.filter(
-    (m) => !(m === 'baseRate' && baseRateCents !== null) && !(m === 'role' && role !== null),
-  );
+  const missing = p.missing
+    .filter(
+      (m) => !(m === 'baseRate' && baseRateCents !== null) && !(m === 'role' && role !== null),
+    )
+    .map((m) => (m === 'baseRate' ? ('base_rate' as const) : m));
   const maxPremiumPct = p.maxPremiumPct ?? d.maxPremiumPctDefault;
-  const complete = role && p.startAt && p.endAt && baseRateCents !== null;
   const minutes =
     p.startAt && p.endAt ? Math.round((p.endAt.getTime() - p.startAt.getTime()) / 60_000) : 0;
-  const hold = complete
-    ? maxAuthorization({
-        baseRateCents,
-        maxPremiumPct,
-        minutes,
-        feeBps: d.svc.config.platformFeeBps,
-      })
-    : null;
+  const hold =
+    role && p.startAt && p.endAt && baseRateCents !== null
+      ? maxAuthorization({
+          baseRateCents,
+          maxPremiumPct,
+          minutes,
+          feeBps: d.svc.config.platformFeeBps,
+        })
+      : null;
 
-  const card = ParsedCardDto.parse({
-    source: 'rules',
-    role,
-    roleLabel: role ? ROLE_LABELS[role] : null,
-    startAt: p.startAt?.toISOString() ?? null,
-    endAt: p.endAt?.toISOString() ?? null,
-    baseRateCents,
-    baseRateSource: p.baseRateCents !== null ? 'text' : replaced ? 'replaced_shift' : 'missing',
-    maxPremiumPct,
-    maxPremiumSource: p.maxPremiumPct !== null ? 'text' : 'default',
-    calledOutName: p.calledOutName,
-    replacesSlotId: replaced?.id ?? null,
-    venueId: venue.id,
-    missing,
-    hold: hold && { currency: 'USD', ...hold },
-  });
-  return json(card);
+  return json(
+    ParseResultDto.parse({
+      source: 'rules',
+      role,
+      date: p.startAt ? localDateString(p.startAt, venue.timezone) : null,
+      start: p.startAt ? hhmm(p.startAt, venue.timezone) : null,
+      end: p.endAt ? hhmm(p.endAt, venue.timezone) : null,
+      venue: { id: venue.id, name: venue.name },
+      base_rate_cents: baseRateCents,
+      max_premium_pct: maxPremiumPct,
+      worker_pay_at_cap_cents: hold?.maxWorkerPayCents ?? null,
+      platform_fee_cents: hold?.maxFeeCents ?? null,
+      total_hold_cents: hold?.authorizedCents ?? null,
+      missing,
+      replaces_slot_id: replaced?.id ?? null,
+      called_out_name: p.calledOutName,
+      start_at: p.startAt?.toISOString() ?? null,
+      end_at: p.endAt?.toISOString() ?? null,
+    }),
+  );
 }
 
 // ---------------------------------------------------------------- manager: create gap
@@ -131,35 +149,28 @@ export async function postCreateGap(d: ApiDeps, req: Request) {
   const ctx = await mgr(d, req);
   managerPost(d, req);
   const body = await parseBody(req, CreateGapRequest);
-  const startAt = new Date(body.startAt);
-  const endAt = new Date(body.endAt);
   const r = await createGap(
     d.svc,
     { orgId: ctx.orgId, userId: ctx.userId },
     {
-      venueId: body.venueId,
+      venueId: body.venue_id,
       role: body.role,
-      startAt,
-      endAt,
-      baseRateCents: body.baseRateCents,
-      maxPremiumPct: body.maxPremiumPct,
-      replacesSlotId: body.replacesSlotId,
+      startAt: new Date(body.start_at),
+      endAt: new Date(body.end_at),
+      baseRateCents: body.base_rate_cents,
+      maxPremiumPct: body.max_premium_pct,
+      replacesSlotId: body.replaces_slot_id,
     },
   );
-  const detail = await gapDetail(d.svc.db, ctx.orgId, r.slot.id);
+  const payment = await paymentDto(d.svc.db, r.slot.id);
   return json(
     CreateGapResponse.parse({
-      slot: detail.slot,
-      hold: { currency: 'USD', ...r.hold },
-      payment: detail.payment,
-      card: {
-        role: body.role,
-        roleLabel: ROLE_LABELS[body.role],
-        startAt: body.startAt,
-        endAt: body.endAt,
-        durationMinutes: r.minutes,
-        baseRateCents: body.baseRateCents,
-        maxPremiumPct: body.maxPremiumPct,
+      slot: await slotDto(d.svc.db, ctx.orgId, r.slot.id),
+      payment,
+      hold: {
+        worker_pay_at_cap_cents: r.hold.maxWorkerPayCents,
+        platform_fee_cents: r.hold.maxFeeCents,
+        total_hold_cents: r.hold.authorizedCents,
       },
     }),
     { status: 201 },
@@ -167,21 +178,23 @@ export async function postCreateGap(d: ApiDeps, req: Request) {
 }
 
 // ---------------------------------------------------------------- manager: gap detail + actions
-export async function getGap(d: ApiDeps, req: Request, id: string) {
-  const ctx = await mgr(d, req);
+const slotId = (id: string) => {
   const uuid = z.uuid().safeParse(id);
   if (!uuid.success) throw new HttpError(404, 'not_found');
-  return json(GapDetailResponse.parse(await gapDetail(d.svc.db, ctx.orgId, uuid.data)));
+  return uuid.data;
+};
+
+export async function getGap(d: ApiDeps, req: Request, id: string) {
+  const ctx = await mgr(d, req);
+  return json(GapDetailResponse.parse(await gapDetail(d.svc.db, ctx.orgId, slotId(id))));
 }
 
 export async function postStartOffering(d: ApiDeps, req: Request, id: string) {
   const ctx = await mgr(d, req);
   managerPost(d, req);
-  const uuid = z.uuid().safeParse(id);
-  if (!uuid.success) throw new HttpError(404, 'not_found');
-  await startOffering(d.svc, { orgId: ctx.orgId, userId: ctx.userId }, uuid.data);
-  const detail = await gapDetail(d.svc.db, ctx.orgId, uuid.data);
-  return json(StartOfferingResponse.parse({ slot: detail.slot }));
+  const sid = slotId(id);
+  await startOffering(d.svc, { orgId: ctx.orgId, userId: ctx.userId }, sid);
+  return json(StartOfferingResponse.parse({ slot: await slotDto(d.svc.db, ctx.orgId, sid) }));
 }
 
 /** Development/test only. 404 unless PAYMENTS_MODE=stub, which env.ts refuses in production. */
@@ -189,13 +202,10 @@ export async function postStubAuthorize(d: ApiDeps, req: Request, id: string) {
   if (d.paymentsMode !== 'stub' || d.production) throw new HttpError(404, 'not_found');
   const ctx = await mgr(d, req);
   managerPost(d, req);
-  const uuid = z.uuid().safeParse(id);
-  if (!uuid.success) throw new HttpError(404, 'not_found');
-  // Org scoping: the slot must belong to the manager's organisation.
-  await gapDetail(d.svc.db, ctx.orgId, uuid.data);
-  await stubAuthorize(d.svc.db, d.paymentsMode, uuid.data, `user:${ctx.userId}`);
-  const detail = await gapDetail(d.svc.db, ctx.orgId, uuid.data);
-  return json(StubAuthorizeResponse.parse({ payment: detail.payment }));
+  const sid = slotId(id);
+  await slotDto(d.svc.db, ctx.orgId, sid); // org scoping: 404 for other organisations' slots
+  await stubAuthorize(d.svc.db, d.paymentsMode, sid, `user:${ctx.userId}`);
+  return json(StubAuthorizeResponse.parse({ payment: await paymentDto(d.svc.db, sid) }));
 }
 
 // ---------------------------------------------------------------- worker: offer link
@@ -203,27 +213,6 @@ const WORKER_HEADERS = {
   'Referrer-Policy': 'no-referrer',
   'X-Robots-Tag': 'noindex, nofollow',
 } as const;
-
-function offerResponse(view: OfferView & { slotId?: string }, withSlot: boolean) {
-  const { offer, state } = view;
-  const dto = offer
-    ? {
-        role: offer.role,
-        roleLabel: offer.roleLabel,
-        venueName: offer.venueName,
-        startAt: offer.startAt,
-        endAt: offer.endAt,
-        rateCents: offer.rateCents,
-        estimatedPayCents: offer.estimatedPayCents,
-        distanceKm: offer.distanceKm,
-        expiresAt: offer.expiresAt,
-        wave: offer.wave,
-      }
-    : null;
-  return withSlot
-    ? ClaimResponse.parse({ state, offer: dto, slotId: view.slotId ?? null })
-    : OfferViewResponse.parse({ state, offer: dto });
-}
 
 /** GET never consumes or writes anything. A valid open upgrades to a session cookie. */
 export async function getOffer(d: ApiDeps, req: Request, token: string) {
@@ -237,7 +226,7 @@ export async function getOffer(d: ApiDeps, req: Request, token: string) {
       d.production,
     );
   }
-  return json(offerResponse(view, false), {
+  return json(WorkerOfferDto.parse(toWorkerOfferDto(view)), {
     status: view.state === 'invalid' ? 404 : 200,
     headers,
   });
@@ -254,12 +243,31 @@ export async function postClaim(d: ApiDeps, req: Request, token: string) {
     d.svc.now(),
   );
   const result = await claimOffer(d.svc, token, { expectedWorkerId: cookieWorker ?? undefined });
-  const status = result.state === 'invalid' ? 404 : 200;
-  return json(offerResponse(result, true), { status, headers: WORKER_HEADERS });
+  return json(ClaimResponse.parse(toWorkerOfferDto(result)), {
+    status: result.state === 'invalid' ? 404 : 200,
+    headers: WORKER_HEADERS,
+  });
 }
 
 export async function getWorkerShifts(d: ApiDeps, req: Request) {
   const workerId = requireWorker(req.headers, d.sessionSecret, d.svc.now());
   const shifts = await workerShifts(d.svc.db, workerId);
-  return json(WorkerShiftsResponse.parse({ shifts }), { headers: WORKER_HEADERS });
+  return json(
+    WorkerShiftsResponse.parse({
+      shifts: shifts.map((s) => ({
+        offer_id: s.offerId,
+        offer_status: s.offerStatus.toLowerCase(),
+        rate_cents: s.rateCents,
+        expires_at: s.expiresAt,
+        slot_id: s.slotId,
+        slot_status: s.slotStatus.toLowerCase(),
+        role: s.role,
+        start_at: s.startAt,
+        end_at: s.endAt,
+        venue_name: s.venueName,
+        is_mine: s.isMine,
+      })),
+    }),
+    { headers: WORKER_HEADERS },
+  );
 }
