@@ -50,6 +50,13 @@
       "when": 1791813449404,
       "tag": "0006_m1_venue_area",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791815293604,
+      "tag": "0007_m1_g1_additions",
+      "breakpoints": true
     }
   ]
 }

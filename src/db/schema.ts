@@ -91,9 +91,17 @@ export const venues = pgTable(
     timezone: text('timezone').notNull().default('America/Los_Angeles'),
     /** Neighbourhood shown next to the venue name (PLAN.md 10.6 venue_area), e.g. "Pearl District". */
     area: text('area').notNull().default(''),
+    /** Street address shown to the worker after claiming (design data-gap venue_address). */
+    address: text('address').notNull().default(''),
+    /** Default worker search radius in miles; a hard matching filter (widening raises it per gap). */
+    searchRadiusMi: integer('search_radius_mi').notNull().default(10),
     createdAt: createdAt(),
   },
-  (t) => [index('venues_org_idx').on(t.orgId), check('venues_radius_ck', sql`${t.radiusM} > 0`)],
+  (t) => [
+    index('venues_org_idx').on(t.orgId),
+    check('venues_radius_ck', sql`${t.radiusM} > 0`),
+    check('venues_search_radius_ck', sql`${t.searchRadiusMi} between 1 and 100`),
+  ],
 );
 
 export const workers = pgTable(
@@ -151,6 +159,13 @@ export const shiftSlots = pgTable(
     offeredRateCents: integer('offered_rate_cents'),
     /** The shift this gap replaces (a worker called in sick); that worker is never offered the cover. */
     replacesSlotId: uuid('replaces_slot_id'),
+    /** Why the gap exists, e.g. called_in_sick (M2/M4 header). Free text key, nullable. */
+    gapReason: text('gap_reason'),
+    /** Per-gap override of the venue search radius (miles); null = venue default. */
+    searchRadiusMi: integer('search_radius_mi'),
+    cancelledAt: ts('cancelled_at'),
+    /** 'user:<id>' or 'system:<job>'. */
+    cancelledBy: text('cancelled_by'),
     /** Defaults to start_at minus 30 min when the gap is posted. */
     fillBy: ts('fill_by'),
     /** Optimistic-lock counter; incremented on every state change. */
@@ -166,6 +181,7 @@ export const shiftSlots = pgTable(
     check('slots_role_ck', sql.raw(`role in (${SHIFT_ROLES.map((r) => `'${r}'`).join(', ')})`)),
     check('slots_rate_ck', sql`${t.baseRateCents} >= 0`),
     check('slots_premium_ck', sql`${t.maxPremiumPct} between 0 and 100`),
+    check('slots_radius_ck', sql`${t.searchRadiusMi} is null or ${t.searchRadiusMi} between 1 and 100`),
     check(
       'slots_offered_rate_ck',
       sql`${t.offeredRateCents} is null or ${t.offeredRateCents} >= 0`,
@@ -191,6 +207,9 @@ export const offers = pgTable(
     status: offerStatus('status').notNull().default('SENT'),
     openedAt: ts('opened_at'),
     claimedAt: ts('claimed_at'),
+    declinedAt: ts('declined_at'),
+    expiredAt: ts('expired_at'),
+    withdrawnAt: ts('withdrawn_at'),
     createdAt: createdAt(),
   },
   (t) => [
