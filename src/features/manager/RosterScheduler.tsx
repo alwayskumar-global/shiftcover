@@ -84,6 +84,7 @@ export default function RosterScheduler({
     <BryntumScheduler
       cls="sc-roster"
       readOnly
+      autoHeight
       resources={model.resources}
       events={model.events}
       timeRanges={nowRange}
