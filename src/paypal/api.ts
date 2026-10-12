@@ -21,10 +21,44 @@ export interface OrderResponse {
 export interface CaptureResponse {
   id: string;
   status: string;
+  amount?: { currency_code: string; value: string };
+  final_capture?: boolean;
+  /** Present when the response is a full representation. */
+  seller_receivable_breakdown?: {
+    paypal_fee?: { currency_code: string; value: string };
+    net_amount?: { currency_code: string; value: string };
+  };
+}
+
+export interface RedirectExperience {
+  returnUrl: string;
+  cancelUrl: string;
+  brandName: string;
+}
+
+/** Orders v2: `payer-action` is returned when payment_source.paypal is present; `approve` otherwise. */
+export function approvalLink(order: OrderResponse): string | undefined {
+  const find = (rel: string) => order.links?.find((l) => l.rel === rel)?.href;
+  return find('payer-action') ?? find('approve');
+}
+
+export type ApprovalCheck = { approved: true } | { approved: false; status: string };
+
+/** Authorize is only valid once the buyer approved the order. */
+export function checkOrderApproved(order: Pick<OrderResponse, 'status'>): ApprovalCheck {
+  return order.status === 'APPROVED'
+    ? { approved: true }
+    : { approved: false, status: order.status };
 }
 
 export interface PayoutBatchResponse {
-  batch_header: { payout_batch_id: string; batch_status: string; sender_batch_header?: unknown };
+  batch_header: {
+    payout_batch_id: string;
+    batch_status: string;
+    amount?: { currency: string; value: string };
+    fees?: { currency: string; value: string };
+    sender_batch_header?: unknown;
+  };
   items?: Array<{
     payout_item_id: string;
     transaction_status: string;
@@ -47,7 +81,14 @@ export function senderBatchId(paymentId: string): string {
 
 export function createAuthorizeOrder(
   client: PaypalClient,
-  args: { slotId: string; attempt: number; maxCents: number; requestId: string },
+  args: {
+    slotId: string;
+    attempt: number;
+    maxCents: number;
+    requestId: string;
+    /** Redirect-style approval (scripts, /dev harness). Omit when the JS SDK button drives approval. */
+    redirect?: RedirectExperience;
+  },
 ) {
   return client.request<OrderResponse>({
     method: 'POST',
@@ -55,6 +96,22 @@ export function createAuthorizeOrder(
     requestId: args.requestId,
     body: {
       intent: 'AUTHORIZE',
+      ...(args.redirect
+        ? {
+            payment_source: {
+              paypal: {
+                experience_context: {
+                  return_url: args.redirect.returnUrl,
+                  cancel_url: args.redirect.cancelUrl,
+                  brand_name: args.redirect.brandName,
+                  landing_page: 'LOGIN',
+                  shipping_preference: 'NO_SHIPPING',
+                  user_action: 'CONTINUE',
+                },
+              },
+            },
+          }
+        : {}),
       purchase_units: [
         {
           custom_id: args.slotId,
@@ -96,6 +153,7 @@ export function captureAuthorization(
     method: 'POST',
     path: `/v2/payments/authorizations/${encodeURIComponent(args.authorizationId)}/capture`,
     requestId: args.requestId,
+    headers: { Prefer: 'return=representation' }, // include seller_receivable_breakdown (fees)
     body: {
       amount: { currency_code: 'USD', value: formatUsd(args.captureCents) },
       final_capture: true,

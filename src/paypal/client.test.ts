@@ -1,5 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createPayout, captureAuthorization, senderBatchId, SelfPayError } from './api';
+import {
+  approvalLink,
+  captureAuthorization,
+  checkOrderApproved,
+  createAuthorizeOrder,
+  createPayout,
+  senderBatchId,
+  SelfPayError,
+} from './api';
 import {
   assertSandboxBase,
   createPaypalClient,
@@ -263,5 +271,94 @@ describe('api wrappers', () => {
         requestId: 'r',
       }),
     ).toThrow(SelfPayError);
+  });
+});
+
+describe('createAuthorizeOrder / approval guard', () => {
+  it('adds redirect experience_context and keeps one AUTHORIZE purchase unit', async () => {
+    const request = vi.fn(async () => ({ id: 'O1', status: 'PAYER_ACTION_REQUIRED' }));
+    await createAuthorizeOrder({ request } as never, {
+      slotId: 'spike-1',
+      attempt: 1,
+      maxCents: 1000,
+      requestId: 'r1',
+      redirect: {
+        returnUrl: 'https://example.com/spike/return',
+        cancelUrl: 'https://example.com/spike/cancel',
+        brandName: 'ShiftCover Spike',
+      },
+    });
+    const call = (
+      request.mock.calls[0] as unknown as [
+        { path: string; requestId: string; body: Record<string, unknown> },
+      ]
+    )[0];
+    expect(call.path).toBe('/v2/checkout/orders');
+    expect(call.requestId).toBe('r1');
+    expect(call.body.intent).toBe('AUTHORIZE');
+    expect(call.body.payment_source).toEqual({
+      paypal: {
+        experience_context: {
+          return_url: 'https://example.com/spike/return',
+          cancel_url: 'https://example.com/spike/cancel',
+          brand_name: 'ShiftCover Spike',
+          landing_page: 'LOGIN',
+          shipping_preference: 'NO_SHIPPING',
+          user_action: 'CONTINUE',
+        },
+      },
+    });
+    const units = call.body.purchase_units as Array<{
+      amount: unknown;
+      custom_id: string;
+      invoice_id: string;
+    }>;
+    expect(units).toHaveLength(1);
+    expect(units[0]).toMatchObject({
+      custom_id: 'spike-1',
+      invoice_id: 'spike-1-1',
+      amount: { currency_code: 'USD', value: '10.00' },
+    });
+  });
+
+  it('omits payment_source when the JS SDK button drives approval', async () => {
+    const request = vi.fn(async () => ({ id: 'O1', status: 'CREATED' }));
+    await createAuthorizeOrder({ request } as never, {
+      slotId: 's',
+      attempt: 1,
+      maxCents: 100,
+      requestId: 'r',
+    });
+    const call = (request.mock.calls[0] as unknown as [{ body: Record<string, unknown> }])[0];
+    expect(call.body).not.toHaveProperty('payment_source');
+  });
+
+  it('picks payer-action first, then approve, from the response links', () => {
+    expect(
+      approvalLink({
+        id: 'O',
+        status: 'PAYER_ACTION_REQUIRED',
+        links: [
+          { rel: 'self', href: 'https://x/self' },
+          { rel: 'approve', href: 'https://x/approve' },
+          { rel: 'payer-action', href: 'https://x/payer' },
+        ],
+      }),
+    ).toBe('https://x/payer');
+    expect(
+      approvalLink({
+        id: 'O',
+        status: 'CREATED',
+        links: [{ rel: 'approve', href: 'https://x/approve' }],
+      }),
+    ).toBe('https://x/approve');
+    expect(approvalLink({ id: 'O', status: 'CREATED' })).toBeUndefined();
+  });
+
+  it('only allows authorize once the order is APPROVED', () => {
+    expect(checkOrderApproved({ status: 'APPROVED' })).toEqual({ approved: true });
+    for (const status of ['CREATED', 'PAYER_ACTION_REQUIRED', 'VOIDED', 'COMPLETED']) {
+      expect(checkOrderApproved({ status })).toEqual({ approved: false, status });
+    }
   });
 });
