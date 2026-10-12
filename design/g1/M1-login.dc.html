@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components.css">
+<link rel="stylesheet" href="console.css">
+<link rel="stylesheet" href="review.css">
+<style>body{margin:0}</style>
+</helmet>
+<div class="rv-page">
+  <section class="rv-bar" aria-label="Review controls">
+    <div class="rv-bar__top"><h1 class="rv-bar__title">M1 · Login</h1><span class="rv-bar__tag">review controls, not part of the product</span><a class="rv-bar__home" href="index.dc.html">All pages</a></div>
+    <div class="rv-bar__groups">
+      <div class="rv-group"><span class="rv-group__label">State</span><div class="rv-group__chips" role="group" aria-label="State">
+        <sc-for list="{{ stateChips }}" as="c" hint-placeholder-count="7"><button class="rv-chip" aria-pressed="{{ c.pressed }}" onClick="{{ c.onClick }}">{{ c.label }}</button></sc-for></div></div>
+      <div class="rv-group"><span class="rv-group__label">Viewport width</span><div class="rv-group__chips" role="group" aria-label="Width">
+        <sc-for list="{{ widthChips }}" as="c" hint-placeholder-count="3"><button class="rv-chip" aria-pressed="{{ c.pressed }}" onClick="{{ c.onClick }}">{{ c.label }}</button></sc-for></div></div>
+      <div class="rv-group"><span class="rv-group__label">Motion</span><div class="rv-group__chips" role="group" aria-label="Motion">
+        <sc-for list="{{ motionChips }}" as="c" hint-placeholder-count="2"><button class="rv-chip" aria-pressed="{{ c.pressed }}" onClick="{{ c.onClick }}">{{ c.label }}</button></sc-for></div></div>
+      <div class="rv-group"><span class="rv-group__label">Next Sign in ends in</span><div class="rv-group__chips" role="group" aria-label="Outcome">
+        <sc-for list="{{ outcomeChips }}" as="c" hint-placeholder-count="2"><button class="rv-chip" aria-pressed="{{ c.pressed }}" onClick="{{ c.onClick }}">{{ c.label }}</button></sc-for></div></div>
+    </div>
+  </section>
+
+  <div class="rv-console-wrap">
+    <div class="rv-console-frame" data-width="{{ width }}">
+<!-- ===== PRODUCT: M1 login ===== -->
+<div class="sc-console" data-motion="{{ motion }}">
+  <main class="sc-login">
+    <aside class="sc-login__brand">
+      <span class="sc-wordmark"><span class="sc-wordmark__mark"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-check"></use></svg></span>ShiftCover Pay</span>
+      <div>
+        <h2 class="sc-login__headline">Someone calls in sick. The shift gets covered.</h2>
+      </div>
+      <ul class="sc-login__points">
+        <li class="sc-login__point"><svg class="sc-icon sc-icon--lg" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-shield"></use></svg><span><strong>Money is held first</strong>You approve a maximum with PayPal. You only pay for hours worked.</span></li>
+        <li class="sc-login__point"><svg class="sc-icon sc-icon--lg" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-send"></use></svg><span><strong>Offered in waves</strong>Qualified workers hear first. The rate rises only if nobody claims.</span></li>
+        <li class="sc-login__point"><svg class="sc-icon sc-icon--lg" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-wallet"></use></svg><span><strong>Paid when you approve</strong>The worker is paid out after you approve their hours.</span></li>
+      </ul>
+    </aside>
+
+    <section class="sc-login__main">
+      <form class="sc-login__card" onSubmit="{{ onSubmit }}" novalidate aria-busy="{{ busy }}">
+        <h1 class="sc-login__title">{{ title }}</h1>
+        <p class="sc-login__lead">{{ lead }}</p>
+
+        <sc-if value="{{ showWrong }}" hint-placeholder-val="{{ false }}">
+          <div class="sc-alert sc-alert--error" role="alert"><svg class="sc-icon sc-icon--lg" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-alert"></use></svg><div><span class="sc-alert__title">That email and password don't match</span><span class="sc-alert__text">Check them and try again, or get a sign-in link instead.</span></div></div>
+        </sc-if>
+        <sc-if value="{{ sent }}" hint-placeholder-val="{{ false }}">
+          <div class="sc-alert sc-alert--success" role="status"><svg class="sc-icon sc-icon--lg" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-mail"></use></svg><div><span class="sc-alert__title">Check your email</span><span class="sc-alert__text">If {{ email }} belongs to a manager on ShiftCover, a sign-in link is on its way. It works once and expires in 15 minutes.</span></div></div>
+        </sc-if>
+
+        <sc-if value="{{ showFields }}" hint-placeholder-val="{{ true }}">
+          <div class="sc-field">
+            <label class="sc-field__label" for="login-email">Email</label>
+            <input class="sc-input" id="login-email" type="email" inputmode="email" autocomplete="username" placeholder="you@yourrestaurant.com" value="{{ email }}" onChange="{{ onEmail }}" disabled="{{ busy }}" aria-invalid="{{ emailError }}" aria-describedby="login-email-err">
+            <sc-if value="{{ emailError }}" hint-placeholder-val="{{ false }}"><span class="sc-field__error" id="login-email-err" role="alert"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-alert"></use></svg>{{ emailErrorText }}</span></sc-if>
+          </div>
+        </sc-if>
+        <sc-if value="{{ showPassword }}" hint-placeholder-val="{{ true }}">
+          <div class="sc-field">
+            <label class="sc-field__label" for="login-password">Password</label>
+            <div class="sc-input-group">
+              <input class="sc-input" id="login-password" type="{{ passwordType }}" autocomplete="current-password" value="{{ password }}" onChange="{{ onPassword }}" disabled="{{ busy }}" aria-invalid="{{ passwordError }}" aria-describedby="login-password-err">
+              <button class="sc-input-group__btn" type="button" onClick="{{ toggleShow }}" aria-label="{{ showLabel }}" aria-pressed="{{ show }}"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#{{ showIcon }}"></use></svg></button>
+            </div>
+            <sc-if value="{{ passwordError }}" hint-placeholder-val="{{ false }}"><span class="sc-field__error" id="login-password-err" role="alert"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-alert"></use></svg>Enter your password.</span></sc-if>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ showSubmit }}" hint-placeholder-val="{{ true }}">
+          <button class="sc-btn sc-btn--primary sc-btn--wide {{ busyClass }}" type="submit" aria-disabled="{{ busy }}"><svg class="sc-icon sc-btn__spinner" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-loader"></use></svg>{{ submitLabel }}</button>
+        </sc-if>
+
+        <sc-if value="{{ showAlt }}" hint-placeholder-val="{{ true }}">
+          <div class="sc-login__divider">or</div>
+          <button class="sc-btn sc-btn--secondary sc-btn--wide" type="button" onClick="{{ toLink }}" aria-disabled="{{ busy }}"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-link"></use></svg>Send me a sign-in link</button>
+        </sc-if>
+        <sc-if value="{{ isLinkMode }}" hint-placeholder-val="{{ false }}">
+          <button class="sc-btn sc-btn--quiet sc-login__link" type="button" onClick="{{ toPassword }}"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-chev-left"></use></svg>Back to password sign-in</button>
+        </sc-if>
+        <p class="sc-login__foot">Workers don't need an account. They get a link by email or notification.</p>
+      </form>
+    </section>
+  </main>
+</div>
+<!-- ===== /PRODUCT ===== -->
+    </div>
+    <span class="rv-device-label">{{ width }} × 900 · scroll inside the frame if the viewport is shorter</span>
+  </div>
+
+  <section class="rv-ref" aria-label="Notes">
+    <div class="rv-card">
+      <h2 class="rv-card__title">Notes for build</h2>
+      <div class="rv-card__row"><span class="rv-card__key">Auth</span><span class="rv-card__val">Email + password is primary. The sign-in link is a one-time magic link. The "link sent" message is identical whether or not the address exists.</span></div>
+      <div class="rv-card__row"><span class="rv-card__key">Validation</span><span class="rv-card__val">Runs on submit, not on every keystroke. Errors have icon + text and are tied to the field with aria-describedby. Typing clears the error.</span></div>
+      <div class="rv-card__row"><span class="rv-card__key">Loading</span><span class="rv-card__val">Button keeps focus, goes aria-disabled with "Signing in…", inputs are disabled. Reduced motion: spinner hidden, label remains.</span></div>
+      <div class="rv-card__row"><span class="rv-card__key">Layout</span><span class="rv-card__val">Brand panel + form at 1024 and up. Below 1024 the brand panel is dropped (not designed yet; console is desktop-first).</span></div>
+      <div class="rv-card__row"><span class="rv-card__key">Try it</span><span class="rv-card__val">Type an email and any password, then Sign in. With outcome "Success" it continues to M2 Roster.</span></div>
+    </div>
+  </section>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { view: 'default', email: '', password: '', show: false, width: 1440, motion: 'normal', outcome: 'wrong' };
+  timers = [];
+  componentDidMount() { const h = (window.location.hash || '').slice(1); if (['default', 'validation', 'wrong', 'signingIn', 'linkForm', 'linkSending', 'linkSent'].includes(h)) this.go(h); }
+  componentWillUnmount() { this.timers.forEach(clearTimeout); }
+  later(fn, ms) { this.timers.push(setTimeout(fn, ms)); }
+  go = (view) => {
+    this.timers.forEach(clearTimeout); this.timers = [];
+    const filled = { email: 'dana@mapleandrye.com', password: 'password1' };
+    const empty = { email: '', password: '' };
+    const p = { default: empty, validation: empty, wrong: filled, signingIn: filled, linkForm: empty, linkSending: filled, linkSent: filled }[view];
+    this.setState(Object.assign({ view, show: false }, p));
+  };
+  onSubmit = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const s = this.state, link = s.view.startsWith('link');
+    if (s.view === 'signingIn' || s.view === 'linkSending') return;
+    const emailOk = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test((s.email || '').trim());
+    if (link) {
+      if (!emailOk) { this.setState({ view: 'linkForm', linkInvalid: true }); return; }
+      this.setState({ view: 'linkSending', linkInvalid: false });
+      this.later(() => this.setState({ view: 'linkSent' }), 1300);
+      return;
+    }
+    if (!s.email.trim() || !s.password) { this.setState({ view: 'validation' }); return; }
+    this.setState({ view: 'signingIn' });
+    this.later(() => { if (this.state.outcome === 'success') window.location.href = 'M2-roster.dc.html'; else this.setState({ view: 'wrong' }); }, 1400);
+  };
+  renderVals() {
+    const s = this.state, v = s.view;
+    const link = v.startsWith('link');
+    const busy = v === 'signingIn' || v === 'linkSending';
+    const chip = (label, pressed, fn) => ({ label, pressed, onClick: fn });
+    const L = { default: 'Default', validation: 'Validation', wrong: 'Wrong password', signingIn: 'Signing in', linkForm: 'Link · form', linkSending: 'Link · sending', linkSent: 'Link · sent' };
+    const emailBad = (v === 'validation' && !s.email.trim()) || (v === 'linkForm' && s.linkInvalid);
+    return {
+      stateChips: Object.keys(L).map(k => chip(L[k], v === k, () => this.go(k))),
+      widthChips: [1440, 1280, 1024].map(w => chip(String(w), s.width === w, () => this.setState({ width: w }))),
+      motionChips: [['Normal', 'normal'], ['Reduced', 'reduced']].map(([l, k]) => chip(l, s.motion === k, () => this.setState({ motion: k }))),
+      outcomeChips: [['Wrong password', 'wrong'], ['Success → M2', 'success']].map(([l, k]) => chip(l, s.outcome === k, () => this.setState({ outcome: k }))),
+      width: s.width, motion: s.motion, busy,
+      title: link ? 'Get a sign-in link' : 'Sign in',
+      lead: link ? 'We\u2019ll email you a link that signs you in. No password needed.' : 'Manage your roster and report gaps.',
+      showWrong: v === 'wrong', sent: v === 'linkSent',
+      showFields: v !== 'linkSent', showPassword: !link, showSubmit: v !== 'linkSent', showAlt: !link, isLinkMode: link,
+      email: s.email, password: s.password,
+      onEmail: e => this.setState({ email: e.target.value, view: v === 'validation' || v === 'wrong' ? 'default' : (v === 'linkForm' ? 'linkForm' : v), linkInvalid: false }),
+      onPassword: e => this.setState({ password: e.target.value, view: v === 'validation' || v === 'wrong' ? 'default' : v }),
+      emailError: emailBad,
+      emailErrorText: (v === 'validation' && !s.email.trim()) ? 'Enter your email address.' : 'Enter a valid email address.',
+      passwordError: v === 'validation' && !s.password,
+      passwordType: s.show ? 'text' : 'password', show: s.show,
+      showIcon: s.show ? 'i-eye-off' : 'i-eye', showLabel: s.show ? 'Hide password' : 'Show password',
+      toggleShow: () => this.setState({ show: !s.show }),
+      busyClass: busy ? 'is-busy' : '',
+      submitLabel: v === 'signingIn' ? 'Signing in…' : v === 'linkSending' ? 'Sending…' : link ? 'Send sign-in link' : 'Sign in',
+      onSubmit: this.onSubmit,
+      toLink: () => { if (!busy) this.go('linkForm'); },
+      toPassword: () => this.go('default'),
+    };
+  }
+}
+
+</script>
+</body>
+</html>

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components.css">
+<link rel="stylesheet" href="review.css">
+<style>body{margin:0}</style>
+</helmet>
+<div class="rv-page">
+  <!-- ===== REVIEW HARNESS (not product UI) ===== -->
+  <section class="rv-bar" aria-label="Review controls">
+    <div class="rv-bar__top">
+      <h1 class="rv-bar__title">W1 · Claim card</h1>
+      <span class="rv-bar__tag">review controls, not part of the product</span>
+      <a class="rv-bar__home" href="index.dc.html">All pages</a>
+    </div>
+    <div class="rv-bar__groups">
+      <div class="rv-group"><span class="rv-group__label">State</span>
+        <div class="rv-group__chips" role="group" aria-label="State">
+          <sc-for list="{{ stateChips }}" as="c" hint-placeholder-count="12"><button class="rv-chip" aria-pressed="{{ c.pressed }}" onClick="{{ c.onClick }}">{{ c.label }}</button></sc-for>
+        </div></div>
+      <div class="rv-group"><span class="rv-group__label">Viewport width</span>
+        <div class="rv-group__chips" role="group" aria-label="Width">
+          <sc-for list="{{ widthChips }}" as="c" hint-placeholder-count="3"><button class="rv-chip" aria-pressed="{{ c.pressed }}" onClick="{{ c.onClick }}">{{ c.label }}</button></sc-for>
+        </div></div>
+      <div class="rv-group"><span class="rv-group__label">Motion</span>
+        <div class="rv-group__chips" role="group" aria-label="Motion">
+          <sc-for list="{{ motionChips }}" as="c" hint-placeholder-count="2"><button class="rv-chip" aria-pressed="{{ c.pressed }}" onClick="{{ c.onClick }}">{{ c.label }}</button></sc-for>
+        </div></div>
+      <div class="rv-group"><span class="rv-group__label">Next Claim tap ends in</span>
+        <div class="rv-group__chips" role="group" aria-label="Claim outcome">
+          <sc-for list="{{ outcomeChips }}" as="c" hint-placeholder-count="3"><button class="rv-chip" aria-pressed="{{ c.pressed }}" onClick="{{ c.onClick }}">{{ c.label }}</button></sc-for>
+        </div></div>
+      <div class="rv-group"><span class="rv-group__label">Other open shifts (Taken)</span>
+        <div class="rv-group__chips" role="group" aria-label="Other open shifts">
+          <sc-for list="{{ otherChips }}" as="c" hint-placeholder-count="2"><button class="rv-chip" aria-pressed="{{ c.pressed }}" onClick="{{ c.onClick }}">{{ c.label }}</button></sc-for>
+        </div></div>
+      <div class="rv-group"><span class="rv-group__label">Countdown</span>
+        <div class="rv-group__chips">
+          <button class="rv-chip" aria-pressed="false" onClick="{{ resetTimer }}">Reset to 12:41</button>
+          <button class="rv-chip" aria-pressed="false" onClick="{{ nearEnd }}">Set to 0:10</button>
+        </div></div>
+    </div>
+  </section>
+
+  <div class="rv-stage">
+    <div class="rv-device-wrap">
+      <div class="rv-device" data-width="{{ width }}">
+        <div class="rv-device__status" aria-hidden="true"><span>6:49</span><span>5G</span></div>
+        <div class="rv-device__scroll">
+
+<!-- ===== PRODUCT: W1 claim card ===== -->
+<main class="sc-app" data-motion="{{ motion }}" aria-busy="{{ isLoading }}">
+  <header class="sc-app__header">
+    <span class="sc-wordmark"><span class="sc-wordmark__mark"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-check"></use></svg></span>ShiftCover Pay</span>
+  </header>
+
+  <!-- loading -->
+  <sc-if value="{{ isLoading }}" hint-placeholder-val="{{ false }}">
+    <section class="sc-app__body" aria-label="Loading shift offer">
+      <span class="sc-visually-hidden" role="status">Loading shift details</span>
+      <article class="sc-ticket sc-ticket--skeleton" aria-hidden="true">
+        <div class="sc-ticket__head">
+          <div class="sc-ticket__top"><span class="sc-skeleton sc-skeleton--eyebrow"></span><span class="sc-skeleton sc-skeleton--chip"></span></div>
+          <span class="sc-skeleton sc-skeleton--title"></span>
+          <span class="sc-skeleton sc-skeleton--line"></span>
+          <span class="sc-skeleton sc-skeleton--line"></span>
+          <span class="sc-skeleton sc-skeleton--line-short"></span>
+        </div>
+        <div class="sc-ticket__perf"></div>
+        <div class="sc-ticket__stub">
+          <span class="sc-skeleton sc-skeleton--eyebrow"></span>
+          <span class="sc-skeleton sc-skeleton--amount"></span>
+          <span class="sc-skeleton sc-skeleton--line-short"></span>
+          <span class="sc-skeleton sc-skeleton--block"></span>
+        </div>
+      </article>
+    </section>
+    <footer class="sc-app__footer" aria-hidden="true"><div class="sc-app__footer-inner"><span class="sc-skeleton sc-skeleton--button"></span></div></footer>
+  </sc-if>
+
+  <!-- offer card: available / rate rising / claiming / claim error -->
+  <sc-if value="{{ showTicket }}" hint-placeholder-val="{{ true }}">
+    <section class="sc-app__body">
+      <sc-if value="{{ isRising }}" hint-placeholder-val="{{ false }}">
+        <div class="sc-rate-banner sc-rate-banner--flash" role="status">
+          <svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-trending-up"></use></svg>
+          <div><span class="sc-rate-banner__title">Rate increased to $24.20/hr</span><span class="sc-rate-banner__text">It was $22.00/hr when this shift was first offered. That's $17.60 more for the shift.</span></div>
+        </div>
+      </sc-if>
+      <article class="sc-ticket" aria-labelledby="offer-title">
+        <div class="sc-ticket__head">
+          <div class="sc-ticket__top">
+            <p class="sc-eyebrow">Shift offer</p>
+            <span class="sc-badge sc-badge--timer {{ timerClass }}" role="timer" aria-live="off" aria-label="{{ timerAria }}"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#{{ timerIcon }}"></use></svg>{{ timerLabel }}</span>
+          </div>
+          <h1 class="sc-ticket__title" id="offer-title">Line cook</h1>
+          <ul class="sc-ticket__meta">
+            <li class="sc-ticket__meta-row"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-pin"></use></svg><span><strong>Maple &amp; Rye</strong> · Portland, OR · 2.4 mi away</span></li>
+            <li class="sc-ticket__meta-row"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-calendar"></use></svg><span><strong>Today</strong> · 7:00 AM – 3:00 PM</span></li>
+            <li class="sc-ticket__meta-row"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-clock"></use></svg><span>8 hours</span></li>
+          </ul>
+        </div>
+        <div class="sc-ticket__perf"></div>
+        <div class="sc-ticket__stub">
+          <p class="sc-eyebrow">You'd earn</p>
+          <p class="sc-ticket__amount">$193.60</p>
+          <p class="sc-ticket__formula">8 h × $24.20/hr<sc-if value="{{ isRising }}" hint-placeholder-val="{{ false }}"> <span class="sc-rate-old">(was $22.00)</span></sc-if></p>
+          <p class="sc-trust"><svg class="sc-icon sc-icon--lg" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-shield"></use></svg><span><span class="sc-trust__title">Pay guaranteed: funds are on hold</span><span class="sc-trust__text">Maple &amp; Rye has already set this money aside with PayPal.</span></span></p>
+          <p class="sc-ticket__payline"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-wallet"></use></svg><span>You're paid to your PayPal account after the manager approves your hours.</span></p>
+        </div>
+      </article>
+      <sc-if value="{{ isErrorClaim }}" hint-placeholder-val="{{ false }}">
+        <div class="sc-alert sc-alert--error" role="alert"><svg class="sc-icon sc-icon--lg" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-wifi-off"></use></svg><div><span class="sc-alert__title">Your claim didn't go through</span><span class="sc-alert__text">Nothing was booked. Check your connection and try again.</span></div></div>
+      </sc-if>
+    </section>
+    <footer class="sc-app__footer">
+      <div class="sc-app__footer-inner">
+        <sc-if value="{{ askingSkip }}" hint-placeholder-val="{{ false }}">
+          <p class="sc-text-muted" role="alert">Skip this shift? We won't ask why.</p>
+          <button class="sc-btn sc-btn--secondary sc-btn--block" onClick="{{ confirmSkip }}">Yes, skip it</button>
+          <button class="sc-btn sc-btn--quiet sc-btn--block" onClick="{{ cancelSkip }}">Go back</button>
+        </sc-if>
+        <sc-if value="{{ notAskingSkip }}" hint-placeholder-val="{{ true }}">
+          <button class="sc-btn sc-btn--primary sc-btn--lg sc-btn--block {{ claimBusyClass }}" aria-disabled="{{ isClaiming }}" onClick="{{ onClaim }}"><svg class="sc-icon sc-btn__spinner" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-loader"></use></svg>{{ claimLabel }}</button>
+          <button class="sc-btn sc-btn--quiet sc-btn--block" aria-disabled="{{ isClaiming }}" onClick="{{ askSkip }}">Not available</button>
+        </sc-if>
+      </div>
+    </footer>
+  </sc-if>
+
+  <!-- notices: claimed hand-off, taken, expired, withdrawn, invalid, load error, declined -->
+  <sc-if value="{{ showNotice }}" hint-placeholder-val="{{ false }}">
+    <section class="sc-app__body">
+      <div class="sc-notice sc-rise">
+        <span class="sc-notice__icon sc-notice__icon--{{ notice.tone }}"><svg class="sc-icon sc-icon--xl" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#{{ notice.icon }}"></use></svg></span>
+        <h1 class="sc-notice__title" role="status">{{ notice.title }}</h1>
+        <p class="sc-notice__text">{{ notice.text }}</p>
+
+        <sc-if value="{{ isClaimedView }}" hint-placeholder-val="{{ false }}">
+          <p class="sc-notice__hint"><svg class="sc-icon sc-icon--sm sc-spinner" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-loader"></use></svg>Taking you to your booking…</p>
+          <div class="sc-notice__actions"><a class="sc-btn sc-btn--primary sc-btn--lg sc-btn--block" href="W2-claimed.dc.html">See your booking</a></div>
+        </sc-if>
+        <sc-if value="{{ isTakenView }}" hint-placeholder-val="{{ false }}">
+          <div class="sc-notice__actions">
+            <sc-if value="{{ hasOtherOpen }}" hint-placeholder-val="{{ true }}"><a class="sc-btn sc-btn--secondary sc-btn--lg sc-btn--block" href="#my-shifts">{{ otherLabel }}</a></sc-if>
+            <sc-if value="{{ noOtherOpen }}" hint-placeholder-val="{{ false }}"><p class="sc-notice__hint">No other open shifts right now.</p></sc-if>
+          </div>
+        </sc-if>
+        <sc-if value="{{ isErrorLoad }}" hint-placeholder-val="{{ false }}">
+          <div class="sc-notice__actions"><button class="sc-btn sc-btn--primary sc-btn--lg sc-btn--block" onClick="{{ retryLoad }}"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-retry"></use></svg>Try again</button></div>
+        </sc-if>
+        <sc-if value="{{ isInvalidView }}" hint-placeholder-val="{{ false }}">
+          <div class="sc-notice__actions">
+            <sc-if value="{{ linkNotSent }}" hint-placeholder-val="{{ true }}">
+              <div class="sc-field">
+                <label class="sc-field__label" for="link-email">Your email</label>
+                <input class="sc-input" id="link-email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" value="{{ email }}" onChange="{{ onEmail }}" aria-invalid="{{ emailInvalid }}">
+                <sc-if value="{{ emailInvalid }}" hint-placeholder-val="{{ false }}"><span class="sc-field__error" role="alert"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-alert"></use></svg>Enter the email address you signed up with.</span></sc-if>
+              </div>
+              <button class="sc-btn sc-btn--primary sc-btn--lg sc-btn--block" onClick="{{ sendLink }}"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-mail"></use></svg>Email me a new link</button>
+            </sc-if>
+            <sc-if value="{{ linkSent }}" hint-placeholder-val="{{ false }}">
+              <div class="sc-alert sc-alert--success" role="status"><svg class="sc-icon sc-icon--lg" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-mail"></use></svg><div><span class="sc-alert__title">Check your email</span><span class="sc-alert__text">If that address is on a ShiftCover team, a new link is on its way.</span></div></div>
+            </sc-if>
+          </div>
+        </sc-if>
+      </div>
+    </section>
+  </sc-if>
+</main>
+<!-- ===== /PRODUCT ===== -->
+
+        </div>
+        <div class="rv-device__home" aria-hidden="true"></div>
+      </div>
+      <span class="rv-device-label">{{ width }} × 844 · safe areas simulated (top 47, bottom 34)</span>
+    </div>
+
+    <aside class="rv-notes" aria-label="State notes">
+      <div class="rv-card">
+        <h2 class="rv-card__title">{{ info.label }}</h2>
+        <div class="rv-card__row"><span class="rv-card__key">Contract</span><span class="rv-card__val rv-mono">{{ info.contract }}</span></div>
+        <div class="rv-card__row"><span class="rv-card__key">Shows</span><span class="rv-card__val">{{ info.shows }}</span></div>
+        <div class="rv-card__row"><span class="rv-card__key">Behavior</span><span class="rv-card__val">{{ info.behavior }}</span></div>
+        <div class="rv-card__row"><span class="rv-card__key">Accessibility</span><span class="rv-card__val">{{ info.a11y }}</span></div>
+        <div class="rv-card__row"><span class="rv-card__key">Reduced motion</span><span class="rv-card__val">{{ info.reduced }}</span></div>
+      </div>
+      <div class="rv-card">
+        <h2 class="rv-card__title">Double-tap guard</h2>
+        <p class="rv-card__val">Tap Claim twice quickly. The first tap locks the button (<span class="rv-mono">aria-disabled="true"</span>, label "Claiming…"); later taps are ignored, so one request is sent.</p>
+        <div class="rv-card__row"><span class="rv-card__key">Taps</span><span class="rv-card__val rv-mono">{{ taps }}</span></div>
+        <div class="rv-card__row"><span class="rv-card__key">Requests sent</span><span class="rv-card__val rv-mono">{{ requests }}</span></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { view: 'loading', secs: 761, width: 390, motion: 'normal', outcome: 'success', other: 2, askSkip: false, email: '', emailInvalid: false, sent: false, taps: 0, requests: 0 };
+  timers = [];
+  locked = false;
+  fromClick = false;
+
+  VIEWS = ['loading', 'available', 'rising', 'claiming', 'claimed', 'taken', 'expired', 'withdrawn', 'invalid', 'errorLoad', 'errorClaim', 'declined'];
+
+  componentDidMount() {
+    const h = (window.location.hash || '').slice(1);
+    if (this.VIEWS.includes(h)) this.setState({ view: h });
+    else this.later(() => { if (this.state.view === 'loading') this.setState({ view: 'available' }); }, 1100);
+    this.tick = setInterval(() => {
+      const v = this.state.view;
+      if (['available', 'rising', 'claiming', 'errorClaim'].includes(v) && this.state.secs > 0) {
+        const secs = this.state.secs - 1;
+        if (secs === 0 && v !== 'claiming') this.setState({ secs, view: 'expired' });
+        else this.setState({ secs });
+      }
+    }, 1000);
+  }
+  componentWillUnmount() { clearInterval(this.tick); this.timers.forEach(clearTimeout); }
+  later(fn, ms) { this.timers.push(setTimeout(fn, ms)); }
+
+  go = (view) => {
+    this.timers.forEach(clearTimeout); this.timers = [];
+    this.locked = false; this.fromClick = false;
+    if (['available', 'rising', 'claiming', 'errorClaim', 'claimed', 'taken'].includes(view) && this.state.secs <= 0) this.setState({ secs: 761 });
+    this.setState({ view, askSkip: false, sent: false, emailInvalid: false });
+    try { history.replaceState(null, '', '#' + view); } catch (e) {}
+    if (view === 'loading') this.later(() => this.go('available'), 1400);
+  };
+
+  onClaim = () => {
+    this.setState(s => ({ taps: s.taps + 1 }));
+    if (this.locked) return;
+    this.locked = true;
+    this.setState(s => ({ view: 'claiming', requests: s.requests + 1 }));
+    this.later(() => {
+      const o = this.state.outcome;
+      this.locked = false;
+      if (o === 'success') {
+        this.fromClick = true;
+        this.setState({ view: 'claimed' });
+        this.later(() => { if (this.state.view === 'claimed' && this.fromClick) window.location.href = 'W2-claimed.dc.html'; }, 1500);
+      } else if (o === 'taken') this.setState({ view: 'taken' });
+      else this.setState({ view: 'errorClaim' });
+    }, 1600);
+  };
+
+  sendLink = () => {
+    const e = (this.state.email || '').trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) { this.setState({ emailInvalid: true }); return; }
+    this.setState({ sent: true, emailInvalid: false });
+  };
+
+  renderVals() {
+    const s = this.state, v = s.view;
+    const fmt = n => Math.floor(n / 60) + ':' + String(n % 60).padStart(2, '0');
+    const urgent = s.secs <= 120;
+    const mins = Math.floor(s.secs / 60), sec = s.secs % 60;
+    const chip = (label, pressed, fn) => ({ label, pressed, onClick: fn });
+
+    const LABELS = { loading: 'Loading', available: 'Available', rising: 'Rate rising', claiming: 'Claiming', claimed: 'Claimed', taken: 'Taken', expired: 'Expired', withdrawn: 'Withdrawn', invalid: 'Invalid link', errorLoad: 'Error · load', errorClaim: 'Error · claim', declined: 'Declined' };
+    const stateChips = this.VIEWS.map(k => chip(LABELS[k], v === k, () => this.go(k)));
+
+    const NOTICES = {
+      claimed: { tone: 'success', icon: 'i-check', title: 'You got it.', text: 'The shift is yours. We\u2019re opening your booking.' },
+      taken: { tone: 'info', icon: 'i-users', title: 'Someone else just claimed this shift', text: 'Thanks for being quick. It went to another team member a moment ago.' },
+      expired: { tone: 'neutral', icon: 'i-clock', title: 'This offer has ended', text: 'The time to claim this shift ran out. You don\u2019t need to do anything.' },
+      withdrawn: { tone: 'neutral', icon: 'i-ban', title: 'This shift is no longer available', text: 'Maple & Rye filled it another way. Thanks for checking.' },
+      invalid: { tone: 'warning', icon: 'i-lock', title: 'This link doesn\u2019t work', text: 'It may have expired, or it has already been used. We can email you a new one.' },
+      errorLoad: { tone: 'error', icon: 'i-wifi-off', title: 'Can\u2019t reach ShiftCover', text: 'Check your connection and try again. Nothing has been claimed.' },
+      declined: { tone: 'info', icon: 'i-check', title: 'Okay, we\u2019ve passed', text: 'We won\u2019t ask why. Thanks for letting us know.' },
+    };
+
+    const NOTES = {
+      loading: { contract: 'fetching offer', shows: 'Skeleton ticket with the same heights as the real card, disabled button placeholder.', behavior: 'Shown for the first fetch of the offer. Replaced by Available, or by Taken / Expired / Withdrawn / Invalid depending on the response.', a11y: 'Container is aria-busy; a visually hidden "Loading shift details" status is announced.', reduced: 'Shimmer stops; flat paper-2 blocks.' },
+      available: { contract: 'state: available', shows: 'Role, venue, area, distance, date/time, hours, pay $193.60 with 8 h × $24.20/hr, guarantee line, payment line, live timer, sticky Claim.', behavior: 'Timer counts down each second. At 0:00 the screen switches to Expired. Under 2:00 the badge changes to red with "Ending soon" and an alert icon.', a11y: 'Timer has role="timer" and aria-live="off" (no per-second announcements). Claim is 56px, Not available 48px.', reduced: 'No animation on this state.' },
+      rising: { contract: 'state: available, rate_cents > rate when first offered', shows: 'Saffron banner "Rate increased to $24.20/hr" with the old rate and $17.60 delta; old rate struck through next to the formula.', behavior: 'Banner halo plays once on load. Everything else matches Available.', a11y: 'Banner is role="status"; the increase is stated in words, not only color.', reduced: 'Halo replaced by a static 2px saffron outline.' },
+      claiming: { contract: 'request in flight', shows: 'Claim button shows spinner + "Claiming…" and is aria-disabled; Not available is disabled too.', behavior: 'Click handler ignores every tap after the first (guard flag set synchronously, before any state update). Resolves to Claimed, Taken or Error · claim.', a11y: 'Button keeps focus (aria-disabled, not disabled). Label change is the status; spinner is decorative.', reduced: 'Spinner is hidden; label "Claiming…" remains.' },
+      claimed: { contract: 'claim accepted → W2', shows: 'Success disc, "You got it.", "See your booking" button.', behavior: 'After a real Claim tap this auto-navigates to W2-claimed after 1.5s. If opened from the switcher it stays so you can review it.', a11y: 'Title is a status region; focus moves to the heading.', reduced: 'Spinner in the hint line is hidden; no fade/rise.' },
+      taken: { contract: 'state: taken', shows: 'Kind message, no blame. If other open shifts exist: "See N other open shifts". If none: a quiet "No other open shifts right now."', behavior: 'Terminal. "See other open shifts" goes to My shifts (gate 3, link is a placeholder).', a11y: 'Heading announced as status.', reduced: 'No fade/rise.' },
+      expired: { contract: 'state: expired', shows: 'Neutral clock icon, "This offer has ended", reassurance that nothing is needed.', behavior: 'Terminal. Also entered automatically when the countdown reaches 0.', a11y: 'Neutral tone, never red: this is not the worker\u2019s fault.', reduced: 'No fade/rise.' },
+      withdrawn: { contract: 'state: withdrawn', shows: 'Ban icon, "This shift is no longer available", venue named.', behavior: 'Terminal.', a11y: 'Icon + title carry the meaning.', reduced: 'No fade/rise.' },
+      invalid: { contract: 'state: invalid', shows: 'Lock icon, explanation, email field, "Email me a new link".', behavior: 'Validates the email shape. After send, the form is replaced by a success alert. The response is identical whether or not the address is known.', a11y: 'Visible label, error has icon + text and role="alert", input autocomplete="email".', reduced: 'No fade/rise.' },
+      errorLoad: { contract: 'network failure on fetch', shows: 'Offline icon, "Can\u2019t reach ShiftCover", Try again.', behavior: 'Try again returns to Loading, then the offer.', a11y: 'Error is stated in words; button is 56px.', reduced: 'No fade/rise.' },
+      errorClaim: { contract: 'network failure on claim', shows: 'Offer card stays visible with an inline error alert; Claim is available again.', behavior: 'Nothing was booked. Tapping Claim re-sends. Timer keeps running.', a11y: 'Alert is role="alert".', reduced: 'No animation.' },
+      declined: { contract: 'worker tapped Not available', shows: 'Confirmation inline in the footer first ("Skip this shift?"), then this screen.', behavior: 'Terminal. No reason is asked.', a11y: 'Two-step confirm avoids accidental decline next to the primary button.', reduced: 'No fade/rise.' },
+    };
+
+    const ticketViews = ['available', 'rising', 'claiming', 'errorClaim'];
+    const noticeKey = { claimed: 'claimed', taken: 'taken', expired: 'expired', withdrawn: 'withdrawn', invalid: 'invalid', errorLoad: 'errorLoad', declined: 'declined' };
+    const notice = NOTICES[noticeKey[v]] || NOTICES.expired;
+
+    return {
+      stateChips,
+      widthChips: [360, 390, 430].map(w => chip(String(w), s.width === w, () => this.setState({ width: w }))),
+      motionChips: [['Normal', 'normal'], ['Reduced', 'reduced']].map(([l, k]) => chip(l, s.motion === k, () => this.setState({ motion: k }))),
+      outcomeChips: [['Booked', 'success'], ['Taken', 'taken'], ['Network error', 'error']].map(([l, k]) => chip(l, s.outcome === k, () => this.setState({ outcome: k }))),
+      otherChips: [0, 2].map(n => chip(String(n), s.other === n, () => this.setState({ other: n }))),
+      resetTimer: () => this.setState({ secs: 761 }),
+      nearEnd: () => this.setState({ secs: 10 }),
+      width: s.width, motion: s.motion,
+      isLoading: v === 'loading',
+      showTicket: ticketViews.includes(v),
+      showNotice: !!noticeKey[v],
+      isRising: v === 'rising',
+      isClaiming: v === 'claiming',
+      isErrorClaim: v === 'errorClaim',
+      claimLabel: v === 'claiming' ? 'Claiming…' : v === 'errorClaim' ? 'Try again' : 'Claim this shift',
+      claimBusyClass: v === 'claiming' ? 'is-busy' : '',
+      timerClass: urgent ? 'sc-badge--urgent' : '',
+      timerIcon: urgent ? 'i-alert' : 'i-clock',
+      timerLabel: (urgent ? 'Ending soon · ' : '') + fmt(s.secs) + ' left',
+      timerAria: mins + ' minutes ' + sec + ' seconds left to claim',
+      askingSkip: s.askSkip, notAskingSkip: !s.askSkip,
+      askSkip: () => { if (v !== 'claiming') this.setState({ askSkip: true }); },
+      cancelSkip: () => this.setState({ askSkip: false }),
+      confirmSkip: () => this.go('declined'),
+      onClaim: this.onClaim,
+      notice,
+      isClaimedView: v === 'claimed', isTakenView: v === 'taken', isErrorLoad: v === 'errorLoad', isInvalidView: v === 'invalid',
+      hasOtherOpen: s.other > 0, noOtherOpen: s.other === 0,
+      otherLabel: 'See ' + s.other + ' other open shifts',
+      retryLoad: () => this.go('loading'),
+      email: s.email, emailInvalid: s.emailInvalid,
+      onEmail: e => this.setState({ email: e.target.value, emailInvalid: false }),
+      sendLink: this.sendLink,
+      linkSent: s.sent, linkNotSent: !s.sent,
+      info: Object.assign({ label: LABELS[v] }, NOTES[v]),
+      taps: s.taps, requests: s.requests,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

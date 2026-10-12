@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="review.css">
+<style>body{margin:0}</style>
+</helmet>
+<div class="rv-page">
+  <section class="rv-bar" aria-label="Page header">
+    <div class="rv-bar__top"><h1 class="rv-bar__title">Inconsistencies</h1><span class="rv-bar__tag">handoff · found, not changed</span><a class="rv-bar__home" href="index.dc.html">All pages</a></div>
+  </section>
+  <main class="rv-doc">
+    <h2 class="rv-doc__title">Inconsistencies found, with proposed fixes</h2>
+    <p class="rv-doc__lead">Found while assembling the handoff. Nothing here was changed in the designs; each item has a proposed fix for you to approve. <span class="rv-tag rv-tag--high">High</span> changes what a user sees or pays, <span class="rv-tag rv-tag--med">Medium</span> breaks a stated rule or an accessibility promise, <span class="rv-tag rv-tag--low">Low</span> is housekeeping.</p>
+    <div class="rv-filters" role="group" aria-label="Filter by severity">
+      <sc-for list="{{ filters }}" as="f" hint-placeholder-count="4"><button class="rv-filter" aria-pressed="{{ f.pressed }}" onClick="{{ f.onClick }}">{{ f.label }}</button></sc-for>
+      <span class="rv-count">{{ count }}</span>
+    </div>
+    <div class="rv-card"><div class="rv-table-wrap">
+      <div class="rv-table rv-table--wide rv-cols-in" role="table">
+        <div class="rv-thead" role="rowgroup"><div class="rv-tr" role="row"><div class="rv-th" role="columnheader">#</div><div class="rv-th" role="columnheader">Severity</div><div class="rv-th" role="columnheader">Where</div><div class="rv-th" role="columnheader">Finding</div><div class="rv-th" role="columnheader">Proposed fix</div></div></div>
+        <div role="rowgroup">
+          <sc-for list="{{ rows }}" as="r" hint-placeholder-count="20">
+            <div class="rv-tr" role="row"><div class="rv-td rv-n" role="cell">{{ r.n }}</div><div class="rv-td" role="cell"><span class="rv-tag rv-tag--{{ r.cls }}">{{ r.sev }}</span></div><div class="rv-td" role="cell"><span class="rv-mono">{{ r.where }}</span></div><div class="rv-td" role="cell">{{ r.finding }}</div><div class="rv-td" role="cell">{{ r.fix }}</div></div>
+          </sc-for>
+        </div>
+      </div>
+    </div></div>
+  </main>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { f: 'All' };
+  I = [
+    ['H', 'W1 available', 'The default Available state shows wave-2 numbers ($24.20/hr, $193.60). A wave-1 viewer would see $22.00/hr and $176.00. Only "Rate rising" should show wave-2 figures plus the old rate.', 'Bind rate, pay and formula to the viewer\'s offer. Keep the sample figures only inside the Rising state.'],
+    ['H', 'Design system, M4', 'Captured $212.30 does not reconcile: worker pay $193.60 plus 5% fee ($9.68) is $203.28, a $9.02 gap. Open question since gate 1.', 'Get the real breakdown (data gap "captured_breakdown"). Show a breakdown row under Captured so any difference is explained.'],
+    ['M', 'W1 notices, W2', 'The notes panels say focus moves to the heading ("You\'re booked.", notice titles), but the pages do not move focus.', 'Add tabindex="-1" and call focus() on the heading when the state changes; or remove the claim from the notes.'],
+    ['M', 'M4 dialogs', 'No focus trap and focus does not return to the opener on close. Only autofocus and Esc exist.', 'Trap Tab inside the dialog, restore focus to the Widen/Cancel button on close.'],
+    ['M', 'M4 reference chip', '.sc-ref is 28px tall. Console floor is 36px (--sc-hit-console).', 'Raise min-height to 36px.'],
+    ['M', 'console.css', 'Text at 11px in .sc-nav__tag, .sc-sched__now-flag, .sc-pass__capflag, .sc-ref small. The type scale sets 12px as the minimum.', 'Raise to 12px (use --sc-text-caption).'],
+    ['M', 'Design system page', 'The gate-1 page is a separate inline-style implementation, not built on components.css. Its contrast table was partly rounded by hand. Two sources can drift.', 'Treat accessibility.dc.html (computed live) as the source of truth; rebuild the design system page on components.css when time allows.'],
+    ['M', 'M2 / Bryntum', 'bryntum-theme.css Part 2 variable names and several selectors are unverified (marked Verify). Wrong names are ignored silently.', 'Check each against the installed svalbard-light.css before sign-off.'],
+    ['L', 'M4 page style tag', '.sc-alert--pending is defined in the M4 page, not in components.css.', 'Move into components.css next to the other alert tones.'],
+    ['L', 'M3, M4 badges', 'Class sc-badge--neutral is used but has no rule (the default badge already looks neutral).', 'Add it as an alias of the default, or remove the class.'],
+    ['L', 'console.css vs components.css', 'Badge status and tone variants live in console.css; worker pages cannot reuse them. @keyframes sc-pulse is defined twice (design system page: saffron halo; console.css: dark halo); sc-spin and sc-shimmer are duplicated.', 'Move badge variants and all keyframes into components.css once.'],
+    ['L', 'tokens.css, console.css', '--sc-console-h is set only by the review frame; console.css reads it with a 100vh fallback.', 'Add --sc-console-h: 100vh (or 100dvh) as a documented default in tokens.css.'],
+    ['L', 'components.css, console.css', 'Colours outside the token system: oklch literals in the sc-flash and sc-pulse keyframes, a #666 chevron in the select data URI, and --sc-sched-today-bg as a raw oklch.', 'Add tokens (e.g. --sc-halo-offering, --sc-icon-muted) or promote today-bg to a primitive.'],
+    ['L', 'W1/W2 vs M2–M4', 'Time ranges appear as "7:00 AM – 3:00 PM" in most places but as "7–3 PM" or "7 AM–3 PM" in scheduler blocks; the gate-1 spec showed "7:00a – 3:00p".', 'One formatter with two documented formats: full and compact.'],
+    ['L', 'W1 vs W2', 'Two success voices: W1 "You got it." then W2 "You\'re booked."', 'Confirm the pair is intended (W1 is a one-second hand-off). Otherwise reuse "You\'re booked." in both.'],
+    ['L', 'Design system page', 'Page says the Day/Week control is 36px; built control is 40px outer with 32px inner buttons.', 'Update the text to match, or raise the inner buttons to 34px.'],
+    ['L', 'M4 reference chip', 'The copied-state icon swap never fires (the page never sets its copied flag). The toast does appear.', 'Set a short-lived copied key when copying and clear it after about 2 seconds.'],
+    ['L', 'Buttons', 'Worker buttons use radius-md (12px); console md buttons use radius-sm (8px). Intentional per the tokens, but not stated in the design system page.', 'Add one sentence to the design system documentation.'],
+    ['L', 'M2', 'Summary strip shows four tiles (adds "Pending approval"); the brief\'s example listed three.', 'Confirm the extra tile is wanted.'],
+    ['L', 'console.css', 'Mock-only classes (.sc-ev--s0…35, .sc-ev--l1…36, the now line at left: 10.09%) exist only to fake Bryntum positioning.', 'Do not ship them; Bryntum computes position and size.'],
+    ['L', 'All pages', 'Fonts load from the Google Fonts CDN on every page. Allowed by the brief, but it adds a third-party request and fails offline.', 'Self-host the three WOFF2 families for production and keep the OFL notices.'],
+  ];
+  renderVals() {
+    const s = this.state, S = { H: ['High', 'high'], M: ['Medium', 'med'], L: ['Low', 'low'] };
+    const all = this.I.map((d, i) => ({ n: i + 1, sev: S[d[0]][0], cls: S[d[0]][1], where: d[1], finding: d[2], fix: d[3] }));
+    const rows = all.filter(r => s.f === 'All' || r.sev === s.f);
+    return { filters: ['All', 'High', 'Medium', 'Low'].map(f => ({ label: f === 'All' ? 'All severities' : f, pressed: s.f === f, onClick: () => this.setState({ f }) })), rows, count: rows.length + ' of ' + all.length + ' items' };
+  }
+}
+
+</script>
+</body>
+</html>

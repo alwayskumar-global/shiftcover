@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components.css">
+<link rel="stylesheet" href="console.css">
+<link rel="stylesheet" href="review.css">
+<style>body{margin:0}.sc-alert--pending{background:var(--sc-st-pending-bg);color:var(--sc-st-pending-fg);border-color:var(--sc-st-pending-border)}</style>
+</helmet>
+<div class="rv-page">
+  <section class="rv-bar" aria-label="Review controls">
+    <div class="rv-bar__top"><h1 class="rv-bar__title">M4 · Gap detail</h1><span class="rv-bar__tag">review controls, not part of the product</span><a class="rv-bar__home" href="index.dc.html">All pages</a></div>
+    <div class="rv-bar__groups">
+      <div class="rv-group"><span class="rv-group__label">State</span><div class="rv-group__chips" role="group" aria-label="State">
+        <sc-for list="{{ stateChips }}" as="c" hint-placeholder-count="8"><button class="rv-chip" aria-pressed="{{ c.pressed }}" onClick="{{ c.onClick }}">{{ c.label }}</button></sc-for></div></div>
+      <div class="rv-group"><span class="rv-group__label">Viewport width</span><div class="rv-group__chips" role="group" aria-label="Width">
+        <sc-for list="{{ widthChips }}" as="c" hint-placeholder-count="3"><button class="rv-chip" aria-pressed="{{ c.pressed }}" onClick="{{ c.onClick }}">{{ c.label }}</button></sc-for></div></div>
+      <div class="rv-group"><span class="rv-group__label">Motion</span><div class="rv-group__chips" role="group" aria-label="Motion">
+        <sc-for list="{{ motionChips }}" as="c" hint-placeholder-count="2"><button class="rv-chip" aria-pressed="{{ c.pressed }}" onClick="{{ c.onClick }}">{{ c.label }}</button></sc-for></div></div>
+    </div>
+  </section>
+
+  <div class="rv-console-wrap">
+    <div class="rv-console-frame" data-width="{{ width }}">
+<!-- ===== PRODUCT: M4 gap detail ===== -->
+<div class="sc-console" data-motion="{{ motion }}">
+  <sc-if value="{{ dlgCap }}" hint-placeholder-val="{{ false }}">
+    <div class="sc-scrim"><div class="sc-dialog" role="dialog" aria-modal="true" aria-labelledby="dlg-cap-title">
+      <h2 class="sc-dialog__title" id="dlg-cap-title">{{ capTitle }}</h2>
+      <p class="sc-dialog__text">Workers only see higher rates if nobody claims at the current one. Nothing changes until you approve the extra hold in PayPal.</p>
+      <div class="sc-segmented" role="group" aria-label="New maximum premium">
+        <sc-for list="{{ capChoices }}" as="c" hint-placeholder-count="3"><button class="sc-segmented__btn" aria-pressed="{{ c.pressed }}" onClick="{{ c.onClick }}">+{{ c.pct }}%</button></sc-for>
+      </div>
+      <div class="sc-money">
+        <div class="sc-money__row"><span class="sc-money__label"><strong>Highest rate offered</strong><small>Base $22.00/hr + {{ capDraft }}%</small></span><span class="sc-money__amt">{{ capNewRate }}/hr</span></div>
+        <div class="sc-money__row"><span class="sc-money__label"><strong>Total hold</strong><small>Was {{ capOldHold }}</small></span><span class="sc-money__amt">{{ capNewHold }}</span></div>
+        <div class="sc-money__row sc-money__row--total"><span class="sc-money__label"><strong>Extra hold to approve</strong><small>Charged only for hours worked</small></span><span class="sc-money__amt">{{ capExtra }}</span></div>
+      </div>
+      <div class="sc-dialog__actions"><button class="sc-btn sc-btn--secondary sc-btn--md" onClick="{{ closeDlg }}">Not now</button><button class="sc-btn sc-btn--primary sc-btn--md" onClick="{{ confirmCap }}" autoFocus="{{ true }}">Widen cap</button></div>
+    </div></div>
+  </sc-if>
+  <sc-if value="{{ dlgCancel }}" hint-placeholder-val="{{ false }}">
+    <div class="sc-scrim"><div class="sc-dialog" role="alertdialog" aria-modal="true" aria-labelledby="dlg-cancel-title">
+      <h2 class="sc-dialog__title" id="dlg-cancel-title">Cancel this gap?</h2>
+      <p class="sc-dialog__text">Line cook, today 7:00 AM to 3:00 PM. This can't be undone.</p>
+      <ul class="sc-dialog__list"><li>Offers to workers are withdrawn.</li><li>The {{ holdText }} hold is released. Nothing is charged.</li><li>The shift stays uncovered.</li></ul>
+      <div class="sc-dialog__actions"><button class="sc-btn sc-btn--secondary sc-btn--md" onClick="{{ closeDlg }}" autoFocus="{{ true }}">Keep gap</button><button class="sc-btn sc-btn--danger sc-btn--md" onClick="{{ confirmCancel }}">Cancel gap</button></div>
+    </div></div>
+  </sc-if>
+
+  <div class="sc-console__shell">
+    <nav class="sc-nav" aria-label="Main">
+      <span class="sc-wordmark"><span class="sc-wordmark__mark"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-check"></use></svg></span>ShiftCover Pay</span>
+      <div class="sc-nav__venue"><span class="sc-avatar sc-avatar--sm sc-avatar--brand" aria-hidden="true">M</span><span class="sc-nav__venue-text"><span class="sc-nav__venue-name">Maple &amp; Rye</span><span class="sc-nav__venue-sub">Portland, OR</span></span></div>
+      <div class="sc-nav__list">
+        <a class="sc-nav__item is-active" href="M2-roster.dc.html" aria-current="page" title="Roster"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-calendar"></use></svg><span class="sc-nav__label">Roster</span></a>
+        <button class="sc-nav__item" aria-disabled="true" title="Workers (coming soon)"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-users"></use></svg><span class="sc-nav__label">Workers</span><span class="sc-nav__tag">Soon</span></button>
+        <button class="sc-nav__item" aria-disabled="true" title="Money (coming soon)"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-wallet"></use></svg><span class="sc-nav__label">Money</span><span class="sc-nav__tag">Soon</span></button>
+        <button class="sc-nav__item" aria-disabled="true" title="Settings (coming soon)"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-settings"></use></svg><span class="sc-nav__label">Settings</span><span class="sc-nav__tag">Soon</span></button>
+      </div>
+      <span class="sc-nav__spacer"></span>
+      <div class="sc-nav__user"><span class="sc-avatar sc-avatar--sm sc-avatar--user" aria-hidden="true">DW</span><span class="sc-nav__user-text"><span class="sc-nav__user-name">Dana Whitfield</span><span class="sc-nav__user-sub">Manager</span></span><a class="sc-nav__signout" href="M1-login.dc.html" aria-label="Sign out" title="Sign out"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-log-out"></use></svg></a></div>
+    </nav>
+
+    <main class="sc-console__main">
+      <div class="sc-page">
+        <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}"><div class="sc-toast" role="status"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-check"></use></svg>{{ toast }}</div></sc-if>
+        <nav class="sc-crumbs" aria-label="Breadcrumb"><a href="M2-roster.dc.html"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-chev-left"></use></svg>Roster</a><span aria-hidden="true">/</span><span aria-current="page">Gap · Line cook, 7:00 AM</span></nav>
+
+        <header class="sc-gaphead">
+          <div class="sc-gaphead__main">
+            <p class="sc-eyebrow">Gap · Maple &amp; Rye</p>
+            <h1 class="sc-gaphead__title">Line cook</h1>
+            <div class="sc-gaphead__meta">
+              <span><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-calendar"></use></svg>Mon, Oct 12 · 7:00 AM – 3:00 PM</span>
+              <span><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-clock"></use></svg>8 hours</span>
+              <span><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-user-x"></use></svg>Replacing Maria Alvarez</span>
+            </div>
+          </div>
+          <div class="sc-gaphead__side">
+            <div class="sc-gaphead__badges">
+              <span class="sc-badge {{ slotBadge.cls }}"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#{{ slotBadge.icon }}"></use></svg>{{ slotBadge.label }}</span>
+              <span class="sc-badge {{ moneyBadge.cls }}"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#{{ moneyBadge.icon }}"></use></svg>{{ moneyBadge.label }}</span>
+            </div>
+            <div class="sc-toolbar__group">
+              <button class="sc-btn sc-btn--secondary sc-btn--md" aria-disabled="{{ noWiden }}" title="{{ widenTip }}" onClick="{{ openCap }}"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-plus"></use></svg>Widen the cap</button>
+              <button class="sc-btn sc-btn--danger-quiet sc-btn--md" aria-disabled="{{ noCancel }}" title="{{ cancelTip }}" onClick="{{ openCancel }}"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-ban"></use></svg>Cancel gap</button>
+            </div>
+          </div>
+        </header>
+
+        <div class="sc-facts" aria-label="Key facts">
+          <sc-for list="{{ facts }}" as="f" hint-placeholder-count="4"><div class="sc-fact"><span class="sc-fact__label">{{ f.k }}</span><span class="sc-fact__value">{{ f.v }}</span></div></sc-for>
+        </div>
+
+        <sc-if value="{{ banner.on }}" hint-placeholder-val="{{ false }}">
+          <div class="sc-alert sc-alert--{{ banner.tone }}" role="status"><svg class="sc-icon sc-icon--lg" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#{{ banner.icon }}"></use></svg>
+            <div><span class="sc-alert__title">{{ banner.title }}</span><span class="sc-alert__text">{{ banner.text }}</span></div></div>
+        </sc-if>
+
+        <sc-if value="{{ suggestOn }}" hint-placeholder-val="{{ false }}">
+          <section class="sc-card" aria-labelledby="sug-title">
+            <h2 class="sc-card__title" id="sug-title">Try one of these</h2>
+            <div class="sc-suggest">
+              <div class="sc-suggest__item"><span class="sc-suggest__title">Raise the cap</span><span class="sc-suggest__text">From +20% ($26.40/hr) to +30% ($28.60/hr). The extra hold is $18.48; you are still charged for hours worked only.</span><button class="sc-btn sc-btn--primary sc-btn--md" onClick="{{ openCap }}">Raise cap and re-offer</button></div>
+              <div class="sc-suggest__item"><span class="sc-suggest__title">Widen the radius</span><span class="sc-suggest__text">Offer to qualified workers farther away: 5 mi to 10 mi. Rates stay the same.</span><button class="sc-btn sc-btn--secondary sc-btn--md" onClick="{{ widenRadius }}">Widen radius and re-offer</button></div>
+            </div>
+          </section>
+        </sc-if>
+
+        <!-- A · waves -->
+        <section class="sc-card" aria-labelledby="a-title">
+          <div class="sc-section__head"><h2 class="sc-card__title" id="a-title">A · Offer waves</h2><span class="sc-section__note">The rate rises only if nobody claims. The dashed ceiling is your cap.</span></div>
+          <div class="sc-pass">
+            <sc-for list="{{ waves }}" as="w" hint-placeholder-count="3">
+              <div class="sc-pass__item sc-pass__item--{{ w.tone }} {{ w.st }}">
+                <div class="sc-pass__top"><span class="sc-pass__node"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#{{ w.icon }}"></use></svg></span><span class="sc-pass__line {{ w.lineCls }}"></span></div>
+                <div><div class="sc-pass__head">{{ w.label }}<span class="sc-pass__tag">{{ w.tag }}</span></div>
+                  <div class="sc-offers__name">{{ w.when }} · {{ w.audience }}</div>
+                  <div class="sc-pass__text">{{ w.result }}</div></div>
+                <sc-if value="{{ w.cap }}" hint-placeholder-val="{{ false }}"><span class="sc-pass__capflag"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-lock"></use></svg>Cap</span></sc-if>
+                <div class="sc-pass__bar"><div class="sc-pass__step sc-pass__step--{{ w.h }} {{ w.capCls }}"><strong>{{ w.rate }}</strong><span>{{ w.rateNote }}</span></div></div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <!-- B · offers -->
+        <section class="sc-card sc-card--flush" aria-labelledby="b-title">
+          <div class="sc-section__head"><h2 class="sc-card__title" id="b-title">B · Offers</h2><span class="sc-section__note">{{ offersNote }}</span></div>
+          <div class="sc-offers" role="table" aria-label="Offers">
+            <div class="sc-offers__row sc-offers__row--head" role="row"><span role="columnheader">Worker</span><span role="columnheader">Wave</span><span role="columnheader">Status</span><span role="columnheader">When</span></div>
+            <sc-for list="{{ offers }}" as="o" hint-placeholder-count="8">
+              <div class="sc-offers__row {{ o.rowCls }}" role="row">
+                <span class="sc-offers__who" role="cell"><span class="{{ o.avCls }}" aria-hidden="true">{{ o.initials }}</span><span><span class="sc-offers__name">{{ o.name }}</span><span class="sc-offers__role">{{ o.role }}</span><sc-if value="{{ o.final }}" hint-placeholder-val="{{ false }}"><span class="sc-offers__final"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-check"></use></svg>Final rate $24.20/hr · pay $193.60</span></sc-if></span></span>
+                <span role="cell">{{ o.wave }}</span>
+                <span role="cell"><span class="sc-badge sc-badge--sm {{ o.badge }}"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#{{ o.icon }}"></use></svg>{{ o.status }}</span></span>
+                <span class="sc-offers__time" role="cell" title="{{ o.abs }}">{{ o.rel }}<small>{{ o.abs }}</small></span>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <!-- C · money -->
+        <section class="sc-card" aria-labelledby="c-title">
+          <div class="sc-section__head"><h2 class="sc-card__title" id="c-title">C · Money</h2><span class="sc-section__note">Authorized, then Captured, then Paid. Each amount says what it is.</span></div>
+          <sc-if value="{{ extraOn }}" hint-placeholder-val="{{ false }}">
+            <div class="sc-alert sc-alert--info"><svg class="sc-icon sc-icon--lg" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-info"></use></svg><div><span class="sc-alert__title">Approve the extra {{ extraAmt }} to use the wider cap</span><span class="sc-alert__text">The cap is now +{{ capPrem }}%. Workers only see the higher rate once PayPal confirms the larger hold.</span><button class="sc-paypal__slot" onClick="{{ approveExtra }}">PayPal button renders here · 52px · click to simulate</button></div></div>
+          </sc-if>
+          <div class="sc-pass">
+            <sc-for list="{{ money }}" as="m" hint-placeholder-count="3">
+              <div class="sc-pass__item sc-pass__item--{{ m.tone }} {{ m.st }}">
+                <div class="sc-pass__top"><span class="sc-pass__node"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#{{ m.icon }}"></use></svg></span><span class="sc-pass__line {{ m.lineCls }}"></span></div>
+                <div><div class="sc-pass__head">{{ m.label }}<span class="sc-pass__tag">{{ m.tag }}</span></div>
+                  <div class="sc-pass__amt">{{ m.amt }}</div></div>
+                <p class="sc-pass__text">{{ m.text }}</p>
+                <span class="sc-pass__when">{{ m.when }}</span>
+                <div class="sc-pass__refs">
+                  <sc-for list="{{ m.refs }}" as="r" hint-placeholder-count="1"><button class="sc-ref" onClick="{{ r.onClick }}" aria-label="Copy {{ r.label }} reference"><small>{{ r.label }}</small>{{ r.value }}<svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#{{ r.icon }}"></use></svg></button></sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <sc-if value="{{ recovery.on }}" hint-placeholder-val="{{ false }}">
+            <div class="sc-alert sc-alert--error" role="alert"><svg class="sc-icon sc-icon--lg" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-warn"></use></svg>
+              <div><span class="sc-alert__title">{{ recovery.title }}</span><span class="sc-alert__text">{{ recovery.text }}</span>
+                <div class="sc-actions"><button class="sc-btn sc-btn--primary sc-btn--md" onClick="{{ retry }}"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-retry"></use></svg>{{ recovery.cta }}</button><button class="sc-btn sc-btn--secondary sc-btn--md" onClick="{{ copyRecovery }}"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-copy"></use></svg>Copy reference for support</button></div></div></div>
+          </sc-if>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+<!-- ===== /PRODUCT ===== -->
+    </div>
+    <span class="rv-device-label">{{ width }} × 900 · scroll inside the frame · Esc closes dialogs</span>
+  </div>
+  <section class="rv-ref" aria-label="Notes">
+    <div class="rv-card"><h2 class="rv-card__title">Notes</h2>
+      <div class="rv-card__row"><span class="rv-card__key">One pattern</span><span class="rv-card__val">The wave timeline (A) and the money timeline (C) are the same component: <span class="rv-mono">sc-pass</span> with node, line, label, tag, amount and text. Done is solid, Now is ringed, Up next is dashed, Failed is ember, Released and Not applicable are grey. Every state has a word as well as a color.</span></div>
+      <div class="rv-card__row"><span class="rv-card__key">Confirmation</span><span class="rv-card__val">Cancel gap uses a modal alert dialog that lists the consequences, defaults focus to "Keep gap" and uses a danger button for the destructive action. Widen the cap uses a dialog that shows the new hold before anything changes, then asks for the extra hold in PayPal.</span></div>
+      <div class="rv-card__row"><span class="rv-card__key">Copyable refs</span><span class="rv-card__val">PayPal reference ids are buttons; click copies and shows a toast.</span></div>
+      <div class="rv-card__row"><span class="rv-card__key">Reduced motion</span><span class="rv-card__val">The "Now" node has no pulse in this view; nothing on this page animates except the toast fade, which becomes instant.</span></div>
+    </div>
+  </section>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { view: 'offering', width: 1440, motion: 'normal', dlg: null, capPrem: 20, draft: 30, toast: '', extra: 0 };
+  timers = [];
+  VIEWS = ['offering', 'filled', 'unfilled', 'inProgress', 'pendingApproval', 'captureDeclined', 'payoutFailed', 'cancelled'];
+  componentDidMount() {
+    const h = (window.location.hash || '').slice(1); if (this.VIEWS.includes(h)) this.setState({ view: h });
+    this.key = e => { if (e.key === 'Escape') this.setState({ dlg: null }); };
+    document.addEventListener('keydown', this.key);
+  }
+  componentWillUnmount() { document.removeEventListener('keydown', this.key); this.timers.forEach(clearTimeout); }
+  say = (t) => { this.setState({ toast: t }); this.timers.push(setTimeout(() => this.setState({ toast: '' }), 3200)); };
+  go = (view) => { this.setState({ view, dlg: null, capPrem: 20, extra: 0, toast: '' }); try { history.replaceState(null, '', '#' + view); } catch (e) {} };
+  copy = (v) => { try { navigator.clipboard.writeText(v); } catch (e) {} this.say('Reference copied'); };
+
+  usd(c) { return '$' + (c / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  hold(p) { const pay = Math.round(17600 * (1 + p / 100)); return { pay, fee: Math.round(pay * .05), total: pay + Math.round(pay * .05) }; }
+  rate(p) { return Math.round(2200 * (1 + p / 100)); }
+
+  renderVals() {
+    const s = this.state, v = s.view, chip = (label, pressed, fn) => ({ label, pressed, onClick: fn });
+    const L = { offering: 'Offering · wave 2', filled: 'Filled', unfilled: 'Unfilled', inProgress: 'In progress', pendingApproval: 'Pending approval', captureDeclined: 'Capture declined', payoutFailed: 'Payout failed', cancelled: 'Cancelled' };
+    const P = s.capPrem, H = this.hold(P), H20 = this.hold(20);
+    const NOW = { offering: 409, filled: 410, unfilled: 425, inProgress: 552, pendingApproval: 908, captureDeclined: 920, payoutFailed: 920, cancelled: 415 }[v];
+    const t12 = m => { const h = Math.floor(m / 60), mm = m % 60; return (((h + 11) % 12) + 1) + ':' + String(mm).padStart(2, '0') + ' ' + (h >= 12 ? 'PM' : 'AM'); };
+    const rel = m => { const d = NOW - m; return d < 1 ? 'just now' : d < 60 ? d + ' min ago' : Math.floor(d / 60) + ' h ago'; };
+    const filled = ['filled', 'inProgress', 'pendingApproval', 'captureDeclined', 'payoutFailed'].includes(v);
+
+    // ----- badges
+    const SB = { offering: ['sc-badge--st-offering', 'i-send', 'Offering'], filled: ['sc-badge--st-confirmed', 'i-check', 'Confirmed'], unfilled: ['sc-badge--st-unfilled sc-badge--dashed', 'i-warn', 'Unfilled'], inProgress: ['sc-badge--st-progress', 'i-play', 'In progress'], pendingApproval: ['sc-badge--st-pending', 'i-hourglass', 'Pending approval'], captureDeclined: ['sc-badge--st-pending', 'i-hourglass', 'Settling'], payoutFailed: ['sc-badge--st-pending', 'i-hourglass', 'Settling'], cancelled: ['sc-badge--st-cancelled sc-badge--dashed', 'i-ban', 'Cancelled'] }[v];
+    const MB = { captureDeclined: ['sc-badge--error', 'i-warn', 'Capture declined'], payoutFailed: ['sc-badge--error', 'i-warn', 'Payout failed'], unfilled: ['sc-badge--neutral', 'i-shield', 'Hold released'], cancelled: ['sc-badge--neutral', 'i-shield', 'Hold released'] }[v] || ['sc-badge--info', 'i-shield', this.usd(H.total) + ' on hold'];
+
+    // ----- waves
+    const W = (n, tone, st, icon, tag, when, audience, result, rate, rateNote, h, cap, last) => ({ label: 'Wave ' + n, tone, st, icon, tag, when, audience, result, rate, rateNote, h, cap, capCls: cap ? 'sc-pass__step--cap' : '', lineCls: last ? 'sc-visually-hidden' : '' });
+    const w2 = this.usd(Math.round(2200 * (1 + P / 200))), w3 = this.usd(this.rate(P));
+    const rN = '+' + +(P / 2).toFixed(1) + '%';
+    let waves;
+    if (v === 'offering') waves = [W(1, 'wave', 'is-done', 'i-send', 'Sent', '6:42 AM', 'Top 3 candidates', '1 declined · 1 opened · 1 waiting', '$22.00/hr', 'Base rate', 1, false), W(2, 'wave', 'is-now', 'i-send', 'Open now', '6:47 AM', 'Next 5', '1 opened · 4 waiting', w2 + '/hr', rN, 2, false), W(3, 'wave', 'is-next', 'i-send', 'Sends 6:52 AM', 'Next at 6:52 AM', 'Everyone eligible', 'Goes out in 3 min unless someone claims.', w3 + '/hr', 'Cap +' + P + '%', 3, true, true)];
+    else if (v === 'unfilled') waves = [W(1, 'wave', 'is-done', 'i-send', 'No takers', '6:42 AM', 'Top 3 candidates', '1 declined · 2 expired', '$22.00/hr', 'Base rate', 1, false), W(2, 'wave', 'is-done', 'i-send', 'No takers', '6:47 AM', 'Next 5', '1 declined · 4 expired', w2 + '/hr', rN, 2, false), W(3, 'wave', 'is-done', 'i-send', 'No takers', '6:52 AM', 'Everyone eligible (9)', '9 offers · all expired at 7:00 AM', w3 + '/hr', 'Cap +' + P + '%', 3, true, true)];
+    else if (v === 'cancelled') waves = [W(1, 'wave', 'is-done', 'i-send', 'Sent', '6:42 AM', 'Top 3 candidates', '1 declined · 2 withdrawn', '$22.00/hr', 'Base rate', 1, false), W(2, 'wave', 'is-skipped', 'i-ban', 'Stopped', '6:47 AM', 'Next 5', 'Withdrawn when you cancelled', w2 + '/hr', rN, 2, false), W(3, 'wave', 'is-skipped', 'i-ban', 'Not sent', 'Would send 6:52 AM', 'Everyone eligible', 'Not sent', w3 + '/hr', 'Cap +' + P + '%', 3, true, true)];
+    else waves = [W(1, 'wave', 'is-done', 'i-send', 'No takers', '6:42 AM', 'Top 3 candidates', '1 declined · 2 expired', '$22.00/hr', 'Base rate', 1, false), W(2, 'claimed', 'is-done', 'i-check', 'Claimed', '6:47 AM', 'Next 5', 'Jordan Reyes claimed at 6:49 AM · 4 withdrawn', '$24.20/hr', '+10% · final rate', 2, false), W(3, 'wave', 'is-skipped', 'i-ban', 'Not sent', 'Planned 6:52 AM', 'Everyone eligible', 'Not needed', w3 + '/hr', 'Cap +' + P + '%', 3, true, true)];
+
+    // ----- offers
+    const tint = n => (n.charCodeAt(0) + n.length) % 5 + 1;
+    const ST = { sent: ['Sent', 'i-send', 'sc-badge--neutral'], opened: ['Opened', 'i-eye', 'sc-badge--st-offering'], claimed: ['Claimed', 'i-check', 'sc-badge--st-confirmed'], declined: ['Declined', 'i-x', 'sc-badge--neutral'], expired: ['Expired', 'i-clock', 'sc-badge--neutral'], withdrawn: ['Withdrawn', 'i-ban', 'sc-badge--neutral sc-badge--dashed'] };
+    const O = (name, role, wave, st, tm, o) => { const x = ST[st]; return Object.assign({ name, role, wave: wave === '–' ? '–' : 'Wave ' + wave, status: x[0], icon: x[1], badge: x[2], initials: name.split(' ').map(p => p[0]).join(''), avCls: 'sc-avatar sc-avatar--' + tint(name), rel: x[0] + ' ' + rel(tm), abs: t12(tm), rowCls: st === 'claimed' ? 'is-claimed' : (st === 'withdrawn' || st === 'expired') ? 'is-muted' : '', final: false }, o || {}); };
+    let offers;
+    const base = (a, b, c2, d, e) => [O('Marcus Lee', 'Line cook', 1, 'declined', 404), O('Chloe Dubois', 'Prep cook', 1, a, b), O('Sam Whitfield', 'Bar back', 1, a, b === 405 ? 402 : b)];
+    if (v === 'offering') offers = [O('Marcus Lee', 'Line cook', 1, 'declined', 404), O('Chloe Dubois', 'Prep cook', 1, 'opened', 405), O('Sam Whitfield', 'Bar back', 1, 'sent', 402), O('Jordan Reyes', 'Line cook', 2, 'opened', 408), O('Priya Nair', 'Bartender', 2, 'sent', 407), O('Devon Brooks', 'Server', 2, 'sent', 407), O('Aisha Khan', 'Server', 2, 'sent', 407), O('Lena Park', 'Host', 2, 'sent', 407)];
+    else if (v === 'unfilled') offers = [O('Marcus Lee', 'Line cook', 1, 'declined', 404), O('Chloe Dubois', 'Prep cook', 1, 'expired', 407), O('Sam Whitfield', 'Bar back', 1, 'expired', 407), O('Jordan Reyes', 'Line cook', 2, 'expired', 412), O('Priya Nair', 'Bartender', 2, 'declined', 410), O('Devon Brooks', 'Server', 2, 'expired', 412), O('Aisha Khan', 'Server', 2, 'expired', 412), O('Lena Park', 'Host', 2, 'expired', 412), O('Tom Okafor', 'Dishwasher', 3, 'expired', 420), O('8 more offers', 'Re-sent in wave 3 at ' + w3 + '/hr', '–', 'expired', 420, { initials: '+8' })];
+    else if (v === 'cancelled') offers = [O('Marcus Lee', 'Line cook', 1, 'declined', 404), O('Chloe Dubois', 'Prep cook', 1, 'withdrawn', 414), O('Sam Whitfield', 'Bar back', 1, 'withdrawn', 414), O('Jordan Reyes', 'Line cook', 2, 'withdrawn', 414), O('4 more offers', 'Wave 2', 2, 'withdrawn', 414, { initials: '+4' })];
+    else offers = [O('Jordan Reyes', 'Line cook', 2, 'claimed', 409, { final: true }), O('Marcus Lee', 'Line cook', 1, 'declined', 404), O('Chloe Dubois', 'Prep cook', 1, 'expired', 407), O('Sam Whitfield', 'Bar back', 1, 'expired', 407), O('4 more offers', 'Priya Nair, Devon Brooks, Aisha Khan, Lena Park', 2, 'withdrawn', 409, { initials: '+4' })];
+
+    // ----- money
+    const REF = { order: '5O190127TN364715T', auth: '7MN40918RK225310X', capt: '2GH65173LA904418C', payo: '9QX20381VD773952B' };
+    const R = (label, key) => ({ label, value: REF[key], icon: s.copied === key ? 'i-check' : 'i-copy', onClick: () => this.copy(REF[key]) });
+    const M = (tone, st, icon, label, tag, amt, text, when, refs, last) => ({ tone, st, icon, label, tag, amt, text, when, refs: refs || [], lineCls: last ? 'sc-visually-hidden' : '' });
+    const hz = this.usd(H.total);
+    const A = (state, tag, text, when) => M('authorized', state, state === 'is-released' ? 'i-shield' : 'i-shield', 'Authorized', tag, hz, text, when, [R('Order', 'order'), R('Auth', 'auth')]);
+    let money;
+    if (v === 'offering') money = [A('is-now', 'On hold', 'Held on your PayPal since 6:41 AM. Nothing has been charged. This is the most the shift can cost.', 'Oct 12 · 6:41 AM'), M('captured', 'is-next', 'i-banknote', 'Captured', 'Up next', '$–', 'Charged only after you approve the hours worked, and never more than the hold.', ''), M('paid', 'is-next', 'i-wallet', 'Paid', 'Up next', '$–', 'Sent to the worker\u2019s PayPal right after you approve their hours.', '', [], true)];
+    else if (v === 'unfilled' || v === 'cancelled') money = [A('is-released', 'Released', v === 'unfilled' ? 'The hold was released at 7:00 AM because nobody claimed the shift. Nothing was charged.' : 'You cancelled the gap. The hold was released and nothing was charged.', v === 'unfilled' ? 'Oct 12 · 7:00 AM' : 'Oct 12 · 6:55 AM'), M('captured', 'is-skipped', 'i-banknote', 'Captured', 'Not applicable', '$0.00', 'No one worked the shift, so there is nothing to charge.', ''), M('paid', 'is-skipped', 'i-wallet', 'Paid', 'Not applicable', '$0.00', 'No payout is needed.', '', [], true)];
+    else if (v === 'filled') money = [A('is-done', 'Held', 'Held at ' + hz + '. Jordan claimed at $24.20/hr, so the final charge will be lower than the hold; the rest is released.', 'Oct 12 · 6:41 AM'), M('captured', 'is-next', 'i-banknote', 'Captured', 'Up next', '$–', 'Charged after the shift, once you approve Jordan\u2019s hours.', ''), M('paid', 'is-next', 'i-wallet', 'Paid', 'Up next', '$–', 'Jordan is paid $193.60 right after you approve.', '', [], true)];
+    else if (v === 'inProgress') money = [A('is-done', 'Held', 'Held at ' + hz + ' while Jordan works. Nothing has been charged.', 'Oct 12 · 6:41 AM'), M('captured', 'is-next', 'i-banknote', 'Captured', 'Up next', '$–', 'Charged after the shift, once you approve Jordan\u2019s hours.', ''), M('paid', 'is-next', 'i-wallet', 'Paid', 'Up next', '$–', 'Jordan is paid $193.60 right after you approve.', '', [], true)];
+    else if (v === 'pendingApproval') money = [A('is-done', 'Held', 'Held at ' + hz + '. Still nothing charged.', 'Oct 12 · 6:41 AM'), M('captured', 'is-next', 'i-banknote', 'Captured', 'Waiting for you', '$–', 'Charged when you approve Jordan\u2019s 8 hours.', ''), M('paid', 'is-next', 'i-wallet', 'Paid', 'Up next', '$–', 'Jordan is paid right after you approve.', '', [], true)];
+    else if (v === 'captureDeclined') money = [A('is-done', 'Held', 'The hold was placed at ' + hz + '.', 'Oct 12 · 6:41 AM'), M('captured', 'is-failed', 'i-warn', 'Captured', 'Declined', '$212.30', 'PayPal declined this charge. Jordan hasn\u2019t been paid yet.', 'Oct 12 · 3:52 PM', [R('Capture', 'capt')]), M('paid', 'is-next', 'i-wallet', 'Paid', 'Waiting', '$–', 'Jordan is paid once the charge goes through.', '', [], true)];
+    else money = [A('is-done', 'Held', 'The hold was placed at ' + hz + '.', 'Oct 12 · 6:41 AM'), M('captured', 'is-done', 'i-banknote', 'Captured', 'Charged', '$212.30', 'You were charged for the hours worked. The unused hold was released.', 'Oct 12 · 3:52 PM', [R('Capture', 'capt')]), M('paid', 'is-failed', 'i-warn', 'Paid', 'Payout failed', '$193.60', 'PayPal couldn\u2019t send this to Jordan Reyes. They haven\u2019t been paid yet.', 'Oct 12 · 3:54 PM', [R('Payout', 'payo')], true)];
+    if (s.extra && v === 'offering') money[0].text = 'Held at ' + this.usd(H20.total) + ' now. The larger hold of ' + hz + ' starts once you approve it.';
+
+    // ----- header bits
+    const facts = [
+      { k: 'Current rate', v: v === 'offering' ? w2 + '/hr · wave 2' : filled ? '$24.20/hr · final' : v === 'unfilled' ? w3 + '/hr · cap reached' : '$22.00/hr · base' },
+      { k: 'Cap', v: '+' + P + '% · ' + w3 + '/hr' },
+      { k: 'Fill by', v: '7:00 AM' },
+      { k: 'Worker', v: filled ? 'Jordan Reyes' : 'Not filled yet' },
+    ];
+    const banners = {
+      offering: { tone: 'info', icon: 'i-send', title: 'Wave 2 is open and nobody has claimed yet', text: 'Wave 3 goes out at 6:52 AM at ' + w3 + '/hr, the cap, to everyone eligible.' },
+      filled: { tone: 'success', icon: 'i-check', title: 'Jordan Reyes claimed this at 6:49 AM', text: 'Final rate $24.20/hr, pay $193.60. The other offers were withdrawn.' },
+      unfilled: { tone: 'warning', icon: 'i-warn', title: 'Nobody claimed this shift', text: 'The ' + hz + ' hold was released at 7:00 AM. Nothing was charged.' },
+      inProgress: { tone: 'info', icon: 'i-play', title: 'Jordan Reyes is on shift', text: 'Started at 7:00 AM. Hours are approved after the shift ends.' },
+      pendingApproval: { tone: 'pending', icon: 'i-hourglass', title: 'Jordan finished at 3:00 PM. Hours need your approval', text: 'Money moves only after you approve. Approving happens on the Approvals screen (coming soon).' },
+      captureDeclined: { tone: 'pending', icon: 'i-hourglass', title: 'Settling is stuck on the charge', text: 'Hours were approved, but PayPal declined the charge. See Money below.' },
+      payoutFailed: { tone: 'pending', icon: 'i-hourglass', title: 'Settling is stuck on the payout', text: 'You were charged, but the payout to Jordan failed. See Money below.' },
+      cancelled: { tone: 'info', icon: 'i-ban', title: 'You cancelled this gap', text: 'Offers were withdrawn and the hold was released. Nothing was charged.' },
+    };
+    const rec = { captureDeclined: { on: true, title: 'PayPal declined the charge of $212.30', text: 'Jordan\u2019s pay is waiting. Check your PayPal account, then retry the charge.', cta: 'Retry charge', ref: 'capt' }, payoutFailed: { on: true, title: 'The payout to Jordan Reyes failed', text: 'You were charged $212.30 and the money is safe. Retry the payout; if it fails again, copy the reference and contact support.', cta: 'Retry payout', ref: 'payo' } }[v] || { on: false };
+    const canW = v === 'offering', canC = v === 'offering' || v === 'filled';
+    const dOpts = [P + 10, P + 20, P + 30].filter(x => x <= 50);
+    const d = Math.min(Math.max(s.draft, P + 10), 50), Hd = this.hold(d);
+
+    return {
+      stateChips: this.VIEWS.map(k => chip(L[k], v === k, () => this.go(k))),
+      widthChips: [1440, 1280, 1024].map(w => chip(String(w), s.width === w, () => this.setState({ width: w }))),
+      motionChips: [['Normal', 'normal'], ['Reduced', 'reduced']].map(([l, k]) => chip(l, s.motion === k, () => this.setState({ motion: k }))),
+      width: s.width, motion: s.motion, toast: s.toast,
+      slotBadge: { cls: SB[0], icon: SB[1], label: SB[2] }, moneyBadge: { cls: MB[0], icon: MB[1], label: MB[2] },
+      noWiden: !canW, noCancel: !canC,
+      widenTip: canW ? '' : 'Only while offering is in progress', cancelTip: canC ? '' : 'Not available once the shift has started or ended',
+      openCap: () => { if (canW || v === 'unfilled') this.setState({ dlg: 'cap', draft: P + 10 }); },
+      openCancel: () => { if (canC) this.setState({ dlg: 'cancel' }); },
+      closeDlg: () => this.setState({ dlg: null }),
+      dlgCap: s.dlg === 'cap', dlgCancel: s.dlg === 'cancel', holdText: hz,
+      capTitle: v === 'unfilled' ? 'Raise the cap and re-offer' : 'Widen the cap',
+      capChoices: dOpts.map(p => ({ pct: p, pressed: p === d, onClick: () => this.setState({ draft: p }) })),
+      capDraft: d, capNewRate: this.usd(this.rate(d)), capOldHold: hz, capNewHold: this.usd(Hd.total), capExtra: this.usd(Hd.total - H.total),
+      confirmCap: () => { const extra = Hd.total - H.total; this.setState({ dlg: null, capPrem: d, extra, view: v === 'unfilled' ? 'offering' : v }); this.say('Cap widened to +' + d + '%'); },
+      confirmCancel: () => { this.setState({ dlg: null, view: 'cancelled' }); this.say('Gap cancelled. Hold of ' + hz + ' released.'); },
+      widenRadius: () => this.say('Radius widened to 10 mi. Re-offering now.'),
+      facts, banner: Object.assign({ on: true }, banners[v]), suggestOn: v === 'unfilled',
+      waves, offers, offersNote: offers.length + ' rows · times are relative; hover for the clock time',
+      money, extraOn: !!s.extra && v === 'offering', extraAmt: this.usd(s.extra || 0), capPrem: P,
+      approveExtra: () => { this.setState({ extra: 0 }); this.say('Hold increased to ' + hz); },
+      recovery: rec, retry: () => this.say('Retrying. This page updates when PayPal replies.'),
+      copyRecovery: () => this.copy(rec.ref ? REF[rec.ref] : ''),
+    };
+  }
+}
+
+</script>
+</body>
+</html>

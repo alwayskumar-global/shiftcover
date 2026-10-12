@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components.css">
+<link rel="stylesheet" href="review.css">
+<style>body{margin:0}</style>
+</helmet>
+<div class="rv-page">
+  <section class="rv-bar" aria-label="Review controls">
+    <div class="rv-bar__top">
+      <h1 class="rv-bar__title">W2 · Claimed confirmation</h1>
+      <span class="rv-bar__tag">review controls, not part of the product</span>
+      <a class="rv-bar__home" href="index.dc.html">All pages</a>
+    </div>
+    <div class="rv-bar__groups">
+      <div class="rv-group"><span class="rv-group__label">Viewport width</span>
+        <div class="rv-group__chips" role="group" aria-label="Width">
+          <sc-for list="{{ widthChips }}" as="c" hint-placeholder-count="3"><button class="rv-chip" aria-pressed="{{ c.pressed }}" onClick="{{ c.onClick }}">{{ c.label }}</button></sc-for>
+        </div></div>
+      <div class="rv-group"><span class="rv-group__label">Motion</span>
+        <div class="rv-group__chips" role="group" aria-label="Motion">
+          <sc-for list="{{ motionChips }}" as="c" hint-placeholder-count="2"><button class="rv-chip" aria-pressed="{{ c.pressed }}" onClick="{{ c.onClick }}">{{ c.label }}</button></sc-for>
+        </div></div>
+      <div class="rv-group"><span class="rv-group__label">Entrance</span>
+        <div class="rv-group__chips"><button class="rv-chip" aria-pressed="false" onClick="{{ replay }}">Replay</button></div></div>
+    </div>
+  </section>
+
+  <div class="rv-stage">
+    <div class="rv-device-wrap">
+      <div class="rv-device" data-width="{{ width }}">
+        <div class="rv-device__status" aria-hidden="true"><span>6:49</span><span>5G</span></div>
+        <div class="rv-device__scroll">
+
+<!-- ===== PRODUCT: W2 claimed ===== -->
+<main class="sc-app" data-motion="{{ motion }}">
+  <header class="sc-app__header">
+    <span class="sc-wordmark"><span class="sc-wordmark__mark"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-check"></use></svg></span>ShiftCover Pay</span>
+  </header>
+  <section class="sc-app__body {{ riseClass }}">
+    <div class="sc-booked">
+      <span class="sc-booked__disc"><svg class="sc-icon sc-icon--xl" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-check"></use></svg></span>
+      <h1 class="sc-booked__title" role="status">You're booked.</h1>
+      <p class="sc-booked__sub">Maple &amp; Rye is expecting you today at 7:00 AM.</p>
+    </div>
+
+    <article class="sc-card" aria-labelledby="summary-title">
+      <p class="sc-eyebrow" id="summary-title">Your shift</p>
+      <ul class="sc-ticket__meta">
+        <li class="sc-ticket__meta-row"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-calendar"></use></svg><span><strong>Line cook</strong> · Today, 7:00 AM – 3:00 PM</span></li>
+        <li class="sc-ticket__meta-row"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-clock"></use></svg><span>8 hours at $24.20/hr</span></li>
+        <li class="sc-ticket__meta-row"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-pin"></use></svg><span><strong>Maple &amp; Rye</strong><br>1234 NW 23rd Ave, Portland, OR 97210</span></li>
+      </ul>
+      <a class="sc-link-row" href="#open-in-maps" data-map-href="{{ mapHref }}">Open in Maps<svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-arrow-up-right"></use></svg></a>
+    </article>
+
+    <article class="sc-card sc-card--guarantee" aria-labelledby="pay-title">
+      <p class="sc-eyebrow" id="pay-title">Guaranteed pay</p>
+      <p class="sc-ticket__amount">$193.60</p>
+      <p class="sc-ticket__formula">8 h × $24.20/hr</p>
+      <p class="sc-ticket__payline"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-shield"></use></svg><span>The money is already on hold with PayPal. It goes to your PayPal account once the manager approves your hours.</span></p>
+    </article>
+
+    <article class="sc-card" aria-labelledby="next-title">
+      <h2 class="sc-card__title" id="next-title">What happens next</h2>
+      <ol class="sc-steps">
+        <sc-for list="{{ steps }}" as="st" hint-placeholder-count="5">
+          <li class="sc-steps__item {{ st.cls }}">
+            <span class="sc-steps__node" aria-hidden="true">{{ st.n }}</span>
+            <div><p class="sc-steps__title">{{ st.title }}<sc-if value="{{ st.isNext }}" hint-placeholder-val="{{ false }}"><span class="sc-steps__tag">Next</span></sc-if></p><p class="sc-steps__text">{{ st.text }}</p></div>
+          </li>
+        </sc-for>
+      </ol>
+    </article>
+  </section>
+  <footer class="sc-app__footer">
+    <div class="sc-app__footer-inner">
+      <a class="sc-btn sc-btn--primary sc-btn--lg sc-btn--block" href="#my-shifts">Go to My shifts<svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-arrow-right"></use></svg></a>
+    </div>
+  </footer>
+</main>
+<!-- ===== /PRODUCT ===== -->
+
+        </div>
+        <div class="rv-device__home" aria-hidden="true"></div>
+      </div>
+      <span class="rv-device-label">{{ width }} × 844 · scroll inside the frame; the button stays pinned</span>
+    </div>
+    <aside class="rv-notes" aria-label="Notes">
+      <div class="rv-card">
+        <h2 class="rv-card__title">Booked</h2>
+        <div class="rv-card__row"><span class="rv-card__key">Contract</span><span class="rv-card__val rv-mono">slot.status: confirmed · worker = viewer</span></div>
+        <div class="rv-card__row"><span class="rv-card__key">Entry</span><span class="rv-card__val">Reached from W1 after a successful claim (auto-navigates after 1.5s). Also the landing page when a claimed worker reopens their link.</span></div>
+        <div class="rv-card__row"><span class="rv-card__key">Behavior</span><span class="rv-card__val">"Open in Maps" opens the device's maps app with the venue address. "Go to My shifts" is the only entry point built here; My shifts is a later gate.</span></div>
+        <div class="rv-card__row"><span class="rv-card__key">Accessibility</span><span class="rv-card__val">"You're booked." is a status region and receives focus on load. Steps are an ordered list; the next step is tagged with the word "Next", not just color. Button 56px, map link 48px.</span></div>
+        <div class="rv-card__row"><span class="rv-card__key">Reduced motion</span><span class="rv-card__val">Normal: content fades in with a 4px rise over 240ms. Reduced: content appears instantly, nothing else changes.</span></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { width: 390, motion: 'normal', rise: true };
+  replay = () => { this.setState({ rise: false }); setTimeout(() => this.setState({ rise: true }), 40); };
+  renderVals() {
+    const s = this.state;
+    const chip = (label, pressed, fn) => ({ label, pressed, onClick: fn });
+    const T = [
+      ['Arrive by 7:00 AM', 'Head to Maple & Rye. The kitchen is expecting you.'],
+      ['Tap "I\u2019ve arrived"', 'In ShiftCover, when you\u2019re at the door. This starts your shift.'],
+      ['Tap "Finished"', 'When your shift ends, around 3:00 PM.'],
+      ['The manager approves your hours', 'They check the time you worked and confirm it.'],
+      ['You get paid', '$193.60 goes to your PayPal account.'],
+    ];
+    return {
+      width: s.width, motion: s.motion,
+      widthChips: [360, 390, 430].map(w => chip(String(w), s.width === w, () => this.setState({ width: w }))),
+      motionChips: [['Normal', 'normal'], ['Reduced', 'reduced']].map(([l, k]) => chip(l, s.motion === k, () => this.setState({ motion: k }))),
+      replay: this.replay,
+      riseClass: s.rise ? 'sc-rise' : '',
+      mapHref: 'maps-link-from-venue_address',
+      steps: T.map(([title, text], i) => ({ n: i + 1, title, text, isNext: i === 0, cls: i === 0 ? 'sc-steps__item--next' : '' })),
+    };
+  }
+}
+
+</script>
+</body>
+</html>

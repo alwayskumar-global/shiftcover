@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="review.css">
+<style>body{margin:0}</style>
+</helmet>
+<div class="rv-page">
+  <section class="rv-bar" aria-label="Page header">
+    <div class="rv-bar__top"><h1 class="rv-bar__title">Microcopy</h1><span class="rv-bar__tag">handoff · every non-obvious string</span><a class="rv-bar__home" href="index.dc.html">All pages</a></div>
+  </section>
+  <main class="rv-doc">
+    <h2 class="rv-doc__title">Microcopy table</h2>
+    <p class="rv-doc__lead">One row per string, with the screen and state it appears in. <span class="rv-mono">{curly}</span> parts are runtime values. Tone: plain, kind, specific, no blame. Money strings always say what the amount is (hold, charged, paid). Times are 12-hour in the venue's time zone.</p>
+    <div class="rv-filters" role="group" aria-label="Filter by screen">
+      <sc-for list="{{ filters }}" as="f" hint-placeholder-count="8"><button class="rv-filter" aria-pressed="{{ f.pressed }}" onClick="{{ f.onClick }}">{{ f.label }}</button></sc-for>
+      <input class="rv-search" type="search" placeholder="Search strings" aria-label="Search strings" value="{{ q }}" onInput="{{ onQ }}">
+      <span class="rv-count">{{ count }}</span>
+    </div>
+    <div class="rv-card">
+      <div class="rv-table-wrap">
+        <div class="rv-table rv-table--wide rv-cols-mc" role="table">
+          <div class="rv-thead" role="rowgroup"><div class="rv-tr" role="row"><div class="rv-th" role="columnheader">Screen</div><div class="rv-th" role="columnheader">State</div><div class="rv-th" role="columnheader">Element</div><div class="rv-th" role="columnheader">String</div><div class="rv-th" role="columnheader">Note</div></div></div>
+          <div role="rowgroup">
+            <sc-for list="{{ rows }}" as="r" hint-placeholder-count="30">
+              <div class="rv-tr" role="row"><div class="rv-td rv-n" role="cell"><span class="rv-mono">{{ r.screen }}</span></div><div class="rv-td" role="cell">{{ r.state }}</div><div class="rv-td" role="cell">{{ r.el }}</div><div class="rv-td rv-str" role="cell">{{ r.str }}</div><div class="rv-td" role="cell">{{ r.note }}</div></div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { f: 'All', q: '' };
+  ROWS = (() => {
+    const out = [];
+    const S = (screen) => (state, el, str, note) => out.push({ screen, state, el, str, note: note || '' });
+    let w = S('W1');
+    w('all', 'Wordmark', 'ShiftCover Pay');
+    w('loading', 'Screen-reader status', 'Loading shift details', 'Visually hidden; container is aria-busy');
+    w('available', 'Eyebrow', 'Shift offer');
+    w('available', 'Expiry badge', '{m:ss} left', 'e.g. 12:41 left');
+    w('available · under 2:00', 'Expiry badge (urgent)', 'Ending soon · {m:ss} left', 'Alert icon + red tone');
+    w('available', 'Expiry aria-label', '{m} minutes {s} seconds left to claim', 'role=timer, aria-live off');
+    w('available', 'Distance row', 'Maple & Rye · Portland, OR · 2.4 mi away');
+    w('available', 'Date row', 'Today · 7:00 AM – 3:00 PM');
+    w('available', 'Duration row', '8 hours');
+    w('available', 'Pay eyebrow', 'You\u2019d earn', 'Worker sees pay only, never the fee or hold ceiling');
+    w('available', 'Pay formula', '8 h × $24.20/hr');
+    w('available', 'Guarantee title', 'Pay guaranteed: funds are on hold');
+    w('available', 'Guarantee text', 'Maple & Rye has already set this money aside with PayPal.');
+    w('available', 'Payment timing', 'You\u2019re paid to your PayPal account after the manager approves your hours.');
+    w('available', 'Primary button', 'Claim this shift');
+    w('available', 'Secondary button', 'Not available', 'Asks to confirm, no reason requested');
+    w('skip confirm', 'Prompt', 'Skip this shift? We won\u2019t ask why.');
+    w('skip confirm', 'Buttons', 'Yes, skip it · Go back');
+    w('rate rising', 'Banner title', 'Rate increased to $24.20/hr');
+    w('rate rising', 'Banner text', 'It was $22.00/hr when this shift was first offered. That\u2019s $17.60 more for the shift.', 'Delta = hours × (new − first rate)');
+    w('rate rising', 'Formula suffix', '(was $22.00)', 'Struck through');
+    w('claiming', 'Button', 'Claiming…', 'Spinner hidden under reduced motion');
+    w('claim error', 'Alert title', 'Your claim didn\u2019t go through');
+    w('claim error', 'Alert text', 'Nothing was booked. Check your connection and try again.');
+    w('claim error', 'Button', 'Try again');
+    w('claimed', 'Title', 'You got it.');
+    w('claimed', 'Text', 'The shift is yours. We\u2019re opening your booking.');
+    w('claimed', 'Hint', 'Taking you to your booking…');
+    w('claimed', 'Button', 'See your booking');
+    w('taken', 'Title', 'Someone else just claimed this shift');
+    w('taken', 'Text', 'Thanks for being quick. It went to another team member a moment ago.', 'Kind tone, no blame');
+    w('taken', 'Button', 'See {n} other open shifts', 'Links to My shifts (later gate)');
+    w('taken · none', 'Hint', 'No other open shifts right now.');
+    w('expired', 'Title', 'This offer has ended');
+    w('expired', 'Text', 'The time to claim this shift ran out. You don\u2019t need to do anything.', 'Neutral tone, not red');
+    w('withdrawn', 'Title', 'This shift is no longer available');
+    w('withdrawn', 'Text', 'Maple & Rye filled it another way. Thanks for checking.');
+    w('invalid', 'Title', 'This link doesn\u2019t work');
+    w('invalid', 'Text', 'It may have expired, or it has already been used. We can email you a new one.');
+    w('invalid', 'Field label / placeholder', 'Your email · you@example.com');
+    w('invalid · error', 'Field error', 'Enter the email address you signed up with.');
+    w('invalid', 'Button', 'Email me a new link');
+    w('invalid · sent', 'Alert title', 'Check your email');
+    w('invalid · sent', 'Alert text', 'If that address is on a ShiftCover team, a new link is on its way.', 'Identical whether or not the address is known');
+    w('load error', 'Title', 'Can\u2019t reach ShiftCover');
+    w('load error', 'Text', 'Check your connection and try again. Nothing has been claimed.');
+    w('load error', 'Button', 'Try again');
+    w('declined', 'Title', 'Okay, we\u2019ve passed');
+    w('declined', 'Text', 'We won\u2019t ask why. Thanks for letting us know.');
+    w = S('W2');
+    w('booked', 'Title', 'You\u2019re booked.');
+    w('booked', 'Subtitle', 'Maple & Rye is expecting you today at 7:00 AM.');
+    w('booked', 'Card eyebrow', 'Your shift');
+    w('booked', 'Rows', 'Line cook · Today, 7:00 AM – 3:00 PM  |  8 hours at $24.20/hr  |  Maple & Rye, {venue_address}', 'Address is sample data (data gap)');
+    w('booked', 'Map link', 'Open in Maps');
+    w('booked', 'Pay card', 'Guaranteed pay · $193.60 · 8 h × $24.20/hr');
+    w('booked', 'Pay note', 'The money is already on hold with PayPal. It goes to your PayPal account once the manager approves your hours.');
+    w('booked', 'Section title', 'What happens next');
+    w('booked', 'Step 1', 'Arrive by 7:00 AM — Head to Maple & Rye. The kitchen is expecting you.');
+    w('booked', 'Step 2', 'Tap \u201cI\u2019ve arrived\u201d — In ShiftCover, when you\u2019re at the door. This starts your shift.');
+    w('booked', 'Step 3', 'Tap \u201cFinished\u201d — When your shift ends, around 3:00 PM.');
+    w('booked', 'Step 4', 'The manager approves your hours — They check the time you worked and confirm it.');
+    w('booked', 'Step 5', 'You get paid — $193.60 goes to your PayPal account.');
+    w('booked', 'Step tag', 'Next', 'Word, not only colour');
+    w('booked', 'Primary button', 'Go to My shifts');
+    w = S('M1');
+    w('all', 'Brand headline', 'Someone calls in sick. The shift gets covered.');
+    w('all', 'Point 1', 'Money is held first — You approve a maximum with PayPal. You only pay for hours worked.');
+    w('all', 'Point 2', 'Offered in waves — Qualified workers hear first. The rate rises only if nobody claims.');
+    w('all', 'Point 3', 'Paid when you approve — The worker is paid out after you approve their hours.');
+    w('default', 'Title / lead', 'Sign in · Manage your roster and report gaps.');
+    w('default', 'Labels / placeholder', 'Email · Password · you@yourrestaurant.com');
+    w('default', 'Show password toggle', 'Show password / Hide password', 'aria-label, aria-pressed');
+    w('default', 'Buttons', 'Sign in · Send me a sign-in link');
+    w('default', 'Divider', 'or');
+    w('default', 'Footer', 'Workers don\u2019t need an account. They get a link by email or notification.');
+    w('validation', 'Email errors', 'Enter your email address. · Enter a valid email address.');
+    w('validation', 'Password error', 'Enter your password.');
+    w('wrong password', 'Alert title', 'That email and password don\u2019t match', 'Never says which one is wrong');
+    w('wrong password', 'Alert text', 'Check them and try again, or get a sign-in link instead.');
+    w('signing in', 'Button', 'Signing in…');
+    w('link form', 'Title / lead', 'Get a sign-in link · We\u2019ll email you a link that signs you in. No password needed.');
+    w('link form', 'Buttons', 'Send sign-in link · Back to password sign-in');
+    w('link sending', 'Button', 'Sending…');
+    w('link sent', 'Alert title', 'Check your email');
+    w('link sent', 'Alert text', 'If {email} belongs to a manager on ShiftCover, a sign-in link is on its way. It works once and expires in 15 minutes.', 'Expiry is an assumption');
+    w = S('M2');
+    w('all', 'Nav', 'Roster · Workers · Money · Settings', 'Last three have tag \u201cSoon\u201d, aria-disabled');
+    w('all', 'Nav tag', 'Soon');
+    w('all', 'Sign out', 'Sign out', 'aria-label and title');
+    w('all', 'Page title', 'Roster');
+    w('day', 'Subtitle', '{Weekday, Month D, YYYY} · Today · Maple & Rye');
+    w('week', 'Subtitle', 'Week of {Month D, YYYY} · Maple & Rye');
+    w('all', 'Toolbar', 'Today · Previous day / Previous week · Next day / Next week · Day · Week · Report a gap');
+    w('populated', 'Stat labels', '{n} open gap(s) · {n} offering · {n} pending approval · {n} shifts today / this day / this week', 'Singular \u201copen gap\u201d when 1');
+    w('all', 'Legend', 'Status · Planned · Open gap · Offering · Confirmed · In progress · Pending approval · Settled · Unfilled · Cancelled · No-show');
+    w('populated', 'Scheduler corner', 'Team {n}');
+    w('populated · day', 'Now flag', 'Now 6:49 AM');
+    w('populated', 'Gap row flag', 'Shift needs cover', 'Reason (called in sick) is a data gap');
+    w('populated', 'Block titles', 'Open gap · Offering · Wave {n} · Confirmed · In progress · Pending approval · Settled · Unfilled · Cancelled · No-show · {Role} (planned)');
+    w('populated', 'Block subtitle', '{Role} · {time range}', 'Planned shows time range only');
+    w('populated', 'Block tooltip', '{Status} · {role} · {time} · {worker}');
+    w('empty', 'Banner title', 'No gaps today · No gaps on this day · No gaps this week');
+    w('empty', 'Banner text', 'All {n} shifts have someone on them. If someone calls in, report it and we\u2019ll start offering the shift.');
+    w('error', 'Title', 'We couldn\u2019t load the roster');
+    w('error', 'Text', 'Check your connection and try again. Your shifts haven\u2019t changed; only the display failed.');
+    w('error', 'Button', 'Try again');
+    w('loading', 'Aria label', 'Loading roster');
+    w = S('M3');
+    w('all', 'Breadcrumb', 'Roster / Report a gap');
+    w('all', 'Subtitle', 'Tell us what happened. We fill in the details; you check them and approve the money.');
+    w('all', 'Stepper', 'Describe · Check details · Approve hold');
+    w('empty', 'Card title', 'Tell us what happened');
+    w('empty', 'Placeholder', 'e.g. Maria called in sick, need a line cook 7 to 3 today');
+    w('all', 'Hint', 'We read it, you check it. Nothing goes to workers until you approve the hold.');
+    w('all', 'Button', 'Parse');
+    w('parsing', 'Status', 'AI is reading this');
+    w('parsing', 'Button', 'Reading…');
+    w('parse failed', 'Alert title', 'We couldn\u2019t read that note');
+    w('parse failed', 'Alert text', 'Nothing was filled in. Fill in the details below instead, or name the role, the day and the times and try Parse again.');
+    w('all', 'Details title', 'Shift details');
+    w('empty', 'Details hint', 'Or skip the note and fill these in.');
+    w('parse failed', 'Details hint', 'Fill these in by hand.');
+    w('parsed', 'Details hint', 'Filled from your note. Change anything that\u2019s off.');
+    w('parsed', 'AI tags', 'From your note · Role default');
+    w('all', 'Labels', 'Role · Venue · Date · Length · Start · End · Base rate · Maximum premium');
+    w('all', 'Role placeholder', 'Choose a role');
+    w('all', 'Affixes', '$ · / hour · % above base');
+    w('parsed', 'Premium helper', 'Highest rate we\u2019ll offer: {capRate}/hr. The rate only rises if nobody claims.');
+    w('validation', 'Role error', 'Choose a role.');
+    w('validation', 'Date errors', 'Choose a date. · Pick today or a later date.');
+    w('validation', 'Time errors', 'Enter a start time. · Enter an end time. · End must be after start.');
+    w('validation', 'Rate error', 'Enter an hourly rate, like 22.00.');
+    w('validation', 'Premium error', 'Enter a number from 0 to 50.');
+    w('all', 'Review title / badges', 'Review · Waiting for details · Needs your confirmation · Fix highlighted fields · Confirmed · hold needed · Hold not placed · On hold');
+    w('empty', 'Review lead', 'Fill in the details and we\u2019ll show what it will cost.');
+    w('validation', 'Review lead', 'Fix the highlighted fields to see what this will cost.');
+    w('parsed', 'Review keys', 'Role · Date · Time · Venue · Base rate · Max premium');
+    w('parsed', 'Money row 1', 'Base pay — {h} hours × {rate}/hr · if no premium is needed');
+    w('parsed', 'Money row 2', 'Worker pay at the cap — {h} hours × {capRate}/hr (+{n}%)', '$211.20 in the sample');
+    w('parsed', 'Money row 3', 'Platform fee (5%) — 5% of worker pay at the cap', 'Percent is a variable');
+    w('parsed', 'Money row 4', 'Total hold — The most this shift can cost. You are charged for hours worked only.', '$221.76 in the sample');
+    w('parsed', 'Ladder', 'Wave 1 · base · Wave 2 · +{n}% · Wave 3 · cap +{n}%');
+    w('parsed', 'Button', 'Details are correct');
+    w('confirmed', 'Banner', 'Details confirmed · Edit details');
+    w('confirmed', 'PayPal label', 'Approve a hold of up to {hold}. You are only charged for the hours worked.', 'Brief\u2019s required wording');
+    w('confirmed', 'PayPal fine print', 'PayPal sets this money aside now. Anything not used is released.', 'Assumption, see open questions');
+    w('empty', 'Slot (disabled)', 'Available after you confirm the details');
+    w('confirmed', 'Slot (placeholder)', 'PayPal button renders here · 52px', 'Design placeholder only');
+    w('confirmed', 'Slot (loading)', 'Loading secure payment…');
+    w('PayPal window open', 'Slot / alert', 'Waiting for PayPal… · Finish in the PayPal window · Don\u2019t close this page. We\u2019ll update it when PayPal replies.');
+    w('PayPal cancelled', 'Alert', 'You closed PayPal · No hold was placed. Approve it when you\u2019re ready and we\u2019ll start offering the shift.');
+    w('PayPal failed', 'Alert', 'PayPal couldn\u2019t place the hold · Nothing was charged. Check your PayPal funding source, then try again.');
+    w('PayPal failed', 'Button', 'Try again');
+    w('PayPal approved', 'Alert title', '{hold} on hold', '\u201c$221.76 on hold\u201d');
+    w('PayPal approved', 'Alert text', 'Nothing has been charged yet. We\u2019re offering the shift to qualified workers now.');
+    w('PayPal approved', 'Rail', 'Authorized · Now · Captured · After you approve hours · Paid · To the worker');
+    w('PayPal approved', 'Buttons', 'View gap · Back to roster');
+    w = S('M4');
+    w('all', 'Eyebrow', 'Gap · Maple & Rye');
+    w('all', 'Meta', 'Mon, Oct 12 · 7:00 AM – 3:00 PM · 8 hours · Replacing Maria Alvarez', 'Replaced worker is a data gap');
+    w('all', 'Slot badges', 'Offering · Confirmed · Unfilled · In progress · Pending approval · Settling · Cancelled');
+    w('all', 'Money badges', '{hold} on hold · Capture declined · Payout failed · Hold released');
+    w('all', 'Actions', 'Widen the cap · Cancel gap');
+    w('disabled', 'Tooltips', 'Only while offering is in progress · Not available once the shift has started or ended');
+    w('all', 'Fact labels', 'Current rate · Cap · Fill by · Worker');
+    w('all', 'Fact values', '{rate}/hr · wave 2 · $24.20/hr · final · $26.40/hr · cap reached · Not filled yet');
+    w('offering', 'Banner', 'Wave 2 is open and nobody has claimed yet — Wave 3 goes out at 6:52 AM at {rate}/hr, the cap, to everyone eligible.');
+    w('filled', 'Banner', 'Jordan Reyes claimed this at 6:49 AM — Final rate $24.20/hr, pay $193.60. The other offers were withdrawn.');
+    w('unfilled', 'Banner', 'Nobody claimed this shift — The {hold} hold was released at 7:00 AM. Nothing was charged.');
+    w('in progress', 'Banner', 'Jordan Reyes is on shift — Started at 7:00 AM. Hours are approved after the shift ends.');
+    w('pending approval', 'Banner', 'Jordan finished at 3:00 PM. Hours need your approval — Money moves only after you approve. Approving happens on the Approvals screen (coming soon).');
+    w('capture declined', 'Banner', 'Settling is stuck on the charge — Hours were approved, but PayPal declined the charge. See Money below.');
+    w('payout failed', 'Banner', 'Settling is stuck on the payout — You were charged, but the payout to Jordan failed. See Money below.');
+    w('cancelled', 'Banner', 'You cancelled this gap — Offers were withdrawn and the hold was released. Nothing was charged.');
+    w('unfilled', 'Suggestions', 'Try one of these · Raise the cap · Widen the radius · Raise cap and re-offer · Widen radius and re-offer');
+    w('unfilled', 'Suggestion text', 'Raise the cap: from +20% ($26.40/hr) to +30% ($28.60/hr). The extra hold is $18.48; you are still charged for hours worked only.');
+    w('unfilled', 'Suggestion text', 'Widen the radius: offer to qualified workers farther away: 5 mi to 10 mi. Rates stay the same.', 'Radius values are sample data');
+    w('all', 'Section A', 'A · Offer waves — The rate rises only if nobody claims. The dashed ceiling is your cap.');
+    w('offering', 'Wave tags / results', 'Sent · Open now · Sends 6:52 AM · 1 declined · 1 opened · 1 waiting · Goes out in 3 min unless someone claims.');
+    w('unfilled', 'Wave tag / results', 'No takers · 9 offers · all expired at 7:00 AM');
+    w('filled', 'Wave tags / results', 'Claimed · Not sent · Not needed · Jordan Reyes claimed at 6:49 AM · 4 withdrawn');
+    w('cancelled', 'Wave tags / results', 'Stopped · Withdrawn when you cancelled · Not sent');
+    w('all', 'Cap flag', 'Cap');
+    w('all', 'Section B', 'B · Offers — {n} rows · times are relative; hover for the clock time');
+    w('all', 'Table head', 'Worker · Wave · Status · When');
+    w('all', 'Offer statuses', 'Sent · Opened · Claimed · Declined · Expired · Withdrawn');
+    w('all', 'Relative time', '{Status} {n} min ago · just now · {n} h ago');
+    w('filled', 'Claimed row', 'Final rate $24.20/hr · pay $193.60');
+    w('all', 'Section C', 'C · Money — Authorized, then Captured, then Paid. Each amount says what it is.');
+    w('offering', 'Authorized text', 'Held on your PayPal since 6:41 AM. Nothing has been charged. This is the most the shift can cost.');
+    w('offering', 'Captured text', 'Charged only after you approve the hours worked, and never more than the hold.');
+    w('offering', 'Paid text', 'Sent to the worker\u2019s PayPal right after you approve their hours.');
+    w('filled', 'Authorized text', 'Held at {hold}. Jordan claimed at $24.20/hr, so the final charge will be lower than the hold; the rest is released.');
+    w('in progress', 'Authorized text', 'Held at {hold} while Jordan works. Nothing has been charged.');
+    w('unfilled', 'Authorized text', 'The hold was released at 7:00 AM because nobody claimed the shift. Nothing was charged.');
+    w('cancelled', 'Authorized text', 'You cancelled the gap. The hold was released and nothing was charged.');
+    w('unfilled · cancelled', 'Captured / Paid text', 'No one worked the shift, so there is nothing to charge. · No payout is needed.');
+    w('unfilled · cancelled', 'Stage tags', 'Released · Not applicable');
+    w('capture declined', 'Captured text', 'PayPal declined this charge. Jordan hasn\u2019t been paid yet.');
+    w('capture declined', 'Recovery', 'PayPal declined the charge of $212.30 — Jordan\u2019s pay is waiting. Check your PayPal account, then retry the charge.');
+    w('capture declined', 'Buttons', 'Retry charge · Copy reference for support');
+    w('payout failed', 'Paid text', 'PayPal couldn\u2019t send this to Jordan Reyes. They haven\u2019t been paid yet.');
+    w('payout failed', 'Recovery', 'The payout to Jordan Reyes failed — You were charged $212.30 and the money is safe. Retry the payout; if it fails again, copy the reference and contact support.');
+    w('payout failed', 'Buttons', 'Retry payout · Copy reference for support');
+    w('all', 'Reference chip', 'Order · Auth · Capture · Payout + id', 'Click copies; aria-label \u201cCopy {label} reference\u201d');
+    w('widen cap dialog', 'Title / text', 'Widen the cap · Workers only see higher rates if nobody claims at the current one. Nothing changes until you approve the extra hold in PayPal.');
+    w('widen cap dialog', 'Rows', 'Highest rate offered — Base $22.00/hr + {n}% · Total hold — Was {hold} · Extra hold to approve — Charged only for hours worked');
+    w('widen cap dialog', 'Buttons', 'Not now · Widen cap');
+    w('widen cap', 'Inline alert', 'Approve the extra {amount} to use the wider cap — The cap is now +{n}%. Workers only see the higher rate once PayPal confirms the larger hold.');
+    w('cancel dialog', 'Title / text', 'Cancel this gap? · Line cook, today 7:00 AM to 3:00 PM. This can\u2019t be undone.');
+    w('cancel dialog', 'Consequences', 'Offers to workers are withdrawn. · The {hold} hold is released. Nothing is charged. · The shift stays uncovered.');
+    w('cancel dialog', 'Buttons', 'Keep gap · Cancel gap', 'Safe option is first and focused');
+    w('toasts', 'Messages', 'Reference copied · Cap widened to +{n}% · Gap cancelled. Hold of {hold} released. · Radius widened to 10 mi. Re-offering now. · Hold increased to {hold} · Retrying. This page updates when PayPal replies.');
+    return out;
+  })();
+  renderVals() {
+    const s = this.state;
+    const screens = ['All', 'W1', 'W2', 'M1', 'M2', 'M3', 'M4'];
+    const q = s.q.trim().toLowerCase();
+    const rows = this.ROWS.filter(r => (s.f === 'All' || r.screen === s.f) && (!q || (r.str + ' ' + r.el + ' ' + r.state + ' ' + r.note).toLowerCase().includes(q)));
+    return {
+      filters: screens.map(f => ({ label: f === 'All' ? 'All screens' : f, pressed: s.f === f, onClick: () => this.setState({ f }) })),
+      q: s.q, onQ: e => this.setState({ q: e.target.value }),
+      rows, count: rows.length + ' of ' + this.ROWS.length + ' rows',
+    };
+  }
+}
+
+</script>
+</body>
+</html>

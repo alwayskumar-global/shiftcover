@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<style>
+body{margin:0;background:var(--sc-bg-page);color:var(--sc-text);font:var(--sc-text-body);-webkit-font-smoothing:antialiased}
+a{color:var(--sc-text-link)}a:hover{color:var(--sc-green-800)}
+@keyframes sc-pulse{0%{box-shadow:0 0 0 0 oklch(.8 .15 82 / .7)}70%{box-shadow:0 0 0 8px oklch(.8 .15 82 / 0)}100%{box-shadow:0 0 0 0 oklch(.8 .15 82 / 0)}}
+@keyframes sc-ring{0%,100%{box-shadow:0 0 0 4px var(--ring)}50%{box-shadow:0 0 0 8px transparent}}
+@keyframes sc-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@keyframes sc-spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){[data-sc-anim]{animation:none !important}}
+</style>
+</helmet>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4M12 16h.01"></path></symbol>
+<symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></symbol>
+<symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="m15 9-6 6M9 9l6 6"></path></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></symbol>
+<symbol id="i-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"></path><path d="m21.854 2.147-10.94 10.939"></path></symbol>
+<symbol id="i-hourglass" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14M5 2h14M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"></path></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="m9 12 2 2 4-4"></path></symbol>
+<symbol id="i-ban" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="m4.9 4.9 14.2 14.2"></path></symbol>
+<symbol id="i-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="m10 8 6 4-6 4z"></path></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="14" height="14" rx="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></symbol>
+<symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><circle cx="12" cy="10" r="3"></circle></symbol>
+<symbol id="i-warn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path><path d="M12 9v4M12 17h.01"></path></symbol>
+<symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4M12 8h.01"></path></symbol>
+<symbol id="i-loader" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></symbol>
+<symbol id="i-checks" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 7 17l-5-5M22 10l-7.5 7.5L13 16"></path></symbol>
+<symbol id="i-wallet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"></path><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path></symbol>
+<symbol id="i-banknote" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"></rect><circle cx="12" cy="12" r="2"></circle><path d="M6 12h.01M18 12h.01"></path></symbol>
+<symbol id="i-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M8 2v4M16 2v4M3 10h18"></path></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"></path><circle cx="12" cy="12" r="3"></circle></symbol>
+<symbol id="i-retry" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8M21 3v5h-5M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16M8 16H3v5"></path></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5v14"></path></symbol>
+</defs></svg>
+
+<div style="max-width:1200px;margin:0 auto;padding:48px clamp(16px,4vw,40px) 96px;display:flex;flex-direction:column;gap:72px">
+
+<!-- HEADER -->
+<header style="display:flex;flex-direction:column;gap:20px">
+  <div style="display:flex;align-items:center;gap:12px">
+    <span style="width:40px;height:40px;border-radius:12px;background:var(--sc-action);color:var(--sc-on-action);display:grid;place-items:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-check"></use></svg></span>
+    <span style="font:var(--sc-text-h2)">ShiftCover Pay</span>
+    <span style="font:var(--sc-text-mono);padding:2px 8px;border:1px solid var(--sc-border-strong);border-radius:6px;color:var(--sc-text-muted)">design system v0.1 · gate 1 of 3</span>
+  </div>
+  <h1 style="font:700 clamp(36px,6vw,64px)/1.02 var(--sc-font-display);margin:0;letter-spacing:-.02em;max-width:16ch;text-wrap:balance">The pass: every shift, every dollar, in one line of sight.</h1>
+  <p style="font:var(--sc-text-body-lg);color:var(--sc-text-muted);margin:0;max-width:64ch;text-wrap:pretty">Deliverable 1 for review: assumptions and questions, the signature idea, tokens, and core components. Screens (W1–W2, M1–M4) and the Bryntum and microcopy tables follow once this is approved. Tokens ship as <a href="tokens.css" style="font-family:var(--sc-font-mono);font-size:15px">tokens.css</a>.</p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px">
+    <sc-for list="{{ licenses }}" as="l" hint-placeholder-count="3">
+      <div style="padding:14px 16px;background:var(--sc-bg-surface);border:1px solid var(--sc-border);border-radius:var(--sc-radius-md);display:flex;flex-direction:column;gap:2px">
+        <span style="font:var(--sc-text-eyebrow);letter-spacing:var(--sc-tracking-eyebrow);text-transform:uppercase;color:var(--sc-text-muted)">{{ l.kind }}</span>
+        <span style="font:var(--sc-text-label)">{{ l.name }}</span>
+        <span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted)">{{ l.note }}</span>
+      </div>
+    </sc-for>
+  </div>
+</header>
+
+<!-- 00 ASSUMPTIONS -->
+<section style="display:flex;flex-direction:column;gap:24px">
+  <div><div style="font:var(--sc-text-eyebrow);letter-spacing:var(--sc-tracking-eyebrow);text-transform:uppercase;color:var(--sc-text-muted)">00 · Before we start</div><h2 style="font:var(--sc-text-display);margin:4px 0 0">Assumptions and open questions</h2></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:24px">
+    <div style="background:var(--sc-bg-surface);border:1px solid var(--sc-border);border-radius:var(--sc-radius-lg);padding:24px;display:flex;flex-direction:column;gap:4px">
+      <h3 style="font:var(--sc-text-h3);margin:0 0 8px">Assumptions I am designing with</h3>
+      <sc-for list="{{ assumptions }}" as="a" hint-placeholder-count="6">
+        <div style="display:grid;grid-template-columns:36px 1fr;gap:8px;padding:10px 0;border-top:1px solid var(--sc-divider)">
+          <span style="font:var(--sc-text-mono);color:var(--sc-text-muted)">{{ a.id }}</span>
+          <span style="font:var(--sc-text-body-sm);text-wrap:pretty">{{ a.text }}</span>
+        </div>
+      </sc-for>
+    </div>
+    <div style="background:var(--sc-st-open-bg);border:1px solid var(--sc-st-open-border);border-radius:var(--sc-radius-lg);padding:24px;display:flex;flex-direction:column;gap:4px">
+      <h3 style="font:var(--sc-text-h3);margin:0 0 8px;color:var(--sc-st-open-fg)">Questions (I will keep the default unless you say otherwise)</h3>
+      <sc-for list="{{ questions }}" as="q" hint-placeholder-count="6">
+        <div style="display:grid;grid-template-columns:36px 1fr;gap:8px;padding:10px 0;border-top:1px solid var(--sc-st-open-border)">
+          <span style="font:var(--sc-text-mono);color:var(--sc-st-open-fg)">{{ q.id }}</span>
+          <div style="display:flex;flex-direction:column;gap:4px"><span style="font:var(--sc-text-body-sm);font-weight:600;text-wrap:pretty">{{ q.q }}</span><span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted);text-wrap:pretty">Default: {{ q.d }}</span></div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</section>
+
+<!-- 01 SIGNATURE -->
+<section style="display:flex;flex-direction:column;gap:24px">
+  <div><div style="font:var(--sc-text-eyebrow);letter-spacing:var(--sc-tracking-eyebrow);text-transform:uppercase;color:var(--sc-text-muted)">01 · Signature idea</div><h2 style="font:var(--sc-text-display);margin:4px 0 8px">The Pass</h2>
+  <p style="font:var(--sc-text-body);color:var(--sc-text-muted);margin:0;max-width:72ch;text-wrap:pretty">A kitchen pass is where a plate is handed from one person to the next and nobody has to ask where it is. The <b style="color:var(--sc-text)">Money Timeline</b> is the product's one recurring visual: three stations on a rail, <i>Authorized, Captured, Paid</i>, each with an amount, a plain-English sentence, and a copyable reference. The <b style="color:var(--sc-text)">Wave Timeline</b> reuses the exact same rail so the manager learns one pattern. Done = solid node, Now = ringed node, Next = dashed node, always with a text label. Static fallback with reduced motion: the ring stops pulsing and stays drawn.</p></div>
+
+  <div style="background:var(--sc-bg-surface);border:1px solid var(--sc-border);border-radius:var(--sc-radius-lg);padding:28px;display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px"><h3 style="font:var(--sc-text-h3);margin:0">Money timeline · after approval</h3><span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted)">Slot status: Settled · Payment status: paid</span></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:0 20px">
+      <sc-for list="{{ moneyDone }}" as="s" hint-placeholder-count="3">
+        <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px"><span style="flex:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:{{ s.nodeBg }};color:{{ s.nodeFg }};border:{{ s.nodeBorder }};box-shadow:{{ s.nodeShadow }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#{{ s.icon }}"></use></svg></span><span style="flex:1;border-top:{{ s.line }};display:{{ s.lineDisplay }}"></span></div>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <span style="display:inline-flex;align-items:center;gap:6px;font:var(--sc-text-eyebrow);letter-spacing:var(--sc-tracking-eyebrow);text-transform:uppercase;color:{{ s.fg }}">{{ s.label }} <span style="padding:1px 6px;border-radius:99px;background:{{ s.bg }};color:{{ s.fg }};letter-spacing:0;text-transform:none;font-weight:600">{{ s.stateLabel }}</span></span>
+            <span style="font:700 36px/40px var(--sc-font-display);color:{{ s.amountColor }}">{{ s.amount }}</span>
+            <span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted);text-wrap:pretty">{{ s.text }}</span>
+            <span style="font:var(--sc-text-mono);font-size:12px;color:var(--sc-text-subtle)">{{ s.stamp }}</span>
+            <span style="display:inline-flex;align-self:flex-start;align-items:center;gap:6px;font:var(--sc-text-mono);font-size:12px;padding:3px 8px;background:var(--sc-bg-sunken);border-radius:6px;color:var(--sc-text-muted)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-copy"></use></svg>{{ s.ref }}</span>
+            <span style="font:var(--sc-text-body-sm);color:var(--sc-st-open-fg);font-weight:600;display:{{ s.flagDisplay }}">Amount breakdown pending answer to Q1</span>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="background:var(--sc-bg-surface);border:1px solid var(--sc-border);border-radius:var(--sc-radius-lg);padding:28px;display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px"><h3 style="font:var(--sc-text-h3);margin:0">Money timeline · while offering</h3><span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted)">Slot status: Offering · Payment status: authorized</span></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:0 20px">
+      <sc-for list="{{ moneyMid }}" as="s" hint-placeholder-count="3">
+        <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px"><span data-sc-anim="1" style="--ring:{{ s.ringColor }};flex:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:{{ s.nodeBg }};color:{{ s.nodeFg }};border:{{ s.nodeBorder }};animation:{{ s.anim }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#{{ s.icon }}"></use></svg></span><span style="flex:1;border-top:{{ s.line }};display:{{ s.lineDisplay }}"></span></div>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <span style="display:inline-flex;align-items:center;gap:6px;font:var(--sc-text-eyebrow);letter-spacing:var(--sc-tracking-eyebrow);text-transform:uppercase;color:{{ s.fg }}">{{ s.label }} <span style="padding:1px 6px;border-radius:99px;background:{{ s.bg }};color:{{ s.fg }};letter-spacing:0;text-transform:none;font-weight:600">{{ s.stateLabel }}</span></span>
+            <span style="font:700 36px/40px var(--sc-font-display);color:{{ s.amountColor }}">{{ s.amount }}</span>
+            <span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted);text-wrap:pretty">{{ s.text }}</span>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="background:var(--sc-bg-surface);border:1px solid var(--sc-border);border-radius:var(--sc-radius-lg);padding:28px;display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px"><h3 style="font:var(--sc-text-h3);margin:0">Wave timeline · same rail, rising rate</h3><span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted)">Step height = rate. The cap is a dashed ceiling.</span></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:0 20px">
+      <sc-for list="{{ waves }}" as="w" hint-placeholder-count="3">
+        <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px"><span style="flex:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:{{ w.nodeBg }};color:{{ w.nodeFg }};border:{{ w.nodeBorder }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#{{ w.icon }}"></use></svg></span><span style="flex:1;border-top:{{ w.line }};display:{{ w.lineDisplay }}"></span></div>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <span style="display:inline-flex;align-items:center;gap:6px;font:var(--sc-text-eyebrow);letter-spacing:var(--sc-tracking-eyebrow);text-transform:uppercase;color:{{ w.fg }}">{{ w.label }} <span style="padding:1px 6px;border-radius:99px;background:{{ w.bg }};color:{{ w.fg }};letter-spacing:0;text-transform:none;font-weight:600">{{ w.stateLabel }}</span></span>
+            <span style="font:var(--sc-text-label)">{{ w.when }}</span>
+            <span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted)">{{ w.audience }}</span>
+          </div>
+          <div style="height:120px;display:flex;align-items:flex-end"><div style="width:100%;height:{{ w.barH }};box-sizing:border-box;background:{{ w.barBg }};border-top:{{ w.barTop }};border-radius:8px 8px 0 0;padding:10px 14px;display:flex;flex-direction:column;justify-content:flex-end;gap:0"><span style="font:700 24px/28px var(--sc-font-display);color:{{ w.fg }}">{{ w.rate }}</span><span style="font:var(--sc-text-body-sm);color:{{ w.fg }}">{{ w.rateNote }}</span></div></div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</section>
+
+<!-- 02 COLOR -->
+<section style="display:flex;flex-direction:column;gap:28px">
+  <div><div style="font:var(--sc-text-eyebrow);letter-spacing:var(--sc-tracking-eyebrow);text-transform:uppercase;color:var(--sc-text-muted)">02 · Foundations</div><h2 style="font:var(--sc-text-display);margin:4px 0 8px">Color</h2>
+  <p style="font:var(--sc-text-body);color:var(--sc-text-muted);margin:0;max-width:72ch;text-wrap:pretty">Warm paper neutrals, basil green for trust and action, ember for anything that needs attention. All colors are OKLCH. Layer 1 primitives are never used in components; layer 2 semantic tokens are. A dark theme re-maps layer 2 only.</p></div>
+
+  <div style="display:flex;flex-direction:column;gap:20px">
+    <sc-for list="{{ families }}" as="f" hint-placeholder-count="6">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <span style="font:var(--sc-text-label)">{{ f.label }} <span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted);font-weight:400">· {{ f.note }}</span></span>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:8px">
+          <sc-for list="{{ f.items }}" as="c" hint-placeholder-count="6">
+            <div style="background:{{ c.bg }};color:{{ c.fg }};border:1px solid var(--sc-border);border-radius:var(--sc-radius-md);padding:10px 10px 8px;min-height:72px;display:flex;flex-direction:column;justify-content:flex-end;gap:2px"><span style="font:var(--sc-text-mono);font-size:12px;font-weight:500">{{ c.name }}</span><span style="font:var(--sc-text-mono);font-size:11px">{{ c.val }}</span></div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="background:var(--sc-bg-surface);border:1px solid var(--sc-border);border-radius:var(--sc-radius-lg);padding:24px;display:flex;flex-direction:column">
+    <h3 style="font:var(--sc-text-h3);margin:0 0 12px">Semantic · surfaces, text, lines, actions</h3>
+    <sc-for list="{{ semantic }}" as="r" hint-placeholder-count="10">
+      <div style="display:grid;grid-template-columns:40px minmax(150px,1.1fr) minmax(110px,.8fr) 2fr;gap:12px;align-items:center;padding:8px 0;border-top:1px solid var(--sc-divider)">
+        <span style="width:40px;height:28px;border-radius:6px;border:1px solid var(--sc-border);background:{{ r.bg }}"></span>
+        <span style="font:var(--sc-text-mono);font-size:12px">{{ r.token }}</span>
+        <span style="font:var(--sc-text-mono);font-size:12px;color:var(--sc-text-muted)">{{ r.alias }}</span>
+        <span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted)">{{ r.use }}</span>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="background:var(--sc-bg-surface);border:1px solid var(--sc-border);border-radius:var(--sc-radius-lg);padding:24px;display:flex;flex-direction:column;gap:16px">
+    <div><h3 style="font:var(--sc-text-h3);margin:0 0 4px">Semantic · slot status</h3><span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted)">Five tokens per status: <code style="font-family:var(--sc-font-mono)">-bg -fg -solid -on -border</code>. Status is always icon + label, never color alone.</span></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:12px">
+      <sc-for list="{{ statuses }}" as="s" hint-placeholder-count="9">
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 14px;align-items:center;padding:14px;border:1px solid var(--sc-border);border-radius:var(--sc-radius-md)">
+          <span style="display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px 0 8px;border-radius:99px;font:600 13px/16px var(--sc-font-body);background:{{ s.bg }};color:{{ s.fg }};border:1px {{ s.badgeBorderStyle }} {{ s.border }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#{{ s.icon }}"></use></svg>{{ s.label }}</span>
+          <span style="display:flex;gap:4px;justify-content:flex-end"><i title="bg" style="width:22px;height:22px;border-radius:5px;border:1px solid var(--sc-border);background:{{ s.bg }}"></i><i title="fg" style="width:22px;height:22px;border-radius:5px;background:{{ s.fg }}"></i><i title="solid" style="width:22px;height:22px;border-radius:5px;background:{{ s.solid }};border:1px solid var(--sc-border)"></i><i title="border" style="width:22px;height:22px;border-radius:5px;border:2px {{ s.badgeBorderStyle }} {{ s.border }}"></i></span>
+          <span style="grid-column:1 / -1;font:var(--sc-text-body-sm);color:var(--sc-text-muted);text-wrap:pretty"><span style="font-family:var(--sc-font-mono);font-size:12px;color:var(--sc-text)">{{ s.contract }}</span> · {{ s.use }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:24px">
+    <div style="background:var(--sc-bg-surface);border:1px solid var(--sc-border);border-radius:var(--sc-radius-lg);padding:24px;display:flex;flex-direction:column;gap:12px">
+      <h3 style="font:var(--sc-text-h3);margin:0">Semantic · money states</h3>
+      <sc-for list="{{ money }}" as="m" hint-placeholder-count="4">
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:4px 14px;align-items:center;padding-top:12px;border-top:1px solid var(--sc-divider)">
+          <span style="display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px 0 8px;border-radius:99px;font:600 13px/16px var(--sc-font-body);background:{{ m.bg }};color:{{ m.fg }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#{{ m.icon }}"></use></svg>{{ m.label }}</span>
+          <span style="font:700 22px/28px var(--sc-font-display);color:{{ m.fg }};text-align:right">{{ m.sample }}</span>
+          <span style="grid-column:1 / -1;font:var(--sc-text-body-sm);color:var(--sc-text-muted)"><span style="font-family:var(--sc-font-mono);font-size:12px;color:var(--sc-text)">{{ m.contract }}</span> · {{ m.use }}</span>
+        </div>
+      </sc-for>
+      <span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted);text-wrap:pretty">Failed shares the ember family with Open gap; the warning icon and the word "failed" keep them apart.</span>
+    </div>
+    <div style="background:var(--sc-bg-surface);border:1px solid var(--sc-border);border-radius:var(--sc-radius-lg);padding:24px;display:flex;flex-direction:column;gap:6px">
+      <h3 style="font:var(--sc-text-h3);margin:0 0 6px">Contrast, WCAG AA</h3>
+      <span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted);margin-bottom:6px">Computed from OKLCH to sRGB relative luminance. Re-verify in browser devtools before sign-off.</span>
+      <sc-for list="{{ contrast }}" as="c" hint-placeholder-count="10">
+        <div style="display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:7px 0;border-top:1px solid var(--sc-divider)">
+          <span style="font:var(--sc-text-body-sm)">{{ c.pair }}</span><span style="font:var(--sc-text-mono);font-size:12px">{{ c.ratio }}</span>
+          <span style="display:inline-flex;align-items:center;gap:4px;font:600 12px/16px var(--sc-font-body);color:var(--sc-st-confirmed-fg)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-check"></use></svg>{{ c.req }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</section>
+
+<!-- TYPE / SPACE / RADIUS / ELEVATION / MOTION -->
+<section style="display:flex;flex-direction:column;gap:28px">
+  <div><h2 style="font:var(--sc-text-display);margin:0 0 8px">Type</h2>
+  <p style="font:var(--sc-text-body);color:var(--sc-text-muted);margin:0;max-width:72ch;text-wrap:pretty">Bricolage Grotesque gives headlines and money a warm, slightly irregular voice. Public Sans carries everything functional. IBM Plex Mono is reserved for times, ids and PayPal references so they read as "data". Worker app body never goes below 16px; console prose never below 14px; 12px only for captions on the console.</p></div>
+  <div style="background:var(--sc-bg-surface);border:1px solid var(--sc-border);border-radius:var(--sc-radius-lg);padding:8px 24px">
+    <sc-for list="{{ types }}" as="t" hint-placeholder-count="10">
+      <div style="display:grid;grid-template-columns:minmax(120px,160px) 1fr minmax(140px,200px);gap:16px;align-items:baseline;padding:14px 0;border-top:1px solid var(--sc-divider)">
+        <span style="font:var(--sc-text-mono);font-size:12px;color:var(--sc-text-muted)">{{ t.name }}</span>
+        <span style="font:{{ t.font }};letter-spacing:{{ t.ls }};text-transform:{{ t.tt }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ t.sample }}</span>
+        <span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted);text-align:right">{{ t.spec }}</span>
+      </div>
+    </sc-for>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:24px">
+    <div style="background:var(--sc-bg-surface);border:1px solid var(--sc-border);border-radius:var(--sc-radius-lg);padding:24px;display:flex;flex-direction:column;gap:10px">
+      <h3 style="font:var(--sc-text-h3);margin:0">Spacing · 4px base</h3>
+      <sc-for list="{{ spaces }}" as="s" hint-placeholder-count="10">
+        <div style="display:grid;grid-template-columns:110px 44px 1fr;gap:12px;align-items:center"><span style="font:var(--sc-text-mono);font-size:12px">{{ s.token }}</span><span style="font:var(--sc-text-mono);font-size:12px;color:var(--sc-text-muted)">{{ s.px }}</span><span style="height:12px;width:{{ s.px }};background:var(--sc-action);border-radius:2px;display:block"></span></div>
+      </sc-for>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:24px">
+      <div style="background:var(--sc-bg-surface);border:1px solid var(--sc-border);border-radius:var(--sc-radius-lg);padding:24px;display:flex;flex-direction:column;gap:12px">
+        <h3 style="font:var(--sc-text-h3);margin:0">Radius</h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:12px">
+          <sc-for list="{{ radii }}" as="r" hint-placeholder-count="6">
+            <div style="display:flex;flex-direction:column;gap:6px"><span style="height:56px;background:var(--sc-action-soft);border:2px solid var(--sc-action);border-radius:{{ r.px }}"></span><span style="font:var(--sc-text-mono);font-size:11px">{{ r.name }} · {{ r.px }}</span><span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted);font-size:12px;line-height:16px">{{ r.use }}</span></div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="background:var(--sc-bg-sunken);border:1px solid var(--sc-border);border-radius:var(--sc-radius-lg);padding:24px;display:flex;flex-direction:column;gap:12px">
+        <h3 style="font:var(--sc-text-h3);margin:0">Elevation</h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:14px">
+          <sc-for list="{{ shadows }}" as="e" hint-placeholder-count="4">
+            <div style="background:var(--sc-bg-surface);border-radius:var(--sc-radius-md);box-shadow:{{ e.value }};padding:14px;min-height:72px;display:flex;flex-direction:column;gap:2px"><span style="font:var(--sc-text-mono);font-size:12px">{{ e.name }}</span><span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted);font-size:12px;line-height:16px">{{ e.use }}</span></div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="background:var(--sc-bg-surface);border:1px solid var(--sc-border);border-radius:var(--sc-radius-lg);padding:24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:24px">
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <h3 style="font:var(--sc-text-h3);margin:0 0 6px">Motion</h3>
+      <sc-for list="{{ motion }}" as="m" hint-placeholder-count="6">
+        <div style="display:grid;grid-template-columns:130px 70px 1fr;gap:12px;padding:7px 0;border-top:1px solid var(--sc-divider)"><span style="font:var(--sc-text-mono);font-size:12px">{{ m.name }}</span><span style="font:var(--sc-text-mono);font-size:12px;color:var(--sc-text-muted)">{{ m.value }}</span><span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted)">{{ m.use }}</span></div>
+      </sc-for>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <h3 style="font:var(--sc-text-h3);margin:0">Live samples</h3>
+      <div style="display:flex;align-items:center;gap:14px"><span data-sc-anim="1" style="width:16px;height:16px;border-radius:50%;background:var(--sc-st-offering-solid);animation:sc-pulse 1.6s infinite"></span><span style="font:var(--sc-text-body-sm)"><b>Offering heartbeat.</b> Reduced motion: solid dot, no halo; the word "Offering" carries the meaning.</span></div>
+      <div style="display:flex;align-items:center;gap:14px"><span data-sc-anim="1" style="width:16px;height:16px;border-radius:50%;border:2px solid var(--sc-action);border-top-color:transparent;animation:sc-spin .8s linear infinite"></span><span style="font:var(--sc-text-body-sm)"><b>Button progress.</b> Reduced motion: spinner replaced by the text "Working…".</span></div>
+      <div data-sc-anim="1" style="height:12px;border-radius:6px;background:linear-gradient(90deg,var(--sc-paper-2) 25%,var(--sc-paper-3) 50%,var(--sc-paper-2) 75%);background-size:200% 100%;animation:sc-shimmer 1.4s linear infinite"></div>
+      <span style="font:var(--sc-text-body-sm)"><b>Skeleton shimmer.</b> Reduced motion: flat paper-2 bars.</span>
+      <span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted)">Rule: motion only confirms a state change or marks a live process. No decorative loops, no confetti on claim; "You're booked" arrives with a 240ms fade and a 4px rise.</span>
+    </div>
+  </div>
+</section>
+
+<!-- ICONS -->
+<section style="display:flex;flex-direction:column;gap:20px">
+  <div><h2 style="font:var(--sc-text-display);margin:0 0 8px">Iconography</h2>
+  <p style="font:var(--sc-text-body);color:var(--sc-text-muted);margin:0;max-width:72ch;text-wrap:pretty">Lucide (ISC license), 24px grid, 2px round stroke, <code style="font-family:var(--sc-font-mono)">currentColor</code>. Sizes: 16 in badges and rows, 20 in buttons and nodes, 24 in nav and alerts, 32+ in empty states at 1.75 stroke. Icon names below are Lucide ids (drawn here from the same paths); the dev should import from <code style="font-family:var(--sc-font-mono)">lucide-react</code> or <code style="font-family:var(--sc-font-mono)">lucide-static</code>.</p></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">
+    <sc-for list="{{ icons }}" as="i" hint-placeholder-count="12">
+      <div style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--sc-bg-surface);border:1px solid var(--sc-border);border-radius:var(--sc-radius-md)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><use href="#{{ i.id }}"></use></svg><span style="display:flex;flex-direction:column"><span style="font:var(--sc-text-mono);font-size:12px">{{ i.name }}</span><span style="font:var(--sc-text-body-sm);font-size:12px;line-height:16px;color:var(--sc-text-muted)">{{ i.use }}</span></span></div>
+    </sc-for>
+  </div>
+</section>
+
+<!-- 03 COMPONENTS -->
+<section style="display:flex;flex-direction:column;gap:32px">
+  <div><div style="font:var(--sc-text-eyebrow);letter-spacing:var(--sc-tracking-eyebrow);text-transform:uppercase;color:var(--sc-text-muted)">03 · Components</div><h2 style="font:var(--sc-text-display);margin:4px 0 0">Core components</h2></div>
+
+  <!-- buttons -->
+  <div style="background:var(--sc-bg-surface);border:1px solid var(--sc-border);border-radius:var(--sc-radius-lg);padding:24px;display:flex;flex-direction:column;gap:16px">
+    <div><h3 style="font:var(--sc-text-h3);margin:0 0 4px">Buttons</h3><span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted)">Worker: 56px primary, 48px minimum for anything tappable. Console: 40px default, 36px dense. One primary per view. Focus = 2px blue ring with 2px offset on every component.</span></div>
+    <div style="overflow-x:auto"><div style="display:grid;grid-template-columns:90px repeat(5,minmax(130px,1fr));gap:12px 12px;align-items:center;min-width:760px">
+      <span></span><span style="font:var(--sc-text-eyebrow);letter-spacing:.08em;text-transform:uppercase;color:var(--sc-text-muted)">Default</span><span style="font:var(--sc-text-eyebrow);letter-spacing:.08em;text-transform:uppercase;color:var(--sc-text-muted)">Hover</span><span style="font:var(--sc-text-eyebrow);letter-spacing:.08em;text-transform:uppercase;color:var(--sc-text-muted)">Focus</span><span style="font:var(--sc-text-eyebrow);letter-spacing:.08em;text-transform:uppercase;color:var(--sc-text-muted)">Disabled</span><span style="font:var(--sc-text-eyebrow);letter-spacing:.08em;text-transform:uppercase;color:var(--sc-text-muted)">In progress</span>
+      <sc-for list="{{ buttonRows }}" as="r" hint-placeholder-count="4">
+        <div style="display:contents">
+          <span style="font:var(--sc-text-mono);font-size:12px">{{ r.variant }}</span>
+          <sc-for list="{{ r.cells }}" as="b" hint-placeholder-count="5">
+            <button style="display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 20px;border-radius:var(--sc-radius-md);font:600 16px/24px var(--sc-font-body);cursor:{{ b.cursor }};background:{{ b.bg }};color:{{ b.fg }};border:{{ b.border }};box-shadow:{{ b.shadow }};outline:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:{{ b.spinDisplay }};animation:sc-spin .8s linear infinite" data-sc-anim="1"><use href="#i-loader"></use></svg>{{ b.text }}</button>
+          </sc-for>
+        </div>
+      </sc-for>
+    </div></div>
+    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding-top:8px;border-top:1px solid var(--sc-divider)">
+      <button style="height:56px;padding:0 28px;border:0;border-radius:var(--sc-radius-md);background:var(--sc-action);color:var(--sc-on-action);font:700 18px/24px var(--sc-font-display);display:inline-flex;align-items:center;gap:10px;cursor:pointer" style-hover="background:var(--sc-action-hover)">Claim this shift</button>
+      <span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted)">Worker hero, 56px, Bricolage 700/18</span>
+      <button style="height:40px;padding:0 16px;border:1px solid var(--sc-border-strong);border-radius:var(--sc-radius-sm);background:var(--sc-bg-surface);color:var(--sc-text);font:600 14px/20px var(--sc-font-body);display:inline-flex;align-items:center;gap:8px;cursor:pointer" style-hover="background:var(--sc-bg-sunken)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-plus"></use></svg>Report a gap</button>
+      <span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted)">Console, 40px, radius-sm · "Report a gap" uses the primary fill in M2</span>
+      <button style="height:48px;padding:0 12px;border:0;background:transparent;color:var(--sc-text-muted);font:600 16px/24px var(--sc-font-body);text-decoration:underline;text-underline-offset:3px;cursor:pointer" style-hover="color:var(--sc-text)">Not available</button>
+      <span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted)">Quiet link-button, still 48px tall</span>
+    </div>
+  </div>
+
+  <!-- PayPal slot -->
+  <div style="background:var(--sc-bg-surface);border:1px solid var(--sc-border);border-radius:var(--sc-radius-lg);padding:24px;display:flex;flex-direction:column;gap:16px">
+    <div><h3 style="font:var(--sc-text-h3);margin:0 0 4px">PayPal slot (hold approval)</h3><span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted)">A reserved box, <code style="font-family:var(--sc-font-mono)">--sc-paypal-slot-h: 52px</code>, full width on mobile, max 420px on desktop. The SDK renders its own button inside; we never restyle or imitate it. The plain-language line above it is ours. The dashed outline below is a design placeholder only, remove it in code.</span></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px;align-items:start">
+      <sc-for list="{{ slotStates }}" as="p" hint-placeholder-count="5">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <span style="font:var(--sc-text-eyebrow);letter-spacing:.08em;text-transform:uppercase;color:var(--sc-text-muted)">{{ p.name }}</span>
+          <div style="padding:16px;border:1px solid var(--sc-border);border-radius:var(--sc-radius-md);display:flex;flex-direction:column;gap:12px;background:var(--sc-bg-page)">
+            <span style="font:var(--sc-text-body-sm);font-weight:600;text-wrap:pretty">{{ p.lead }}</span>
+            <div style="height:52px;box-sizing:border-box;border-radius:8px;display:{{ p.slotDisplay }};align-items:center;justify-content:center;font:var(--sc-text-mono);font-size:12px;color:var(--sc-text-muted);border:1.5px dashed var(--sc-paper-5);background:{{ p.slotBg }}" data-sc-anim="1">{{ p.slotText }}</div>
+            <div style="display:{{ p.alertDisplay }};gap:10px;padding:12px;border-radius:var(--sc-radius-md);background:{{ p.abg }};color:{{ p.afg }};border:1px solid {{ p.aborder }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;margin-top:1px"><use href="#{{ p.aicon }}"></use></svg><div style="display:flex;flex-direction:column;gap:2px"><span style="font:600 14px/20px var(--sc-font-body)">{{ p.atitle }}</span><span style="font:400 14px/20px var(--sc-font-body)">{{ p.abody }}</span></div></div>
+            <button style="display:{{ p.retryDisplay }};align-items:center;justify-content:center;gap:8px;height:40px;border:1px solid var(--sc-border-strong);border-radius:var(--sc-radius-sm);background:var(--sc-bg-surface);font:600 14px/20px var(--sc-font-body);color:var(--sc-text);cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-retry"></use></svg>Try again</button>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- inputs -->
+  <div style="background:var(--sc-bg-surface);border:1px solid var(--sc-border);border-radius:var(--sc-radius-lg);padding:24px;display:flex;flex-direction:column;gap:16px">
+    <div><h3 style="font:var(--sc-text-h3);margin:0 0 4px">Inputs</h3><span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted)">Console 40px (48px on the worker app). Border uses border-strong (3.5:1). Labels always visible above the field; errors have an icon and text, not just a red border.</span></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:20px;align-items:start">
+      <label style="display:flex;flex-direction:column;gap:6px"><span style="font:var(--sc-text-label)">Role</span><input value="Line cook" style="height:40px;box-sizing:border-box;padding:0 12px;border:1px solid var(--sc-border-strong);border-radius:var(--sc-radius-sm);background:var(--sc-bg-surface);font:var(--sc-text-body);color:var(--sc-text)"></label>
+      <label style="display:flex;flex-direction:column;gap:6px"><span style="font:var(--sc-text-label)">Base rate</span><span style="display:flex;align-items:center;height:40px;box-sizing:border-box;border:2px solid var(--sc-focus);border-radius:var(--sc-radius-sm);background:var(--sc-bg-surface);box-shadow:0 0 0 2px var(--sc-bg-surface)"><span style="padding:0 0 0 12px;color:var(--sc-text-muted)">$</span><input value="22.00" style="flex:1;min-width:0;border:0;outline:none;background:transparent;height:100%;padding:0 8px;font:var(--sc-text-body);font-variant-numeric:tabular-nums"><span style="padding:0 12px;color:var(--sc-text-muted);font:var(--sc-text-body-sm)">/ hour</span></span><span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted)">Focused state shown</span></label>
+      <label style="display:flex;flex-direction:column;gap:6px"><span style="font:var(--sc-text-label)">Max premium</span><input value="120" style="height:40px;box-sizing:border-box;padding:0 12px;border:2px solid var(--sc-danger);border-radius:var(--sc-radius-sm);background:var(--sc-bg-surface);font:var(--sc-text-body);color:var(--sc-text)"><span style="display:flex;align-items:center;gap:6px;font:var(--sc-text-body-sm);color:var(--sc-error-fg)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-alert"></use></svg>Enter a number from 0 to 50.</span></label>
+      <label style="display:flex;flex-direction:column;gap:6px"><span style="font:var(--sc-text-label);color:var(--sc-disabled-text)">Venue</span><input value="Maple &amp; Rye" disabled style="height:40px;box-sizing:border-box;padding:0 12px;border:1px solid var(--sc-border);border-radius:var(--sc-radius-sm);background:var(--sc-disabled-bg);font:var(--sc-text-body);color:var(--sc-disabled-text)"><span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted)">Single venue for now</span></label>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:20px;align-items:start">
+      <div style="display:flex;flex-direction:column;gap:6px"><span style="font:var(--sc-text-label)">Tell us what happened</span>
+        <div style="border:1px solid var(--sc-border-strong);border-radius:var(--sc-radius-md);padding:12px;display:flex;flex-direction:column;gap:12px;background:var(--sc-bg-surface)"><span style="font:var(--sc-text-body);min-height:48px">Maria called in sick, need a line cook 7 to 3 today</span><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted)">Plain English is fine.</span><button style="height:36px;padding:0 14px;border:0;border-radius:var(--sc-radius-sm);background:var(--sc-action);color:var(--sc-on-action);font:600 14px/20px var(--sc-font-body);cursor:pointer">Parse</button></div></div></div>
+      <div style="display:flex;flex-direction:column;gap:6px"><span style="font:var(--sc-text-label)">Segmented control</span>
+        <div role="group" aria-label="View" style="display:inline-flex;align-self:flex-start;padding:3px;gap:2px;border:1px solid var(--sc-border-strong);border-radius:var(--sc-radius-sm);background:var(--sc-bg-sunken)"><button aria-pressed="true" style="height:32px;padding:0 16px;border:0;border-radius:6px;background:var(--sc-bg-surface);box-shadow:var(--sc-shadow-1);font:600 14px/20px var(--sc-font-body);color:var(--sc-text);cursor:pointer">Day</button><button aria-pressed="false" style="height:32px;padding:0 16px;border:0;border-radius:6px;background:transparent;font:600 14px/20px var(--sc-font-body);color:var(--sc-text-muted);cursor:pointer">Week</button></div>
+        <span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted)">Day/Week, and Today/prev/next use the same height (36px).</span></div>
+    </div>
+  </div>
+
+  <!-- badges -->
+  <div style="background:var(--sc-bg-surface);border:1px solid var(--sc-border);border-radius:var(--sc-radius-lg);padding:24px;display:flex;flex-direction:column;gap:16px">
+    <div><h3 style="font:var(--sc-text-h3);margin:0 0 4px">Status badges and chips</h3><span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted)">28px tall pill, 16px icon, 13px/600 label. Every badge has an icon and a word. Unfilled uses a dashed border and Cancelled uses a dashed border plus muted tone so they differ without color.</span></div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px">
+      <sc-for list="{{ allBadges }}" as="s" hint-placeholder-count="12">
+        <span style="display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px 0 8px;border-radius:99px;font:600 13px/16px var(--sc-font-body);background:{{ s.bg }};color:{{ s.fg }};border:1px {{ s.badgeBorderStyle }} {{ s.border }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#{{ s.icon }}"></use></svg>{{ s.label }}</span>
+      </sc-for>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding-top:12px;border-top:1px solid var(--sc-divider)">
+      <span style="display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:var(--sc-radius-sm);background:var(--sc-bg-sunken);border:1px solid var(--sc-border);font:600 13px/16px var(--sc-font-body)">Line cook</span>
+      <span style="display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:var(--sc-radius-sm);background:var(--sc-bg-sunken);border:1px solid var(--sc-border);font:600 13px/16px var(--sc-font-body)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-pin"></use></svg>2.4 mi</span>
+      <span style="display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:var(--sc-radius-sm);background:var(--sc-st-offering-bg);color:var(--sc-st-offering-fg);border:1px solid var(--sc-st-offering-border);font:600 13px/16px var(--sc-font-body)">Wave 2 · +10%</span>
+      <span style="display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:var(--sc-radius-sm);background:var(--sc-st-open-bg);color:var(--sc-st-open-fg);border:1px solid var(--sc-st-open-border);font:600 13px/16px var(--sc-font-body)">Cap reached · +20%</span>
+      <span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted)">Neutral and rate chips (rectangular, radius-sm, so they never read as status)</span>
+    </div>
+  </div>
+
+  <!-- shift blocks -->
+  <div style="background:var(--sc-bg-surface);border:1px solid var(--sc-border);border-radius:var(--sc-radius-lg);padding:24px;display:flex;flex-direction:column;gap:16px">
+    <div><h3 style="font:var(--sc-text-h3);margin:0 0 4px">Scheduler shift block</h3><span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted)">Icon, title, subtitle, fill: nothing a themed Bryntum event cannot render. 44px tall, radius-xs, 13px/600 title. The open gap is the only hatched block on the page. Token mapping comes in deliverable 3.</span></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:12px">
+      <sc-for list="{{ blocks }}" as="b" hint-placeholder-count="9">
+        <div style="display:flex;flex-direction:column;gap:4px"><span style="font:var(--sc-text-mono);font-size:11px;color:var(--sc-text-muted)">{{ b.status }}</span>
+          <div style="box-sizing:border-box;height:44px;display:flex;align-items:center;gap:8px;padding:0 10px;border-radius:var(--sc-radius-xs);background:{{ b.bg }};color:{{ b.fg }};border:{{ b.border }};border-left:{{ b.left }}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><use href="#{{ b.icon }}"></use></svg>
+            <span style="display:flex;flex-direction:column;min-width:0"><span style="font:600 13px/16px var(--sc-font-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:{{ b.deco }}">{{ b.title }}</span><span style="font:500 12px/14px var(--sc-font-mono);white-space:nowrap">{{ b.sub }}</span></span>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- cards -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:24px;align-items:start">
+    <div style="background:var(--sc-bg-sunken);border:1px solid var(--sc-border);border-radius:var(--sc-radius-lg);padding:28px 20px;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <span style="align-self:flex-start;font:var(--sc-text-h3)">Card · claim ticket</span>
+      <span style="align-self:flex-start;font:var(--sc-text-body-sm);color:var(--sc-text-muted);margin-top:-8px">Perforated stub edge echoes a kitchen ticket. 20px radius, shadow-2.</span>
+      <div style="position:relative;width:100%;max-width:350px;background:var(--sc-bg-surface);border-radius:var(--sc-radius-lg);box-shadow:var(--sc-shadow-2);overflow:hidden">
+        <div style="padding:20px 20px 18px;display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;justify-content:space-between;align-items:center"><span style="font:var(--sc-text-eyebrow);letter-spacing:.08em;text-transform:uppercase;color:var(--sc-text-muted)">Line cook</span><span style="display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px 0 8px;border-radius:99px;background:var(--sc-st-offering-bg);color:var(--sc-st-offering-fg);border:1px solid var(--sc-st-offering-border);font:600 13px/16px var(--sc-font-body)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-clock"></use></svg>12:41 left</span></div>
+          <span style="font:var(--sc-text-h2)">Maple &amp; Rye</span>
+          <span style="font:var(--sc-text-body);color:var(--sc-text-muted)">Today · 7:00 AM – 3:00 PM · 8 h</span>
+          <span style="display:flex;align-items:center;gap:6px;font:var(--sc-text-body);color:var(--sc-text-muted)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-pin"></use></svg>Portland, OR · 2.4 mi</span>
+        </div>
+        <div style="position:relative;height:0;border-top:2px dashed var(--sc-border)"><i style="position:absolute;left:-12px;top:-13px;width:24px;height:24px;border-radius:50%;background:var(--sc-bg-sunken)"></i><i style="position:absolute;right:-12px;top:-13px;width:24px;height:24px;border-radius:50%;background:var(--sc-bg-sunken)"></i></div>
+        <div style="padding:16px 20px 20px;display:flex;flex-direction:column;gap:12px">
+          <div><span style="display:block;font:var(--sc-text-money-xl);line-height:62px;letter-spacing:-.02em">$193.60</span><div style="font:var(--sc-text-body-sm);color:var(--sc-text-muted)">8 h × $24.20/hr · paid to your PayPal</div></div>
+          <span style="display:flex;align-items:center;gap:8px;font:var(--sc-text-label);color:var(--sc-money-authorized-fg);background:var(--sc-money-authorized-bg);padding:10px 12px;border-radius:var(--sc-radius-md)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-shield"></use></svg>Pay guaranteed: funds are on hold</span>
+          <button style="height:56px;border:0;border-radius:var(--sc-radius-md);background:var(--sc-action);color:var(--sc-on-action);font:700 18px/24px var(--sc-font-display);cursor:pointer">Claim this shift</button>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:24px">
+      <div style="background:var(--sc-bg-surface);border:1px solid var(--sc-border);border-radius:var(--sc-radius-lg);padding:20px;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span style="font:var(--sc-text-h3)">Card · console panel</span><span style="display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px 0 8px;border-radius:99px;background:var(--sc-st-open-bg);color:var(--sc-st-open-fg);border:1px solid var(--sc-st-open-border);font:600 13px/16px var(--sc-font-body)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-alert"></use></svg>Open gap</span></div>
+        <span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted)">1px border, 20px radius, no shadow at rest (shadow-1 on hover when clickable). 20–24px padding. Header row = title left, status right.</span>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+          <div style="padding:12px;background:var(--sc-bg-sunken);border-radius:var(--sc-radius-md)"><div style="font:700 28px/32px var(--sc-font-display)">1</div><div style="font:var(--sc-text-body-sm);color:var(--sc-text-muted)">Open gap</div></div>
+          <div style="padding:12px;background:var(--sc-bg-sunken);border-radius:var(--sc-radius-md)"><div style="font:700 28px/32px var(--sc-font-display)">1</div><div style="font:var(--sc-text-body-sm);color:var(--sc-text-muted)">Offering</div></div>
+          <div style="padding:12px;background:var(--sc-bg-sunken);border-radius:var(--sc-radius-md)"><div style="font:700 28px/32px var(--sc-font-display)">14</div><div style="font:var(--sc-text-body-sm);color:var(--sc-text-muted)">Shifts today</div></div>
+        </div>
+        <span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted)">Summary-strip stat tiles (M2): sunken fill, number in display font.</span>
+      </div>
+      <div style="background:var(--sc-bg-surface);border:1px solid var(--sc-border);border-radius:var(--sc-radius-lg);padding:20px;display:flex;flex-direction:column;gap:4px">
+        <span style="font:var(--sc-text-h3);margin-bottom:6px">List rows · offers</span>
+        <sc-for list="{{ offers }}" as="o" hint-placeholder-count="5">
+          <div style="display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:center;min-height:56px;padding:8px 8px;margin:0 -8px;border-radius:var(--sc-radius-md);background:{{ o.rowBg }}">
+            <span style="width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:{{ o.avBg }};color:{{ o.avFg }};font:700 14px/16px var(--sc-font-body)">{{ o.initials }}</span>
+            <span style="display:flex;flex-direction:column;min-width:0"><span style="font:var(--sc-text-label)">{{ o.name }}</span><span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted)">{{ o.role }} · Wave {{ o.wave }} · {{ o.when }}</span></span>
+            <span style="display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px 0 8px;border-radius:99px;font:600 13px/16px var(--sc-font-body);background:{{ o.bg }};color:{{ o.fg }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#{{ o.icon }}"></use></svg>{{ o.status }}</span>
+          </div>
+        </sc-for>
+        <span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted);margin-top:6px">Avatars are initials on a tinted disc; the tint is decorative and has no meaning. The claimed row gets a confirmed-tint background.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- alerts -->
+  <div style="background:var(--sc-bg-surface);border:1px solid var(--sc-border);border-radius:var(--sc-radius-lg);padding:24px;display:flex;flex-direction:column;gap:16px">
+    <div><h3 style="font:var(--sc-text-h3);margin:0 0 4px">Inline alerts and toast</h3><span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted)">Inline alerts stay put and carry the explanation. Toasts confirm a completed action for 5s, bottom-center on mobile and top-right on console; never for errors the user must act on.</span></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px">
+      <sc-for list="{{ alerts }}" as="a" hint-placeholder-count="4">
+        <div style="display:flex;gap:12px;padding:14px;border-radius:var(--sc-radius-md);background:{{ a.bg }};color:{{ a.fg }};border:1px solid {{ a.border }}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><use href="#{{ a.icon }}"></use></svg><div style="display:flex;flex-direction:column;gap:2px"><span style="font:var(--sc-text-label)">{{ a.title }}</span><span style="font:var(--sc-text-body-sm)">{{ a.body }}</span></div></div>
+      </sc-for>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;align-self:flex-start;background:var(--sc-bg-inverse);color:var(--sc-text-inverse);padding:12px 16px;border-radius:var(--sc-radius-md);box-shadow:var(--sc-shadow-3)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-check"></use></svg><span style="font:var(--sc-text-label)">Reference copied</span><button style="border:0;background:transparent;color:var(--sc-text-inverse);font:600 14px/20px var(--sc-font-body);text-decoration:underline;cursor:pointer;min-height:36px">Undo</button></div>
+  </div>
+
+  <!-- empty + skeleton -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:24px;align-items:start">
+    <div style="background:var(--sc-bg-surface);border:1px solid var(--sc-border);border-radius:var(--sc-radius-lg);padding:40px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px">
+      <span style="width:72px;height:72px;border-radius:50%;background:var(--sc-st-confirmed-bg);color:var(--sc-st-confirmed-fg);display:grid;place-items:center"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-checks"></use></svg></span>
+      <span style="font:var(--sc-text-h2)">No gaps today</span>
+      <span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted);max-width:32ch;text-wrap:pretty">All 14 shifts have someone on them. If someone calls in, report it here and we will start offering the shift.</span>
+      <button style="height:40px;padding:0 16px;border:0;border-radius:var(--sc-radius-sm);background:var(--sc-action);color:var(--sc-on-action);font:600 14px/20px var(--sc-font-body);cursor:pointer">Report a gap</button>
+      <span style="font:var(--sc-text-caption);color:var(--sc-text-subtle)">Empty state: 72px tinted disc, icon at 32/1.75, title, one sentence, one action.</span>
+    </div>
+    <div style="background:var(--sc-bg-surface);border:1px solid var(--sc-border);border-radius:var(--sc-radius-lg);padding:24px;display:flex;flex-direction:column;gap:14px">
+      <span style="font:var(--sc-text-h3)">Skeleton</span>
+      <div style="display:flex;gap:12px;align-items:center"><span data-sc-anim="1" style="width:40px;height:40px;border-radius:50%;background:linear-gradient(90deg,var(--sc-paper-2) 25%,var(--sc-paper-3) 50%,var(--sc-paper-2) 75%);background-size:200% 100%;animation:sc-shimmer 1.4s linear infinite"></span><div style="flex:1;display:flex;flex-direction:column;gap:8px"><span data-sc-anim="1" style="height:14px;width:60%;border-radius:6px;background:linear-gradient(90deg,var(--sc-paper-2) 25%,var(--sc-paper-3) 50%,var(--sc-paper-2) 75%);background-size:200% 100%;animation:sc-shimmer 1.4s linear infinite"></span><span data-sc-anim="1" style="height:12px;width:40%;border-radius:6px;background:linear-gradient(90deg,var(--sc-paper-2) 25%,var(--sc-paper-3) 50%,var(--sc-paper-2) 75%);background-size:200% 100%;animation:sc-shimmer 1.4s linear infinite"></span></div></div>
+      <span data-sc-anim="1" style="height:56px;border-radius:12px;background:linear-gradient(90deg,var(--sc-paper-2) 25%,var(--sc-paper-3) 50%,var(--sc-paper-2) 75%);background-size:200% 100%;animation:sc-shimmer 1.4s linear infinite"></span>
+      <span style="font:var(--sc-text-body-sm);color:var(--sc-text-muted);text-wrap:pretty">Skeletons mirror the real layout's heights so nothing jumps on load. Set <code style="font-family:var(--sc-font-mono)">aria-busy="true"</code> on the container and add visually-hidden "Loading shift details".</span>
+    </div>
+  </div>
+</section>
+
+<!-- NEXT -->
+<section style="background:var(--sc-bg-inverse);color:var(--sc-text-inverse);border-radius:var(--sc-radius-xl);padding:32px;display:flex;flex-direction:column;gap:12px">
+  <h2 style="font:var(--sc-text-h1);margin:0">For your review</h2>
+  <ul style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font:var(--sc-text-body);max-width:80ch">
+    <li>Confirm or change Q1–Q6 (Q1 affects every money screen).</li>
+    <li>Palette, type pairing and the Pass concept: approve or redirect.</li>
+    <li>On approval I build gate 2: W1–W2 at 360/390/430, M1–M4 at 1440 and 1024, with every state, plus a lift-ready <span style="font-family:var(--sc-font-mono)">components.css</span> (BEM-style <span style="font-family:var(--sc-font-mono)">sc-*</span> classes extracted from the components above). Gate 3: Bryntum table, microcopy table, data gaps.</li>
+  </ul>
+</section>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const V = n => `var(--sc-${n})`;
+    const ICON = 'currentColor';
+    const licenses = [
+      { kind: 'Display font', name: 'Bricolage Grotesque', note: 'OFL 1.1 · Google Fonts · 500/600/700' },
+      { kind: 'UI font', name: 'Public Sans', note: 'OFL 1.1 · Google Fonts · 400/500/600/700' },
+      { kind: 'Mono font', name: 'IBM Plex Mono', note: 'OFL 1.1 · Google Fonts · 400/500' },
+      { kind: 'Icons', name: 'Lucide', note: 'ISC · 24px grid · 2px stroke' },
+    ];
+    const assumptions = [
+      { id: 'A1', text: 'Signature = the Money Timeline. The Wave Timeline is built on the same rail component so there is one pattern to learn.' },
+      { id: 'A2', text: 'Platform fee = platform_fee_pct (5%) of maximum worker pay, charged to the employer on top: $211.20 × 5% = $10.56; hold = $221.76. The worker only ever sees worker pay, never the fee.' },
+      { id: 'A3', text: 'Wave 2 premium is +10%; wave 3 is the manager\u2019s cap (+20%). If the cap is below 10%, wave 2 becomes half the cap.' },
+      { id: 'A4', text: 'Times are shown in the venue\u2019s time zone, 12-hour, e.g. "6:49 AM". Relative times ("2 min ago") always have the clock time in a tooltip and in the screen-reader label.' },
+      { id: 'A5', text: 'Worker links carry a signed token. "Not available" declines silently (no reason asked). The worker app never shows the fee, the hold ceiling or other workers.' },
+      { id: 'A6', text: 'The Scheduler is themed with CSS variables only. Blocks show icon + title + subtitle + fill. Hatching on open gaps is a CSS background on an event class, nothing custom.' },
+      { id: 'A7', text: 'Light theme only. All components consume semantic tokens, so dark is a re-map of layer 2 (stub at the bottom of tokens.css, unreviewed).' },
+      { id: 'A8', text: 'Status "planned" (a normal assigned shift) gets a neutral outlined block. "settling" uses the pending-approval family with the label "Settling". "no_show" uses the ember family with the label "No-show".' },
+    ];
+    const questions = [
+      { id: 'Q1', q: 'Captured $212.30 does not reconcile. Worker pay $193.60 + 5% fee ($9.68) = $203.28, a $9.02 gap. What is in the $212.30?', d: 'Money timeline shows captured as given, with a breakdown row (worker pay, fee, adjustments) so any difference is explained, never silent.' },
+      { id: 'Q2', q: 'Is the fee charged on top to the employer (assumed), or taken out of the worker\u2019s pay?', d: 'On top to the employer.' },
+      { id: 'Q3', q: 'Which premium steps for wave 2 when the cap is not 20%?', d: 'Half the cap (A3).' },
+      { id: 'Q4', q: 'Venue address and a map link are needed on W2 but are not in the Slot contract. Add venue_address and venue_lat/lng?', d: 'Yes, listed as a data gap; the map link opens the device\u2019s maps app.' },
+      { id: 'Q5', q: 'Unused hold after capture ($221.76 − $212.30 = $9.46) is released automatically. Should the manager see this line?', d: 'Yes, a one-line note under Captured.' },
+      { id: 'Q6', q: 'Manager login: is email + password the only credential, with the magic link as a fallback?', d: 'Yes; no social login, no MFA UI in this phase.' },
+    ];
+
+    // ---- timeline stations
+    const tone = {
+      authorized: { solid: V('money-authorized-solid'), on: V('paper-0'), bg: V('money-authorized-bg'), fg: V('money-authorized-fg') },
+      captured: { solid: V('money-captured-solid'), on: V('paper-9'), bg: V('money-captured-bg'), fg: V('money-captured-fg') },
+      paid: { solid: V('money-paid-solid'), on: V('paper-0'), bg: V('money-paid-bg'), fg: V('money-paid-fg') },
+    };
+    const station = (t, state, o, last) => {
+      const k = tone[t];
+      const done = state === 'done', now = state === 'now';
+      return Object.assign({
+        nodeBg: done || now ? k.solid : V('bg-surface'),
+        nodeFg: done || now ? k.on : V('paper-6'),
+        nodeBorder: done || now ? '2px solid ' + k.solid : '2px dashed ' + V('paper-5'),
+        nodeShadow: 'none',
+        ringColor: k.bg,
+        anim: now ? 'sc-ring 1.8s ease-in-out infinite' : 'none',
+        line: done ? '2px solid ' + k.solid : '2px dashed ' + V('paper-4'),
+        lineDisplay: last ? 'none' : 'block',
+        fg: done || now ? k.fg : V('text-muted'),
+        bg: done || now ? k.bg : V('bg-sunken'),
+        amountColor: done || now ? V('text') : V('paper-6'),
+        stateLabel: done ? 'Done' : now ? 'Now' : 'Up next',
+        flagDisplay: 'none',
+      }, o);
+    };
+    const moneyDone = [
+      station('authorized', 'done', { label: 'Authorized', icon: 'i-shield', amount: '$221.76', text: 'Held on Dana\u2019s PayPal before any offer went out. This was the most the shift could cost.', stamp: 'Oct 12 · 6:41 AM', ref: 'AUTH 7MN40918RK225310X' }),
+      station('captured', 'done', { label: 'Captured', icon: 'i-banknote', amount: '$212.30', text: 'Charged after Dana approved the hours. The unused $9.46 of the hold was released.', stamp: 'Oct 12 · 3:52 PM', ref: 'CAPT 2GH65173LA904418C', flagDisplay: 'block' }),
+      station('paid', 'done', { label: 'Paid', icon: 'i-wallet', amount: '$193.60', text: 'Sent to Jordan Reyes\u2019s PayPal account. Jordan sees exactly this amount.', stamp: 'Oct 12 · 3:54 PM', ref: 'PAYO 9QX20381VD773952B' }, true),
+    ];
+    const moneyMid = [
+      station('authorized', 'now', { label: 'Authorized', icon: 'i-shield', amount: '$221.76', text: 'On hold. Nothing has been charged yet. You are only charged for hours worked.' }),
+      station('captured', 'next', { label: 'Captured', icon: 'i-banknote', amount: '$\u2013', text: 'Happens when you approve the hours after the shift.' }),
+      station('paid', 'next', { label: 'Paid', icon: 'i-wallet', amount: '$\u2013', text: 'Sent to the worker\u2019s PayPal right after you approve.' }, true),
+    ];
+
+    const wk = (st, o) => Object.assign({
+      nodeBg: st === 'done' ? V('st-offering-solid') : V('bg-surface'),
+      nodeFg: st === 'done' ? V('st-offering-on') : V('paper-6'),
+      nodeBorder: st === 'done' ? '2px solid ' + V('st-offering-solid') : '2px dashed ' + V('paper-5'),
+      fg: V('st-offering-fg'), bg: V('st-offering-bg'),
+      barBg: V('st-offering-bg'), barTop: '3px solid ' + V('st-offering-solid'),
+      line: st === 'done' ? '2px solid ' + V('st-offering-solid') : '2px dashed ' + V('paper-4'),
+      lineDisplay: 'block', stateLabel: 'Sent',
+    }, o);
+    const waves = [
+      wk('done', { label: 'Wave 1', icon: 'i-send', when: '6:42 AM', audience: 'Top 3 candidates', rate: '$22.00/hr', rateNote: 'Base rate', barH: '56px' }),
+      wk('done', { label: 'Wave 2', icon: 'i-check', when: '6:47 AM', audience: 'Next 5 · Jordan Reyes claimed at 6:49 AM', rate: '$24.20/hr', rateNote: '+10% · worker pay $193.60', barH: '84px', nodeBg: V('st-confirmed-solid'), nodeBorder: '2px solid ' + V('st-confirmed-solid'), nodeFg: V('st-confirmed-on'), barBg: V('st-confirmed-bg'), barTop: '3px solid ' + V('st-confirmed-solid'), fg: V('st-confirmed-fg'), bg: V('st-confirmed-bg'), line: '2px dashed ' + V('paper-4'), stateLabel: 'Claimed' }),
+      wk('next', { label: 'Wave 3', icon: 'i-send', when: 'Would send 6:52 AM', audience: 'Everyone eligible · not needed', rate: '$26.40/hr', rateNote: 'Cap +20% · worker pay $211.20', barH: '112px', fg: V('text-muted'), bg: V('bg-sunken'), barBg: V('bg-page'), barTop: '3px dashed ' + V('st-open-solid'), stateLabel: 'Not sent', lineDisplay: 'none' }),
+    ];
+
+    // ---- color
+    const lightBg = n => { const [f, s] = n.split('-'); const x = +s; return f === 'paper' ? x <= 5 : f === 'saffron' ? x <= 400 : x <= 300; };
+    const fam = (label, note, list) => ({ label, note, items: list.map(([n, v]) => ({ name: n, val: 'oklch(' + v + ')', bg: V(n), fg: lightBg(n) ? V('paper-9') : V('paper-0') })) });
+    const families = [
+      fam('Paper', 'warm neutrals, chroma ≤ .016', [['paper-0', '.985 .006 85'], ['paper-1', '.966 .009 85'], ['paper-2', '.94 .012 85'], ['paper-3', '.90 .014 82'], ['paper-4', '.84 .015 80'], ['paper-5', '.62 .016 75'], ['paper-6', '.52 .016 70'], ['paper-7', '.42 .015 65'], ['paper-8', '.32 .014 62'], ['paper-9', '.22 .012 60']]),
+      fam('Basil', 'brand · confirmed · paid · success', [['green-50', '.96 .03 155'], ['green-100', '.92 .06 155'], ['green-300', '.78 .12 155'], ['green-600', '.48 .105 155'], ['green-700', '.40 .09 155'], ['green-800', '.32 .07 155']]),
+      fam('Ember', 'open gap · failed · destructive', [['ember-50', '.965 .02 40'], ['ember-100', '.93 .05 38'], ['ember-300', '.78 .13 36'], ['ember-600', '.53 .185 33'], ['ember-700', '.45 .15 32']]),
+      fam('Saffron', 'offering · captured · warning', [['saffron-100', '.94 .07 90'], ['saffron-300', '.86 .14 85'], ['saffron-400', '.80 .15 82'], ['saffron-700', '.47 .09 75']]),
+      fam('Steel blue', 'in progress · authorized · info · focus', [['blue-50', '.965 .02 245'], ['blue-100', '.93 .04 245'], ['blue-300', '.78 .08 245'], ['blue-600', '.50 .12 245'], ['blue-700', '.42 .10 245']]),
+      fam('Plum', 'pending approval', [['plum-50', '.965 .02 320'], ['plum-100', '.93 .04 320'], ['plum-300', '.78 .08 320'], ['plum-600', '.48 .14 320'], ['plum-700', '.40 .12 320']]),
+    ];
+    const sem = (token, alias, use) => ({ token: '--sc-' + token, alias, use, bg: V(token) });
+    const semantic = [
+      sem('bg-page', 'paper-1', 'App background, behind cards and the scheduler'),
+      sem('bg-surface', 'paper-0', 'Cards, inputs, popovers, scheduler cells'),
+      sem('bg-sunken', 'paper-2', 'Row stripes, stat tiles, segmented track, scheduler header'),
+      sem('bg-inverse', 'paper-9', 'Toasts, tooltips, dark callouts'),
+      sem('text', 'paper-9', 'Primary text (16.6:1 on surface)'),
+      sem('text-muted', 'paper-7', 'Secondary text (8.1:1)'),
+      sem('text-subtle', 'paper-6', 'Captions, placeholders (5.3:1)'),
+      sem('border', 'paper-3', 'Card and table borders (decorative)'),
+      sem('border-strong', 'paper-5', 'Input and control boundaries (3.5:1)'),
+      sem('action', 'green-600', 'Primary button, links in nav, selected state (5.95:1 with white)'),
+      sem('action-hover', 'green-700', 'Hover'),
+      sem('action-soft', 'green-50', 'Selected row, soft highlight'),
+      sem('danger', 'ember-600', 'Destructive button, error border'),
+      sem('focus', 'blue-600', 'Focus ring (2px + 2px offset), 5.7:1'),
+    ];
+    const SD = { open: ['open', 'Open gap', 'i-alert', 'open', 'Gap reported, no offer sent yet. Hatched in the scheduler. The only status that demands action.'],
+      offering: ['offering', 'Offering', 'i-send', 'offering', 'Waves are going out. Pulsing dot on the block while live.'],
+      confirmed: ['confirmed', 'Confirmed', 'i-check', 'confirmed', 'A worker has claimed it.'],
+      progress: ['progress', 'In progress', 'i-play', 'in_progress', 'Worker has arrived and the shift is under way.'],
+      pending: ['pending', 'Pending approval', 'i-hourglass', 'pending_approval · settling', 'Shift finished; the manager must approve the hours.'],
+      settled: ['settled', 'Settled', 'i-checks', 'settled', 'Charged and paid. Quiet by design: nothing left to do.'],
+      unfilled: ['unfilled', 'Unfilled', 'i-warn', 'unfilled', 'Deadline passed with nobody. Hold released. Dashed outline.'],
+      cancelled: ['cancelled', 'Cancelled', 'i-ban', 'cancelled', 'Manager cancelled. Dashed, muted, title struck through.'],
+      planned: ['planned', 'Planned', 'i-calendar', 'planned', 'A normal assigned shift. Outlined block, no fill.'] };
+    const stat = k => { const [key, label, icon, contract, use] = SD[k]; return { key, label, icon, contract, use, bg: V(`st-${key}-bg`), fg: V(`st-${key}-fg`), solid: V(`st-${key}-solid`), border: V(`st-${key}-border`), badgeBorderStyle: (k === 'unfilled' || k === 'cancelled') ? 'dashed' : 'solid' }; };
+    const statuses = ['open', 'offering', 'confirmed', 'progress', 'pending', 'settled', 'unfilled', 'cancelled', 'planned'].map(stat);
+    const moneyDefs = [
+      { label: 'Authorized', icon: 'i-shield', k: 'authorized', sample: '$221.76', contract: 'authorized · awaiting_approval', use: 'Hold placed; nothing charged.' },
+      { label: 'Captured', icon: 'i-banknote', k: 'captured', sample: '$212.30', contract: 'captured · payout_pending', use: 'Employer was charged for hours worked.' },
+      { label: 'Paid', icon: 'i-wallet', k: 'paid', sample: '$193.60', contract: 'paid', use: 'Worker received the payout.' },
+      { label: 'Failed', icon: 'i-warn', k: 'failed', sample: '$0.00', contract: 'capture_declined · payout_failed · voided', use: 'Needs a human. Always paired with an explanation and a retry.' },
+    ];
+    const money = moneyDefs.map(m => Object.assign({}, m, { bg: V(`money-${m.k}-bg`), fg: V(`money-${m.k}-fg`) }));
+    const contrast = [
+      { pair: 'Text on surface', ratio: '16.6 : 1', req: 'AAA' },
+      { pair: 'Muted text on surface', ratio: '8.1 : 1', req: 'AAA' },
+      { pair: 'Subtle text on surface', ratio: '5.3 : 1', req: 'AA' },
+      { pair: 'Subtle text on sunken', ratio: '4.6 : 1', req: 'AA' },
+      { pair: 'White on action green', ratio: '5.95 : 1', req: 'AA' },
+      { pair: 'White on ember (danger / open)', ratio: '5.5 : 1', req: 'AA' },
+      { pair: 'White on blue / plum solid', ratio: '5.7 · 6.7 : 1', req: 'AA' },
+      { pair: 'Ink on saffron-400 (offering)', ratio: '9.2 : 1', req: 'AAA' },
+      { pair: 'Status fg on its bg (all nine)', ratio: '5.8 – 8.8 : 1', req: 'AA' },
+      { pair: 'Input border on surface (non-text)', ratio: '3.5 : 1', req: '3:1' },
+    ];
+
+    // ---- type
+    const T = (name, font, sample, spec, ls, tt) => ({ name, font: V('text-' + font), sample, spec, ls: ls || 'normal', tt: tt || 'none' });
+    const types = [
+      T('money-xl', 'money-xl', '$193.60', 'Bricolage 700 · 56/56'),
+      T('display', 'display', 'You\u2019re booked.', 'Bricolage 700 · 36/40'),
+      T('h1', 'h1', 'Report a gap', 'Bricolage 700 · 28/32'),
+      T('h2', 'h2', 'Maple & Rye', 'Bricolage 600 · 22/28'),
+      T('h3', 'h3', 'Wave timeline', 'Bricolage 600 · 18/24'),
+      T('body-lg', 'body-lg', 'Pay guaranteed: funds are on hold.', 'Public Sans 400 · 18/28'),
+      T('body', 'body', 'Today, 7:00 AM to 3:00 PM, 8 hours.', 'Public Sans 400 · 16/24 (worker min)'),
+      T('body-sm', 'body-sm', 'Maria called in sick at 6:31 AM.', 'Public Sans 400 · 14/20 (console min)'),
+      T('label', 'label', 'Maximum premium', 'Public Sans 600 · 14/20'),
+      T('caption', 'caption', 'Last updated 6:49 AM', 'Public Sans 500 · 12/16 (console only)'),
+      T('eyebrow', 'eyebrow', 'Line cook', 'Public Sans 700 · 12/16 · +.08em caps', '.08em', 'uppercase'),
+      T('mono', 'mono', 'AUTH 7MN40918RK225310X', 'IBM Plex Mono 500 · 13/20'),
+    ];
+    const spaces = [[1, 2], [2, 4], [3, 8], [4, 12], [5, 16], [6, 20], [7, 24], [8, 32], [9, 40], [10, 48], [11, 64]].map(([n, px]) => ({ token: '--sc-space-' + n, px: px + 'px' }));
+    const radii = [['xs', '4px', 'Scheduler blocks'], ['sm', '8px', 'Inputs, rect chips'], ['md', '12px', 'Buttons, alerts, rows'], ['lg', '20px', 'Cards, ticket'], ['xl', '28px', 'Sheets, dialogs'], ['pill', '999px', 'Status badges']].map(([name, px, use]) => ({ name, px, use }));
+    const shadows = [['shadow-0', 'none', 'Flat, default'], ['shadow-1', V('shadow-1'), 'Hover, segmented thumb'], ['shadow-2', V('shadow-2'), 'Claim ticket, popover'], ['shadow-3', V('shadow-3'), 'Drawer, toast, dialog']].map(([name, value, use]) => ({ name, value, use }));
+    const motion = [
+      ['dur-instant', '80ms', 'Press feedback, checkbox'],
+      ['dur-fast', '160ms', 'Hover, focus, tooltips'],
+      ['dur-base', '240ms', 'Panels, state swaps, "You\u2019re booked"'],
+      ['dur-slow', '400ms', 'Drawer in/out'],
+      ['ease-out', '.2 .7 .2 1', 'Entering'],
+      ['ease-in-out', '.6 0 .2 1', 'Moving between positions'],
+      ['pulse-dur', '1.6s', 'Offering heartbeat; static when reduced'],
+    ].map(([name, value, use]) => ({ name: '--sc-' + name, value, use }));
+
+    const icons = [
+      ['i-alert', 'circle-alert', 'Open gap'], ['i-send', 'send', 'Offering, sent'], ['i-check', 'circle-check', 'Confirmed, claimed'], ['i-play', 'circle-play', 'In progress'],
+      ['i-hourglass', 'hourglass', 'Pending approval'], ['i-checks', 'check-check', 'Settled'], ['i-warn', 'triangle-alert', 'Unfilled, failed'], ['i-ban', 'ban', 'Cancelled, withdrawn'],
+      ['i-calendar', 'calendar', 'Planned shift'], ['i-shield', 'shield-check', 'Authorized hold'], ['i-banknote', 'banknote', 'Captured'], ['i-wallet', 'wallet', 'Paid'],
+      ['i-lock', 'lock', 'Secure, locked'], ['i-clock', 'clock', 'Expiry, expired'], ['i-pin', 'map-pin', 'Venue, distance'], ['i-eye', 'eye', 'Offer opened'],
+      ['i-x', 'circle-x', 'Declined, error'], ['i-copy', 'copy', 'Copy reference'], ['i-retry', 'refresh-cw', 'Retry'], ['i-info', 'info', 'Info'],
+      ['i-loader', 'loader-circle', 'In progress'], ['i-chev', 'chevron-right', 'Navigate'], ['i-plus', 'plus', 'Report a gap'],
+    ].map(([id, name, use]) => ({ id, name, use }));
+
+    // ---- buttons
+    const variants = [
+      { v: 'Primary', bg: V('action'), fg: V('on-action'), border: '1px solid transparent', hover: V('action-hover'), text: 'Claim shift' },
+      { v: 'Secondary', bg: V('bg-surface'), fg: V('text'), border: '1px solid ' + V('border-strong'), hover: V('bg-sunken'), text: 'Not available' },
+      { v: 'Quiet', bg: 'transparent', fg: V('text'), border: '1px solid transparent', hover: V('bg-sunken'), text: 'Widen cap' },
+      { v: 'Danger', bg: V('danger'), fg: V('on-danger'), border: '1px solid transparent', hover: V('ember-700'), text: 'Cancel gap' },
+    ];
+    const ring = '0 0 0 2px ' + V('bg-surface') + ', 0 0 0 4px ' + V('focus');
+    const buttonRows = variants.map(v => ({ variant: v.v, cells: ['default', 'hover', 'focus', 'disabled', 'busy'].map(s => {
+      const dis = s === 'disabled', busy = s === 'busy';
+      return { text: busy ? 'Working…' : v.text, bg: dis ? V('disabled-bg') : (s === 'hover' ? v.hover : v.bg), fg: dis ? V('disabled-text') : v.fg,
+        border: dis ? '1px solid ' + V('border') : v.border, shadow: s === 'focus' ? ring : 'none', cursor: dis ? 'not-allowed' : 'pointer', spinDisplay: busy ? 'block' : 'none' };
+    }) }));
+    // ---- paypal slot
+    const none = 'none';
+    const slotStates = [
+      { name: 'Ready', lead: 'Approve a hold of up to $221.76. You are only charged for the hours worked.', slotDisplay: 'flex', slotBg: V('bg-surface'), slotText: 'PayPal SDK button · 52px', alertDisplay: none, retryDisplay: none },
+      { name: 'Loading SDK', lead: 'Approve a hold of up to $221.76. You are only charged for the hours worked.', slotDisplay: 'flex', slotBg: 'linear-gradient(90deg,var(--sc-paper-2) 25%,var(--sc-paper-3) 50%,var(--sc-paper-2) 75%)', slotText: 'Loading secure payment…', alertDisplay: none, retryDisplay: none },
+      { name: 'Approved', lead: 'Hold approved', slotDisplay: none, slotBg: '', slotText: '', alertDisplay: 'flex', abg: V('success-bg'), afg: V('success-fg'), aborder: V('success-border'), aicon: 'i-shield', atitle: '$221.76 on hold', abody: 'Nothing has been charged yet. We are offering the shift now.', retryDisplay: none },
+      { name: 'Cancelled', lead: 'Approve a hold of up to $221.76. You are only charged for the hours worked.', slotDisplay: 'flex', slotBg: V('bg-surface'), slotText: 'PayPal SDK button · 52px', alertDisplay: 'flex', abg: V('warning-bg'), afg: V('warning-fg'), aborder: V('warning-border'), aicon: 'i-info', atitle: 'You closed PayPal', abody: 'No hold was placed. Approve it when you\u2019re ready and we\u2019ll start offering.', retryDisplay: none },
+      { name: 'Failed', lead: 'Approve a hold of up to $221.76. You are only charged for the hours worked.', slotDisplay: none, slotBg: '', slotText: '', alertDisplay: 'flex', abg: V('error-bg'), afg: V('error-fg'), aborder: V('error-border'), aicon: 'i-warn', atitle: 'PayPal couldn\u2019t place the hold', abody: 'Nothing was charged. Check your PayPal funding source, then try again.', retryDisplay: 'flex' },
+    ];
+
+    slotStates.forEach((p, i) => { slotStates[i] = Object.assign({ atitle: '', abody: '', abg: 'transparent', afg: 'inherit', aborder: 'transparent', aicon: 'i-info' }, p); });
+    const allBadges = [...statuses.slice(0, 8), ...[['authorized', 'Authorized', 'i-shield'], ['captured', 'Captured', 'i-banknote'], ['paid', 'Paid', 'i-wallet'], ['failed', 'Failed', 'i-warn']].map(([k, label, icon]) => ({ label, icon, bg: V(`money-${k}-bg`), fg: V(`money-${k}-fg`), border: 'transparent', badgeBorderStyle: 'solid' }))];
+
+    // ---- shift blocks
+    const hatch = `repeating-linear-gradient(135deg, ${V('ember-600')} 0 10px, ${V('ember-700')} 10px 20px)`;
+    const B = (status, key, icon, title, sub, o) => Object.assign({ status, icon, title, sub, bg: V(`st-${key}-solid`), fg: V(`st-${key}-on`), border: 'none', left: 'none', deco: 'none' }, o);
+    const blocks = [
+      B('open', 'open', 'i-alert', 'Line cook · OPEN', '7:00a – 3:00p', { bg: hatch, border: '2px solid ' + V('ember-700') }),
+      B('offering', 'offering', 'i-send', 'Line cook · Wave 2', '7:00a – 3:00p · $24.20', { border: '1px solid ' + V('saffron-700') }),
+      B('confirmed', 'confirmed', 'i-check', 'Jordan Reyes', '7:00a – 3:00p'),
+      B('in_progress', 'progress', 'i-play', 'Devon Brooks', '4:00p – 11:00p'),
+      B('pending_approval', 'pending', 'i-hourglass', 'Aisha Khan', '10:00a – 4:00p'),
+      B('settled', 'settled', 'i-checks', 'Tom Okafor', '6:00a – 2:00p'),
+      B('unfilled', 'unfilled', 'i-warn', 'Line cook · Unfilled', 'Yesterday · 7:00a – 3:00p', { bg: V('st-unfilled-bg'), fg: V('st-unfilled-fg'), border: '2px dashed ' + V('st-unfilled-border') }),
+      B('cancelled', 'cancelled', 'i-ban', 'Host · Cancelled', '5:00p – 9:00p', { bg: V('st-cancelled-bg'), fg: V('st-cancelled-fg'), border: '1px dashed ' + V('st-cancelled-border'), deco: 'line-through' }),
+      B('planned', 'planned', 'i-calendar', 'Priya Nair', '3:00p – 11:00p', { bg: V('st-planned-bg'), fg: V('st-planned-on'), border: '1px solid ' + V('st-planned-border'), left: '4px solid ' + V('paper-7') }),
+    ];
+
+    // ---- offers
+    const av = { a: [V('saffron-100'), V('saffron-700')], b: [V('blue-100'), V('blue-700')], c: [V('green-100'), V('green-700')], d: [V('plum-100'), V('plum-700')] };
+    const off = (name, role, wave, when, status, icon, bg, fg, a, claimed) => ({ name, role, wave, when, status, icon, bg, fg, initials: name.split(' ').map(x => x[0]).join(''), avBg: av[a][0], avFg: av[a][1], rowBg: claimed ? V('st-confirmed-bg') : 'transparent' });
+    const neutral = [V('bg-sunken'), V('text-muted')];
+    const offers = [
+      off('Jordan Reyes', 'Line cook', 2, '6:49 AM', 'Claimed', 'i-check', V('st-confirmed-solid'), V('st-confirmed-on'), 'c', true),
+      off('Marcus Lee', 'Line cook', 1, '6:44 AM', 'Declined', 'i-x', neutral[0], neutral[1], 'b'),
+      off('Chloe Dubois', 'Prep cook', 1, 'opened 6:45 AM', 'Opened', 'i-eye', V('st-offering-bg'), V('st-offering-fg'), 'a'),
+      off('Priya Nair', 'Bartender', 2, '6:47 AM', 'Withdrawn', 'i-ban', neutral[0], neutral[1], 'd'),
+      off('Sam Whitfield', 'Bar back', 2, '6:47 AM', 'Sent', 'i-send', neutral[0], neutral[1], 'b'),
+    ];
+
+    const alerts = [
+      { icon: 'i-info', title: 'Info', body: 'Wave 2 goes out at 6:47 AM at $24.20/hr.', bg: V('info-bg'), fg: V('info-fg'), border: V('info-border') },
+      { icon: 'i-check', title: 'Success', body: 'Jordan Reyes claimed the shift at 6:49 AM.', bg: V('success-bg'), fg: V('success-fg'), border: V('success-border') },
+      { icon: 'i-warn', title: 'Heads up', body: 'This shift is still open and the cap is reached.', bg: V('warning-bg'), fg: V('warning-fg'), border: V('warning-border') },
+      { icon: 'i-alert', title: 'Problem', body: 'We couldn\u2019t read that. Try again or fill in the form.', bg: V('error-bg'), fg: V('error-fg'), border: V('error-border') },
+    ];
+
+    return { licenses, assumptions, questions, moneyDone, moneyMid, waves, families, semantic, statuses, money, contrast, types, spaces, radii, shadows, motion, icons, buttonRows, slotStates, allBadges, blocks, offers, alerts };
+  }
+}
+
+</script>
+</body>
+</html>

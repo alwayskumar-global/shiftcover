@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="review.css">
+<style>body{margin:0;background:var(--sc-bg-page)}</style>
+</helmet>
+<main class="rv-page">
+  <div class="rv-index">
+    <h1 class="rv-index__title">ShiftCover Pay · handoff package</h1>
+    <p class="rv-index__lead">Design system v1.0 plus every screen and state, with the documents a developer needs. Light theme only. Read the docs in the order listed; open any screen state directly with its chip.</p>
+
+    <p class="rv-index__section">Read first</p>
+    <ul class="rv-index__list">
+      <sc-for list="{{ docs }}" as="d" hint-placeholder-count="7">
+        <li><a class="rv-index__item" href="{{ d.href }}"><span class="rv-index__name">{{ d.href }}</span><span class="rv-index__desc">{{ d.desc }}</span><span class="rv-index__go">Open</span></a></li>
+      </sc-for>
+    </ul>
+
+    <p class="rv-index__section">Screens and states</p>
+    <ul class="rv-index__list">
+      <sc-for list="{{ pages }}" as="p" hint-placeholder-count="8">
+        <li class="rv-index__item">
+          <span class="rv-index__name">{{ p.file }}</span>
+          <span class="rv-index__desc">{{ p.desc }}</span>
+          <a class="rv-index__go" href="{{ p.file }}">Open</a>
+          <div class="rv-links rv-links--full">
+            <sc-for list="{{ p.states }}" as="s" hint-placeholder-count="4"><a class="rv-link-chip" href="{{ s.href }}">{{ s.label }}</a></sc-for>
+          </div>
+        </li>
+      </sc-for>
+    </ul>
+
+    <p class="rv-index__section">Files</p>
+    <ul class="rv-index__list">
+      <sc-for list="{{ files }}" as="f" hint-placeholder-count="12">
+        <li><a class="rv-index__item" href="{{ f.href }}"><span class="rv-index__name">{{ f.href }}</span><span class="rv-index__desc">{{ f.desc }}</span><span class="rv-index__go">{{ f.kind }}</span></a></li>
+      </sc-for>
+    </ul>
+
+    <p class="rv-index__section">Licenses</p>
+    <div class="rv-card">
+      <div class="rv-table-wrap"><div class="rv-table rv-cols-lic" role="table">
+        <div class="rv-thead" role="rowgroup"><div class="rv-tr" role="row"><div class="rv-th" role="columnheader">Item</div><div class="rv-th" role="columnheader">Use</div><div class="rv-th" role="columnheader">License</div></div></div>
+        <div role="rowgroup">
+          <sc-for list="{{ licenses }}" as="l" hint-placeholder-count="6"><div class="rv-tr" role="row"><div class="rv-td rv-str" role="cell">{{ l.item }}</div><div class="rv-td" role="cell">{{ l.use }}</div><div class="rv-td" role="cell">{{ l.license }}</div></div></sc-for>
+        </div>
+      </div></div>
+      <p class="rv-card__val">Full text in <a href="LICENSES.md">LICENSES.md</a>. No stock photos, no emoji, no third-party illustrations. The PayPal logo and button are never drawn; the design reserves a slot for the PayPal SDK.</p>
+    </div>
+  </div>
+</main>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const st = (file, list) => list.map(([label, h]) => ({ label, href: h ? file + '#' + h : file }));
+    const docs = [
+      { href: 'ShiftCover Design System.dc.html', desc: 'Design system (gate 1): foundations, components, the Pass signature pattern.' },
+      { href: 'tokens.css', desc: 'Final tokens. Every token documented by purpose and example, grouped: color, status, money, feedback, type, space, radius, elevation, motion, worker, console.' },
+      { href: 'components-inventory.dc.html', desc: 'Every reusable component with class, variants, states and pages.' },
+      { href: 'microcopy.dc.html', desc: 'Every non-obvious string, by screen and state. Filter and search.' },
+      { href: 'data-gaps.dc.html', desc: 'Fields and actions the screens need that are not in the data contracts, with priority.' },
+      { href: 'accessibility.dc.html', desc: 'Focus order, touch targets, reduced motion per screen; contrast pairs computed live from the tokens.' },
+      { href: 'inconsistencies.dc.html', desc: 'Inconsistencies found across pages, with proposed fixes. Nothing was changed.' },
+      { href: 'bryntum-theme.dc.html', desc: 'Token to Bryntum Scheduler mapping, config, and paste-in CSS.' },
+      { href: 'LICENSES.md', desc: 'Fonts and icon set with licenses, plus what is not covered (Bryntum, PayPal SDK).' },
+    ];
+    const pages = [
+      { file: 'W1-claim-card.dc.html', desc: 'Worker claim card, 390 × 844 (check 360 and 430). 12 states.', states: st('W1-claim-card.dc.html', [['Loading', 'loading'], ['Available', 'available'], ['Rate rising', 'rising'], ['Claiming', 'claiming'], ['Claimed', 'claimed'], ['Taken', 'taken'], ['Expired', 'expired'], ['Withdrawn', 'withdrawn'], ['Invalid link', 'invalid'], ['Load error', 'errorLoad'], ['Claim error', 'errorClaim'], ['Declined', 'declined']]) },
+      { file: 'W2-claimed.dc.html', desc: 'Worker "You\'re booked." confirmation. One state; width and motion switchers.', states: st('W2-claimed.dc.html', [['Booked', '']]) },
+      { file: 'M1-login.dc.html', desc: 'Manager login, 1440 × 900 (works to 1024). 7 states.', states: st('M1-login.dc.html', [['Default', 'default'], ['Validation', 'validation'], ['Wrong password', 'wrong'], ['Signing in', 'signingIn'], ['Link form', 'linkForm'], ['Link sending', 'linkSending'], ['Link sent', 'linkSent']]) },
+      { file: 'M2-roster.dc.html', desc: 'App shell and roster with the themed Scheduler; Day/Week toggle; all 10 shift-block statuses in a reference below.', states: st('M2-roster.dc.html', [['Populated', 'populated'], ['Loading', 'loading'], ['Empty · no gaps', 'empty'], ['Error', 'error']]) },
+      { file: 'M3-report-gap.dc.html', desc: 'Report a gap (full page): natural-language parse, form, live money, confirm, PayPal hold slot. 10 states.', states: st('M3-report-gap.dc.html', [['Empty', 'empty'], ['Parsing', 'parsing'], ['Parse failed', 'parseFailed'], ['Parsed · confirm', 'parsed'], ['Confirmed', 'confirmed'], ['PayPal window open', 'paypalWaiting'], ['PayPal approved', 'paypalApproved'], ['PayPal cancelled', 'paypalCancelled'], ['PayPal failed', 'paypalFailed'], ['Validation errors', 'validation']]) },
+      { file: 'M4-gap-detail.dc.html', desc: 'Gap detail: wave timeline, offers, money timeline, widen-cap and cancel dialogs. 8 states.', states: st('M4-gap-detail.dc.html', [['Offering · wave 2', 'offering'], ['Filled', 'filled'], ['Unfilled', 'unfilled'], ['In progress', 'inProgress'], ['Pending approval', 'pendingApproval'], ['Capture declined', 'captureDeclined'], ['Payout failed', 'payoutFailed'], ['Cancelled', 'cancelled']]) },
+    ];
+    const files = [
+      { href: 'tokens.css', kind: 'Ship', desc: 'Design tokens (CSS custom properties).' },
+      { href: 'components.css', kind: 'Ship', desc: 'Shared product classes: buttons, badges, alerts, fields, worker screens.' },
+      { href: 'console.css', kind: 'Ship', desc: 'Manager console classes: shell, nav, scheduler mock, M3 and M4 components. Remove the mock-only position classes.' },
+      { href: 'bryntum-theme.css', kind: 'Ship', desc: 'Paste-in overrides that map our tokens to a Bryntum Scheduler (some names to verify).' },
+      { href: 'icons.svg', kind: 'Ship', desc: 'Lucide (ISC) sprite; use icons.svg#i-name.' },
+      { href: 'LICENSES.md', kind: 'Ship', desc: 'License notices.' },
+      { href: 'review.css', kind: 'Review only', desc: 'State bar, device frame and doc tables. Do not ship.' },
+      { href: 'support.js', kind: 'Runtime', desc: 'Preview runtime for the .dc.html pages. Not part of the product.' },
+    ];
+    const licenses = [
+      { item: 'Bricolage Grotesque', use: 'Display and money type', license: 'SIL OFL 1.1' },
+      { item: 'Public Sans', use: 'UI and body type', license: 'SIL OFL 1.1' },
+      { item: 'IBM Plex Mono', use: 'Times, ids, PayPal references', license: 'SIL OFL 1.1' },
+      { item: 'Lucide icons', use: 'All icons (SVG sprite)', license: 'ISC (a few Feather-derived icons are MIT)' },
+      { item: 'Bryntum Scheduler', use: 'Roster component (not bundled here)', license: 'Commercial; not open source, do not commit its source to the public repo' },
+      { item: 'PayPal JS SDK', use: 'Hold approval button (loaded at runtime)', license: 'PayPal terms; we do not draw or restyle its button or logo' },
+    ];
+    return { docs, pages, files, licenses };
+  }
+}
+
+</script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="review.css">
+<style>body{margin:0}</style>
+</helmet>
+<div class="rv-page">
+  <section class="rv-bar" aria-label="Page header">
+    <div class="rv-bar__top"><h1 class="rv-bar__title">Data gaps</h1><span class="rv-bar__tag">handoff · fields not in the original contracts</span><a class="rv-bar__home" href="index.dc.html">All pages</a></div>
+  </section>
+  <main class="rv-doc">
+    <h2 class="rv-doc__title">Data gaps</h2>
+    <p class="rv-doc__lead">Every field or action the screens need that is not in the original contracts (Slot, Offer, Wave summary, Payment, Worker-facing offer). Priority: <span class="rv-tag rv-tag--high">Must</span> blocks a screen, <span class="rv-tag rv-tag--med">Should</span> degrades it, <span class="rv-tag rv-tag--low">Could</span> is polish. Sample values in the designs for these fields are placeholders.</p>
+    <div class="rv-filters" role="group" aria-label="Filter by area">
+      <sc-for list="{{ filters }}" as="f" hint-placeholder-count="6"><button class="rv-filter" aria-pressed="{{ f.pressed }}" onClick="{{ f.onClick }}">{{ f.label }}</button></sc-for>
+      <span class="rv-count">{{ count }}</span>
+    </div>
+    <div class="rv-card"><div class="rv-table-wrap">
+      <div class="rv-table rv-table--wide rv-cols-dg" role="table">
+        <div class="rv-thead" role="rowgroup"><div class="rv-tr" role="row"><div class="rv-th" role="columnheader">Area</div><div class="rv-th" role="columnheader">Needed</div><div class="rv-th" role="columnheader">Suggested field or action</div><div class="rv-th" role="columnheader">Used on</div><div class="rv-th" role="columnheader">Why</div><div class="rv-th" role="columnheader">Priority</div></div></div>
+        <div role="rowgroup">
+          <sc-for list="{{ rows }}" as="r" hint-placeholder-count="30">
+            <div class="rv-tr" role="row"><div class="rv-td" role="cell"><span class="rv-mono">{{ r.area }}</span></div><div class="rv-td rv-str" role="cell">{{ r.need }}</div><div class="rv-td" role="cell"><span class="rv-mono">{{ r.field }}</span></div><div class="rv-td" role="cell">{{ r.where }}</div><div class="rv-td" role="cell">{{ r.why }}</div><div class="rv-td" role="cell"><span class="rv-tag rv-tag--{{ r.pcls }}">{{ r.p }}</span></div></div>
+          </sc-for>
+        </div>
+      </div>
+    </div></div>
+  </main>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { f: 'All' };
+  D = [
+    ['Slot', 'Venue street address', 'venue_address', 'W2', 'Arrival instructions; W2 shows a sample address', 'M'],
+    ['Slot', 'Venue coordinates or maps URL', 'venue_lat, venue_lng (or maps_url)', 'W2 · Open in Maps', 'Opens the device maps app', 'M'],
+    ['Slot', 'Venue time zone', 'venue_tz', 'All times', 'Times must read in venue time', 'M'],
+    ['Slot', 'Server "now" for the venue', 'server_time', 'W1 countdown · M2 now line', 'Countdown and now-line must not trust the device clock', 'M'],
+    ['Slot', 'Reason for the gap', 'gap_reason (e.g. called_in_sick)', 'M2 gap row · M4 header', 'Rows say "Shift needs cover" instead of the reason', 'L'],
+    ['Slot', 'Worker being replaced', 'replaces_worker {id, name}', 'M4 header ("Replacing Maria Alvarez")', 'Context for the manager', 'S'],
+    ['Slot', 'Search radius, current and maximum', 'radius_mi, max_radius_mi', 'M4 unfilled suggestion', 'Needed to offer "Widen the radius"', 'S'],
+    ['Slot', 'How many extra workers a wider radius reaches', 'radius_preview_count', 'M4 unfilled suggestion', 'Lets the manager judge the suggestion', 'L'],
+    ['Slot', 'Cancel metadata', 'cancelled_at, cancelled_by', 'M4 cancelled', 'Banner and audit trail', 'L'],
+    ['Slot', 'Venue-wide platform fee setting', 'platform_fee_pct (variable, 5% sample)', 'M3 money · M4 dialog', 'Fee is a variable, never hard-coded', 'M'],
+    ['Slot', 'Allowed premium range and wave step rule', 'premium_min_pct, premium_max_pct, wave2_step_rule', 'M3 validation · M4 dialog', 'We assumed 0–50% and wave 2 = half the cap', 'S'],
+    ['Slot', 'Per-role default hourly rate', 'role_default_rate_cents', 'M3 "Role default" tag', 'Prefills base rate after parse; sample uses $22 line cook', 'S'],
+    ['Slot', 'Date limits for a gap', 'earliest_date, max_days_ahead', 'M3 validation', 'We assumed today or later', 'L'],
+    ['Slot', 'Overlap check with existing shifts', 'overlapping_slots[]', 'M3', 'No warning designed; likely needed', 'S'],
+    ['Offer', 'Rate when this worker was first offered', 'first_offered_rate_cents', 'W1 "rate rising" banner, delta', 'Banner shows $22.00 to $24.20 and +$17.60', 'M'],
+    ['Offer', 'Declined / expired / withdrawn timestamps', 'declined_at, expired_at, withdrawn_at', 'M4 offers list', 'Relative times for every status', 'S'],
+    ['Offer', 'Worker skipped this offer (action)', 'POST decline, no reason', 'W1 "Not available"', 'Records the skip; no reason is asked', 'M'],
+    ['Offer', 'Offer pay for the viewer\'s wave', 'rate_cents + pay_total_cents per wave', 'W1', 'W1 shows wave 2 numbers by default; must follow the viewer\'s wave', 'M'],
+    ['Wave', 'Audience size of wave 3', 'audience_count (resolved at send)', 'M4 wave 3', 'We showed 9 as a sample', 'L'],
+    ['Wave', 'Per-wave outcome counts', 'declined_count, opened_count, expired_count, withdrawn_count', 'M4 wave results line', 'Text like "1 declined · 1 opened · 1 waiting"', 'S'],
+    ['Worker', 'Other open shifts for this worker', 'other_open_offers_count, my_shifts_url', 'W1 taken state', '"See N other open shifts" and the link target', 'S'],
+    ['Worker', 'Request a new link (action)', 'POST /offer-link/resend {email}', 'W1 invalid link', 'Response must be identical whether or not email is known', 'M'],
+    ['Worker', 'Worker has a PayPal account on file', 'payout_ready (boolean)', 'W1 / W2 payment line', 'Copy promises payout to their PayPal', 'S'],
+    ['Worker', 'Worker progress after claim', 'arrived_at, finished_at', 'W2 on reopen', 'Which "next" step to highlight; designed as step 1 only', 'S'],
+    ['Worker', 'Avatar tint and initials', 'initials, avatar_tint (1–5)', 'M2 resource rows · M4 offers', 'Tint is decorative but must be stable', 'L'],
+    ['Manager', 'Manager email, name, role', 'manager {email, name, role}', 'M1, nav', 'Nav shows Dana Whitfield · Manager', 'M'],
+    ['Manager', 'Magic-link lifetime and single-use rule', 'link_ttl_minutes (15 assumed)', 'M1 link sent copy', 'Copy states "expires in 15 minutes"', 'S'],
+    ['Manager', 'Resource row to open-gap link', 'resource.cls = sc-row--gap', 'M2 scheduler row highlight', 'Bryntum row highlight driven by resource data', 'M'],
+    ['AI parse', 'Parse result and failure', 'parsed {role, date, start, end, rate?, confidence}, error_code', 'M3 parsing / parse failed', 'Which fields were filled and why parse failed', 'M'],
+    ['Payment', 'Breakdown of captured amount', 'captured_breakdown {worker_pay, fee, adjustments}', 'M4 captured stage', 'Sample captured $212.30 does not reconcile (see inconsistencies)', 'M'],
+    ['Payment', 'Hold increase (second authorization)', 'extra_authorization_cents, status', 'M4 widen cap', 'A wider cap needs a bigger hold approved in PayPal', 'M'],
+    ['Payment', 'Hold release time and reason', 'released_at, release_reason', 'M4 unfilled / cancelled', 'Shows "released at 7:00 AM"', 'S'],
+    ['Payment', 'Failure reason codes and retry flags', 'last_error {code, message}, can_retry', 'M4 capture declined / payout failed', 'Recovery card chooses retry vs support', 'M'],
+    ['Payment', 'Unused hold after capture', 'released_cents', 'M4 captured text', 'Plain-language note under Captured', 'L'],
+    ['Payment', 'PayPal environment (sandbox / live)', 'paypal_env', 'M3 slot, M4 refs', 'Reference ids differ per environment; show a sandbox marker', 'L'],
+    ['Ops', 'Notify a worker when a filled gap is cancelled', 'notify_worker_on_cancel', 'M4 cancel dialog', 'Dialog does not mention it; behaviour undefined', 'S'],
+  ];
+  renderVals() {
+    const s = this.state, areas = ['All', ...Array.from(new Set(this.D.map(d => d[0])))];
+    const P = { M: ['Must', 'high'], S: ['Should', 'med'], L: ['Could', 'low'] };
+    const rows = this.D.filter(d => s.f === 'All' || d[0] === s.f).map(d => ({ area: d[0], need: d[1], field: d[2], where: d[3], why: d[4], p: P[d[5]][0], pcls: P[d[5]][1] }));
+    return { filters: areas.map(f => ({ label: f === 'All' ? 'All areas' : f, pressed: s.f === f, onClick: () => this.setState({ f }) })), rows, count: rows.length + ' of ' + this.D.length + ' items' };
+  }
+}
+
+</script>
+</body>
+</html>

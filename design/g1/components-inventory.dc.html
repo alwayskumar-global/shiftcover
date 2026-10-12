@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="review.css">
+<style>body{margin:0}</style>
+</helmet>
+<div class="rv-page">
+  <section class="rv-bar" aria-label="Page header">
+    <div class="rv-bar__top"><h1 class="rv-bar__title">Components inventory</h1><span class="rv-bar__tag">handoff · every reusable component</span><a class="rv-bar__home" href="index.dc.html">All pages</a></div>
+  </section>
+  <main class="rv-doc">
+    <h2 class="rv-doc__title">Components inventory</h2>
+    <p class="rv-doc__lead">Each reusable component, its CSS class, variants, states, and where it appears. Class files: <span class="rv-mono">components.css</span> (shared), <span class="rv-mono">console.css</span> (manager console). Class names follow <span class="rv-mono">.sc-block__element--modifier</span>. See the inconsistency list for items that should move between files.</p>
+    <div class="rv-filters" role="group" aria-label="Filter by group">
+      <sc-for list="{{ filters }}" as="f" hint-placeholder-count="6"><button class="rv-filter" aria-pressed="{{ f.pressed }}" onClick="{{ f.onClick }}">{{ f.label }}</button></sc-for>
+      <span class="rv-count">{{ count }}</span>
+    </div>
+    <div class="rv-card"><div class="rv-table-wrap">
+      <div class="rv-table rv-table--wide rv-cols-ci" role="table">
+        <div class="rv-thead" role="rowgroup"><div class="rv-tr" role="row"><div class="rv-th" role="columnheader">Component</div><div class="rv-th" role="columnheader">Class</div><div class="rv-th" role="columnheader">Variants</div><div class="rv-th" role="columnheader">States</div><div class="rv-th" role="columnheader">Appears on</div></div></div>
+        <div role="rowgroup">
+          <sc-for list="{{ rows }}" as="r" hint-placeholder-count="30">
+            <div class="rv-tr" role="row"><div class="rv-td rv-str" role="cell">{{ r.name }}<br><span class="rv-count">{{ r.group }}</span></div><div class="rv-td" role="cell"><span class="rv-mono">{{ r.cls }}</span></div><div class="rv-td" role="cell">{{ r.variants }}</div><div class="rv-td" role="cell">{{ r.states }}</div><div class="rv-td" role="cell">{{ r.where }}</div></div>
+          </sc-for>
+        </div>
+      </div>
+    </div></div>
+  </main>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { f: 'All' };
+  C = [
+    ['Foundations', 'Button', '.sc-btn', 'primary · secondary · quiet · danger · danger-quiet; sizes lg 56 · default 48 · md 40 · icon · block · wide', 'default · hover · active · focus-visible · aria-disabled · is-busy (spinner + "…ing" label)', 'W1, W2, M1–M4'],
+    ['Foundations', 'Icon', '.sc-icon', 'sm 16 · md 20 · lg 24 · xl 32 (1.75 stroke); Lucide sprite icons.svg', 'inherits currentColor', 'all'],
+    ['Foundations', 'Wordmark', '.sc-wordmark', 'in header · on dark brand panel · collapsed in nav rail', 'static', 'all'],
+    ['Foundations', 'Avatar', '.sc-avatar', 'sm 32 · default 36 · tints 1–5 · brand · user', 'static (initials, decorative, aria-hidden)', 'M2, M4, nav'],
+    ['Foundations', 'Badge / chip', '.sc-badge', 'neutral · timer · urgent · st-<status> ×10 · info/success/warning/error · sm · dashed', 'static; always icon + label', 'W1, M2–M4'],
+    ['Foundations', 'Skeleton', '.sc-skeleton', 'chip · eyebrow · title · line · amount · block · button · avatar · name · role · event · stat', 'shimmer; flat when reduced motion', 'W1, M2'],
+    ['Forms', 'Field and label', '.sc-field, .sc-field__label, .sc-field__error', 'worker (48) · console (40)', 'default · focus · invalid (icon + text) · disabled', 'W1, M1, M3'],
+    ['Forms', 'Input / select', '.sc-input, .sc-input--md, .sc-select', 'text · email · password · date · time · select', 'default · focus · invalid · disabled · reading (shimmer)', 'W1, M1, M3'],
+    ['Forms', 'Affix input (money/percent)', '.sc-affix, .sc-affix__input', 'prefix $ · suffix / hour · suffix % above base', 'default · focus-within · invalid · reading', 'M3'],
+    ['Forms', 'Password group', '.sc-input-group', 'with show/hide toggle', 'hidden · shown (aria-pressed)', 'M1'],
+    ['Forms', 'Natural-language box', '.sc-nl', 'textarea + status + alert + footer', 'empty · filled · parsing ("AI is reading this") · parse failed · locked', 'M3'],
+    ['Forms', 'AI tag', '.sc-tag-ai', '"From your note" · "Role default"', 'static', 'M3'],
+    ['Forms', 'Segmented control', '.sc-segmented', 'Day/Week · cap choices (+30%…)', 'pressed · unpressed · focus', 'M2, M4'],
+    ['Feedback', 'Inline alert', '.sc-alert', 'info · success · warning · error · pending (defined only in M4 page, see inconsistencies)', 'static; role=alert/status as needed', 'W1, M1, M3, M4'],
+    ['Feedback', 'Banner', '.sc-banner', 'success (no gaps)', 'static', 'M2'],
+    ['Feedback', 'Panel (empty/error)', '.sc-panel', 'error tone', 'static; retry button', 'M2'],
+    ['Feedback', 'Notice (worker full-screen)', '.sc-notice', 'tones: neutral · success · info · warning · error; with actions or form', 'enter animation sc-rise', 'W1'],
+    ['Feedback', 'Toast', '.sc-toast', 'confirmation, inverse surface', 'appears 3.2s, then removed', 'M4'],
+    ['Feedback', 'Dialog + scrim', '.sc-dialog, .sc-scrim', 'confirm (cancel gap) · form (widen cap)', 'open · closed (Esc, buttons); focus trap not yet built', 'M4'],
+    ['Worker', 'Claim ticket', '.sc-ticket (+ __head, __perf, __stub, __amount, __formula, __payline)', 'available · rate rising · skeleton', 'claiming · claim error', 'W1'],
+    ['Worker', 'Trust strip', '.sc-trust', 'guarantee line', 'static', 'W1'],
+    ['Worker', 'Rate-rising banner', '.sc-rate-banner (--flash)', 'one-time halo', 'static when reduced motion', 'W1'],
+    ['Worker', 'Card', '.sc-card', 'default · --guarantee · --flush', 'static', 'W2, M3, M4'],
+    ['Worker', 'Link row', '.sc-link-row', '"Open in Maps"', 'default · hover · focus', 'W2'],
+    ['Worker', 'Steps rail', '.sc-steps', 'next step highlighted with tag "Next"', 'static', 'W2'],
+    ['Worker', 'Booked hero', '.sc-booked', 'disc + title + subtitle', 'enter animation sc-rise', 'W2'],
+    ['Console shell', 'Nav', '.sc-nav, .sc-nav__item', 'full 232 · icon rail 72 (below 1180)', 'active · hover · disabled ("Soon") · focus', 'M2–M4'],
+    ['Console shell', 'Page header + toolbar', '.sc-page, .sc-page__head, .sc-toolbar, .sc-crumbs', 'with date nav · with stepper · with facts', 'static', 'M2–M4'],
+    ['Console shell', 'Login layout', '.sc-login', 'brand panel + form card', 'default · validation · wrong · busy · link flow', 'M1'],
+    ['Roster', 'Stat tile', '.sc-stat', 'open (alert) · offering · pending · shifts', 'zero · alert · skeleton', 'M2'],
+    ['Roster', 'Legend', '.sc-legend', '10 status badges', 'static', 'M2'],
+    ['Roster', 'Scheduler (themed Bryntum mock)', '.sc-sched, .sc-sched__*', 'Day · Week; resource column; time axis; stripes; today tint', 'loading · populated · empty · error; gap row; now line', 'M2, bryntum-theme'],
+    ['Roster', 'Shift block', '.sc-ev--planned · open · offering · confirmed · progress · pending · settled · unfilled · cancelled · noshow; --compact', 'icon + title + subtitle + fill/pattern', 'default · hover · selected (ring) · focus; offering pulses', 'M2, bryntum-theme'],
+    ['Gap flow', 'Stepper', '.sc-stepper', '3 steps', 'done · now · next', 'M3'],
+    ['Gap flow', 'Key-value list', '.sc-kv', 'review details', 'filled · empty dash', 'M3'],
+    ['Gap flow', 'Money table', '.sc-money', 'muted row · normal · total', 'live recalculation', 'M3, M4 dialog'],
+    ['Gap flow', 'Rate ladder', '.sc-ladder', '3 steps, cap dashed', 'live recalculation', 'M3'],
+    ['Gap flow', 'PayPal slot', '.sc-paypal, .sc-paypal__slot', 'ready · disabled · loading · waiting · hidden for failed (retry) · approved (replaced by alert)', 'see M3 states; dashed outline is placeholder only', 'M3, M4'],
+    ['Gap flow', 'Money rail (compact)', '.sc-rail', 'Authorized now · Captured next · Paid next', 'now · next', 'M3'],
+    ['Signature', 'The Pass (wave + money timeline)', '.sc-pass, .sc-pass__item--wave|claimed|authorized|captured|paid', 'wave timeline · money timeline; gate-1 version in the design system page uses inline styles', 'is-done · is-now · is-next · is-failed · is-released · is-skipped', 'M4 (A and C), design system'],
+    ['Signature', 'Reference chip', '.sc-ref', 'Order · Auth · Capture · Payout', 'default · hover · copied (icon swap not wired)', 'M4'],
+    ['Gap detail', 'Gap header + facts', '.sc-gaphead, .sc-facts', 'slot + money badges, actions', 'actions disabled by status', 'M4'],
+    ['Gap detail', 'Offers table', '.sc-offers', 'row: default · claimed (highlight) · muted (expired/withdrawn)', 'static', 'M4'],
+    ['Gap detail', 'Suggestion cards', '.sc-suggest', 'raise cap · widen radius', 'static', 'M4'],
+    ['Harness (not product)', 'State bar, device frame, doc tables', '.rv-*  (review.css)', '—', '—', 'all pages; do not ship'],
+  ];
+  renderVals() {
+    const s = this.state, groups = ['All', ...Array.from(new Set(this.C.map(c => c[0])))];
+    const rows = this.C.filter(c => s.f === 'All' || c[0] === s.f).map(c => ({ group: c[0], name: c[1], cls: c[2], variants: c[3], states: c[4], where: c[5] }));
+    return { filters: groups.map(f => ({ label: f === 'All' ? 'All groups' : f, pressed: s.f === f, onClick: () => this.setState({ f }) })), rows, count: rows.length + ' of ' + this.C.length + ' components' };
+  }
+}
+
+</script>
+</body>
+</html>
