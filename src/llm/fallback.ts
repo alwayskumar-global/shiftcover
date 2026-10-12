@@ -5,13 +5,9 @@ import type { LlmFailureReason } from './gemini';
  * M0 ships the interface and stubs only; the rules parser and templates land in M3.
  */
 
-export interface ParsedGapDraft {
-  role: string;
-  startAt: string; // ISO
-  endAt: string; // ISO
-  baseRateCents: number;
-  maxPremiumPct: number;
-}
+import { parseGapText, type GapParse } from '../domain/gap-parser';
+
+export type ParsedGapDraft = GapParse;
 
 export interface GapParser {
   parse(text: string, ctx: { now: Date; timezone: string }): ParsedGapDraft | null;
@@ -23,9 +19,9 @@ export interface Explainer {
   shiftRecap(args: { role: string; hours: number; payUsd: string }): string;
 }
 
-/** Stub: returns null until the rules parser is implemented (M3). */
+/** Deterministic rules parser (M1). The Gemini path arrives in M3; this stays as the fallback. */
 export const rulesGapParser: GapParser = {
-  parse: () => null,
+  parse: (text, ctx) => parseGapText(text, ctx),
 };
 
 /** Stub templates; amounts are injected by code, never generated. */

@@ -1,16 +1,7 @@
 import { z } from 'zod';
 
-export const HOSPITALITY_ROLES = [
-  'line_cook',
-  'prep_cook',
-  'server',
-  'bartender',
-  'bar_back',
-  'dishwasher',
-  'barista',
-  'host',
-  'event_staff',
-] as const;
+import { SHIFT_ROLES as HOSPITALITY_ROLES } from '../../src/domain/roles';
+export { HOSPITALITY_ROLES };
 
 /** Structured gap the intake LLM must return. Manager confirms before anything happens. */
 export const gapSchema = z.object({
