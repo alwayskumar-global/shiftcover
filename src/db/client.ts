@@ -1,6 +1,6 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import { getServerEnv } from '../config/env';
+import { EnvError, getServerEnv } from '../config/env';
 import { buildPoolConfig } from './connection';
 import * as schema from './schema';
 
@@ -23,12 +23,21 @@ export function getDb() {
 
 export type Db = ReturnType<typeof getDb>;
 
-/** True when a trivial query succeeds. Never throws, never exposes connection details. */
+/**
+ * True when a trivial query succeeds. Never throws and never exposes details to the caller; the cause
+ * is logged server-side only (env variable names for config errors, error code for DB errors, never values).
+ */
 export async function pingDb(): Promise<boolean> {
   try {
     await getPool().query('select 1');
     return true;
-  } catch {
+  } catch (err) {
+    if (err instanceof EnvError) {
+      console.error(`[health] config error: ${err.message}`);
+    } else {
+      const code = (err as { code?: string } | null)?.code ?? 'unknown';
+      console.error(`[health] db ping failed (code=${code})`);
+    }
     return false;
   }
 }
