@@ -70,11 +70,22 @@ describe('parseServerEnv', () => {
         NODE_ENV: 'production',
         PAYPAL_CLIENT_ID: 'x',
         PAYPAL_CLIENT_SECRET: 'x',
-        PAYPAL_WEBHOOK_ID: 'x',
         PAYPAL_PLATFORM_EMAIL: 'platform@example.com',
         LLM_ENABLED: 'false',
       }),
     ).not.toThrow();
+  });
+
+  it('does not require PAYPAL_WEBHOOK_ID at boot (it only exists after the first deploy)', () => {
+    const prod = {
+      ...base,
+      NODE_ENV: 'production',
+      PAYPAL_CLIENT_ID: 'x',
+      PAYPAL_CLIENT_SECRET: 'x',
+      PAYPAL_PLATFORM_EMAIL: 'platform@example.com',
+      LLM_ENABLED: 'false',
+    };
+    expect(parseServerEnv(prod).PAYPAL_WEBHOOK_ID).toBeUndefined();
   });
 
   it('rejects out-of-range fee bps', () => {

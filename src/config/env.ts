@@ -85,10 +85,11 @@ const serverSchema = z
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV !== 'production') return;
+    // PAYPAL_WEBHOOK_ID is deliberately NOT required: it only exists after the first deploy (the webhook
+    // is registered against the public URL). Until it is set, POST /api/webhooks/paypal answers 503.
     const need: Array<keyof typeof env> = [
       'PAYPAL_CLIENT_ID',
       'PAYPAL_CLIENT_SECRET',
-      'PAYPAL_WEBHOOK_ID',
       'PAYPAL_PLATFORM_EMAIL',
     ];
     if (env.LLM_ENABLED) need.push('GEMINI_API_KEY');
