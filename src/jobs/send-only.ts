@@ -26,7 +26,7 @@ function getSendOnlyBoss(): PgBoss {
 export async function enqueueFromWeb(
   name: JobName,
   data: object,
-  options?: { singletonKey?: string },
+  options?: { singletonKey?: string; startAfter?: number },
 ) {
   return getSendOnlyBoss().send(name, data, options);
 }
