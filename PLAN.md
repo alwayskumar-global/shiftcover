@@ -234,7 +234,7 @@ Base URL (sandbox): `https://api-m.sandbox.paypal.com`. Auth: client-credentials
 - Use the Webhooks Simulator and Events dashboard for testing and manual resends.
 
 ### 7.7 Reconciliation job
-Every 2 to 5 minutes, for non-terminal payments, GET the authorization, capture, or payout batch and advance state. Safety net for delayed or missing sandbox webhooks.
+Every 2 to 5 minutes, for non-terminal payments, GET the authorization, capture, or payout batch and advance state. Safety net for delayed or missing sandbox webhooks. It must also re-enqueue `paypal_events` rows whose `processed_at` is null and older than a few minutes (an event that was stored but whose enqueue failed, since the receiver still answers 200 in that case). The webhook route answers 503 until `PAYPAL_WEBHOOK_ID` is set; the app no longer requires it at boot.
 
 ### 7.8 Fee model
 `platform_fee_cents = round(worker_pay_cents * PLATFORM_FEE_BPS / 10000)`. Employer pays `worker_pay + platform_fee`. The ledger also records PayPal's own capture and payout fees so margin is honest.
