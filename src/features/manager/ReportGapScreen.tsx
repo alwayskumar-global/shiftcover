@@ -66,7 +66,6 @@ export function ReportGapScreen() {
     const [y, m, d] = today.split('-').map(Number) as [number, number, number];
     return new Date(Date.UTC(y, m - 1, d + config.max_days_ahead)).toISOString().slice(0, 10);
   })();
-  const stubUi = config.payments_mode === 'stub' && process.env.NODE_ENV !== 'production';
 
   const [nl, setNl] = useState('');
   const [form, setForm] = useState<Form>({
@@ -716,7 +715,9 @@ export function ReportGapScreen() {
                     The stub button below exists only in stub mode and never in a production build. */}
                 {phase !== 'paypalFailed' && (
                   <div id="paypal-button-container">
-                    {stubUi && (slotReady || phase === 'paypalWaiting') ? (
+                    {process.env.NODE_ENV !== 'production' &&
+                    config.payments_mode === 'stub' &&
+                    (slotReady || phase === 'paypalWaiting') ? (
                       <button
                         className={`sc-paypal__slot ${slotLoading ? 'sc-paypal__slot--loading' : ''} ${phase === 'paypalWaiting' ? 'sc-paypal__slot--waiting' : ''}`}
                         type="button"

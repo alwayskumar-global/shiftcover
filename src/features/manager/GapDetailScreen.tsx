@@ -150,7 +150,6 @@ export function GapDetailScreen({ id }: { id: string }) {
   );
   const awaitingApproval = payment?.status === 'awaiting_approval';
   const canCancel = ['open', 'offering', 'confirmed'].includes(slot.status);
-  const stubUi = me.config.payments_mode === 'stub' && process.env.NODE_ENV !== 'production';
 
   // ---- badges
   const moneyBadge = (() => {
@@ -723,7 +722,7 @@ export function GapDetailScreen({ id }: { id: string }) {
             Workers only see the shift once the hold is placed.
             {/* PayPal slot: M2 mounts the SDK v6 button here. The stub button exists only in stub mode, never in a production build. */}
             <span id="paypal-button-container" style={{ display: 'block' }}>
-              {stubUi && (
+              {process.env.NODE_ENV !== 'production' && me.config.payments_mode === 'stub' && (
                 <button
                   className="sc-paypal__slot"
                   type="button"
