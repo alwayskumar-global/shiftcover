@@ -9,6 +9,8 @@ export const MATCHING = {
   },
   /** Hard limits. */
   maxWeeklyHours: 40,
+  /** Largest search radius (miles) a manager can widen to. */
+  maxSearchRadiusMi: 25,
   minRestHours: 8,
   /** Score normalisation. */
   maxDistanceKm: 25,

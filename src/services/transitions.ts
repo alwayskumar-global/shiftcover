@@ -37,7 +37,18 @@ export async function moveSlot(
   slotId: string,
   to: SlotState,
   ctx: MoveCtx,
-  patch: Partial<Pick<SlotRow, 'workerId' | 'offeredRateCents' | 'fillBy'>> = {},
+  patch: Partial<
+    Pick<
+      SlotRow,
+      | 'workerId'
+      | 'offeredRateCents'
+      | 'fillBy'
+      | 'searchRadiusMi'
+      | 'cancelledAt'
+      | 'cancelledBy'
+      | 'gapReason'
+    >
+  > = {},
 ): Promise<SlotRow> {
   const [cur] = await tx.select().from(shiftSlots).where(eq(shiftSlots.id, slotId)).for('update');
   if (!cur) throw new ServiceError('not_found', 'slot not found');
@@ -70,9 +81,17 @@ export async function moveOffer(
     actor: ctx.actor,
     meta: ctx.meta,
   });
+  const outcomeAt =
+    to === 'DECLINED'
+      ? { declinedAt: sql`now()` }
+      : to === 'EXPIRED'
+        ? { expiredAt: sql`now()` }
+        : to === 'WITHDRAWN'
+          ? { withdrawnAt: sql`now()` }
+          : {};
   const [row] = await tx
     .update(offers)
-    .set({ ...patch, status: to })
+    .set({ ...patch, ...outcomeAt, status: to })
     .where(eq(offers.id, offerId))
     .returning();
   await writeAudit(tx, r.audit);

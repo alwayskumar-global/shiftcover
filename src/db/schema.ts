@@ -181,7 +181,10 @@ export const shiftSlots = pgTable(
     check('slots_role_ck', sql.raw(`role in (${SHIFT_ROLES.map((r) => `'${r}'`).join(', ')})`)),
     check('slots_rate_ck', sql`${t.baseRateCents} >= 0`),
     check('slots_premium_ck', sql`${t.maxPremiumPct} between 0 and 100`),
-    check('slots_radius_ck', sql`${t.searchRadiusMi} is null or ${t.searchRadiusMi} between 1 and 100`),
+    check(
+      'slots_radius_ck',
+      sql`${t.searchRadiusMi} is null or ${t.searchRadiusMi} between 1 and 100`,
+    ),
     check(
       'slots_offered_rate_ck',
       sql`${t.offeredRateCents} is null or ${t.offeredRateCents} >= 0`,

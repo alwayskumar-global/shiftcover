@@ -27,6 +27,8 @@ export interface GapFacts {
   startAt: Date;
   endAt: Date;
   venue: { orgId: string; lat: number; lng: number; timezone: string };
+  /** Worker search radius in miles (hard filter). Omitted = no radius filter. Workers without a home location pass. */
+  radiusMi?: number;
 }
 
 export type FilterReason =
@@ -37,8 +39,10 @@ export type FilterReason =
   | 'overlapping_shift'
   | 'insufficient_rest'
   | 'weekly_hours_exceeded'
+  | 'outside_radius'
   | 'called_out';
 
+export const KM_PER_MILE = 1.609344;
 const HOUR_MS = 3_600_000;
 const MIN_MS = 60_000;
 
@@ -94,6 +98,11 @@ export function filterReasons(c: CandidateFacts, g: GapFacts, cfg: MatchingConfi
         (s.startAt.getTime() >= gapEnd && s.startAt.getTime() - gapEnd < restMs),
     );
     if (tooClose) reasons.push('insufficient_rest');
+  }
+
+  if (g.radiusMi !== undefined && c.homeLat !== null && c.homeLng !== null) {
+    const miles = haversineKm(c.homeLat, c.homeLng, g.venue.lat, g.venue.lng) / KM_PER_MILE;
+    if (miles > g.radiusMi) reasons.push('outside_radius');
   }
 
   const week = localWeekKey(g.startAt, g.venue.timezone);

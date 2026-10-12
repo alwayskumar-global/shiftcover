@@ -48,6 +48,7 @@ export const PAYMENT_STATUS_PUBLIC = [
 export const OFFER_VIEW_STATE = [
   'available',
   'claimed',
+  'declined',
   'taken',
   'expired',
   'withdrawn',
@@ -59,7 +60,16 @@ export const ApiError = z
   .strict();
 
 // ---------------------------------------------------------------- 10.6 Slot
-export const WorkerRefDto = z.object({ id: z.uuid(), name: z.string(), role }).strict();
+/** `initials` and `avatar_tint` (1-5) are additive (design data-gap: stable avatar). */
+export const WorkerRefDto = z
+  .object({
+    id: z.uuid(),
+    name: z.string(),
+    role,
+    initials: z.string(),
+    avatar_tint: z.number().int().min(1).max(5),
+  })
+  .strict();
 
 export const SlotDto = z
   .object({
@@ -76,6 +86,13 @@ export const SlotDto = z
     max_premium_pct: z.number().int().min(0).max(100),
     offered_rate_cents: cents.nullable(),
     fill_by: iso.nullable(),
+    // ---- additive (docs/api-m1.md Deviations) ----
+    venue_tz: z.string(),
+    gap_reason: z.string().nullable(),
+    replaces_worker: z.object({ id: z.uuid(), name: z.string() }).strict().nullable(),
+    search_radius_mi: z.number().int().positive(),
+    cancelled_at: iso.nullable(),
+    cancelled_by: z.string().nullable(),
   })
   .strict();
 export type SlotDto = z.infer<typeof SlotDto>;
@@ -84,7 +101,14 @@ export type SlotDto = z.infer<typeof SlotDto>;
 export const OfferDto = z
   .object({
     id: z.uuid(),
-    worker: z.object({ name: z.string(), role }).strict(),
+    worker: z
+      .object({
+        name: z.string(),
+        role,
+        initials: z.string(),
+        avatar_tint: z.number().int().min(1).max(5),
+      })
+      .strict(),
     wave: z.number().int().min(1).max(3),
     rate_cents: cents,
     status: z.enum(OFFER_STATUS_PUBLIC),
@@ -92,6 +116,10 @@ export const OfferDto = z
     opened_at: iso.nullable(),
     claimed_at: iso.nullable(),
     expires_at: iso,
+    // ---- additive ----
+    declined_at: iso.nullable(),
+    expired_at: iso.nullable(),
+    withdrawn_at: iso.nullable(),
   })
   .strict();
 export type OfferDto = z.infer<typeof OfferDto>;
@@ -105,6 +133,11 @@ export const WaveSummaryDto = z
     rate_cents: cents,
     /** True when the slot's max premium clamped this wave's rate below its planned premium. */
     capped: z.boolean(),
+    // ---- additive: outcome counts for the wave results line ----
+    opened_count: z.number().int().nonnegative(),
+    declined_count: z.number().int().nonnegative(),
+    expired_count: z.number().int().nonnegative(),
+    withdrawn_count: z.number().int().nonnegative(),
   })
   .strict();
 export type WaveSummaryDto = z.infer<typeof WaveSummaryDto>;
@@ -144,6 +177,16 @@ export const WorkerOfferDto = z
     pay_total_cents: cents.nullable(),
     expires_at: iso.nullable(),
     state: z.enum(OFFER_VIEW_STATE),
+    // ---- additive (docs/api-m1.md Deviations) ----
+    wave: z.number().int().min(1).max(3).nullable(),
+    server_time: iso.nullable(),
+    venue_tz: z.string().nullable(),
+    venue_address: z.string().nullable(),
+    venue_lat: z.number().nullable(),
+    venue_lng: z.number().nullable(),
+    first_offered_rate_cents: cents.nullable(),
+    other_open_offers_count: z.number().int().nonnegative().nullable(),
+    payout_ready: z.boolean().nullable(),
   })
   .strict();
 export type WorkerOfferDto = z.infer<typeof WorkerOfferDto>;
@@ -152,7 +195,13 @@ export type WorkerOfferDto = z.infer<typeof WorkerOfferDto>;
 export const RosterQuery = z.object({ date: z.iso.date().optional() });
 
 export const RosterResourceDto = z
-  .object({ id: z.uuid(), name: z.string(), role, initials: z.string() })
+  .object({
+    id: z.uuid(),
+    name: z.string(),
+    role,
+    initials: z.string(),
+    avatar_tint: z.number().int().min(1).max(5),
+  })
   .strict();
 
 export const RosterResponse = z
@@ -160,6 +209,7 @@ export const RosterResponse = z
     /** Additive (Deviations): the venue-local day shown and its IANA zone, needed to render UTC timestamps. */
     date: z.iso.date(),
     timezone: z.string(),
+    server_time: iso,
     resources: z.array(RosterResourceDto),
     events: z.array(SlotDto),
     summary: z
@@ -193,6 +243,8 @@ export const ParseResultDto = z
       .nullable(),
     venue: z.object({ id: z.uuid(), name: z.string() }).strict(),
     base_rate_cents: cents.nullable(),
+    /** Additive: where the rate came from, so the UI can show the "Role default" tag. */
+    base_rate_source: z.enum(['text', 'replaced_shift', 'role_default']).nullable(),
     max_premium_pct: z.number().int().min(0).max(100),
     /** Computed money; null until role, times and rate are all known. */
     worker_pay_at_cap_cents: cents.nullable(),
@@ -202,6 +254,7 @@ export const ParseResultDto = z
     missing: z.array(z.enum(['role', 'time', 'base_rate'])),
     replaces_slot_id: z.uuid().nullable(),
     called_out_name: z.string().nullable(),
+    gap_reason: z.string().nullable(),
     /** Exact instants so the UI can POST without re-deriving them from date + start/end + zone. */
     start_at: iso.nullable(),
     end_at: iso.nullable(),
@@ -219,6 +272,8 @@ export const CreateGapRequest = z
     base_rate_cents: z.number().int().positive().max(100_000),
     max_premium_pct: z.number().int().min(0).max(100),
     replaces_slot_id: z.uuid().optional(),
+    /** Why the gap exists, e.g. called_in_sick. */
+    gap_reason: z.string().trim().min(1).max(60).optional(),
   })
   .strict()
   .refine((v) => Date.parse(v.end_at) > Date.parse(v.start_at), {
@@ -243,6 +298,15 @@ export type CreateGapResponse = z.infer<typeof CreateGapResponse>;
 
 export const GapDetailResponse = z
   .object({
+    server_time: iso,
+    /** Additive: current and maximum search radius, and how many more workers the maximum would reach. */
+    widen: z
+      .object({
+        radius_mi: z.number().int(),
+        max_radius_mi: z.number().int(),
+        preview_count: z.number().int().nonnegative(),
+      })
+      .strict(),
     slot: SlotDto,
     waves: z.array(WaveSummaryDto),
     offers: z.array(OfferDto),
@@ -279,3 +343,46 @@ export const WorkerShiftsResponse = z
     ),
   })
   .strict();
+
+// ---------------------------------------------------------------- manager: me / config (additive endpoint)
+export const MeResponse = z
+  .object({
+    manager: z.object({ email: z.string(), name: z.string(), role: z.literal('manager') }).strict(),
+    org: z.object({ name: z.string() }).strict(),
+    venue: z
+      .object({
+        id: z.uuid(),
+        name: z.string(),
+        area: z.string(),
+        address: z.string(),
+        timezone: z.string(),
+      })
+      .strict(),
+    config: z
+      .object({
+        platform_fee_pct: z.number(),
+        premium_min_pct: z.number().int(),
+        premium_max_pct: z.number().int(),
+        max_days_ahead: z.number().int(),
+        link_ttl_minutes: z.number().int(),
+        role_default_rate_cents: z.record(z.string(), cents),
+        paypal_env: z.literal('sandbox'),
+        payments_mode: z.enum(['paypal', 'stub']),
+      })
+      .strict(),
+  })
+  .strict();
+export type MeResponse = z.infer<typeof MeResponse>;
+
+// ---------------------------------------------------------------- actions (additive endpoints)
+export const WidenRadiusRequest = z
+  .object({ search_radius_mi: z.number().int().min(1).max(100) })
+  .strict();
+export const WidenRadiusResponse = z.object({ slot: SlotDto, reopened: z.boolean() }).strict();
+export const CancelGapRequest = z
+  .object({ reason: z.string().trim().max(200).optional() })
+  .strict();
+export const CancelGapResponse = z.object({ slot: SlotDto }).strict();
+export const ResendLinkRequest = z.object({ email: z.email().max(254) }).strict();
+/** Identical for known and unknown addresses. */
+export const ResendLinkResponse = z.object({ ok: z.literal(true) }).strict();

@@ -9,6 +9,7 @@ export interface ManagerContext {
   orgId: string;
   role: 'manager';
   email: string;
+  name: string;
 }
 
 /**
@@ -26,5 +27,5 @@ export async function requireManager(
   if (!u || u.authProvider !== AUTH_PROVIDER || u.role !== 'manager') {
     throw new HttpError(403, 'forbidden', 'Not a manager of any organisation');
   }
-  return { userId: u.id, orgId: u.orgId, role: 'manager', email: u.email };
+  return { userId: u.id, orgId: u.orgId, role: 'manager', email: u.email, name: session.user.name };
 }

@@ -35,6 +35,7 @@ export async function loadGapFacts(
     startAt: slot.startAt,
     endAt: slot.endAt,
     venue: { orgId: venue.orgId, lat: venue.lat, lng: venue.lng, timezone: venue.timezone },
+    radiusMi: slot.searchRadiusMi ?? venue.searchRadiusMi,
   };
 }
 

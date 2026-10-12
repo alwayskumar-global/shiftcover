@@ -194,7 +194,7 @@ describe.skipIf(!hasTestDb)('M1 HTTP API (handlers on live Postgres)', () => {
     });
   });
 
-  it('parse: incomplete text reports what is missing instead of guessing', async () => {
+  it('parse: nothing readable -> 422 parse_failed (the UI fills nothing in)', async () => {
     const w = await world();
     const res = await handle(postParseGap)(
       w.api,
@@ -203,13 +203,28 @@ describe.skipIf(!hasTestDb)('M1 HTTP API (handlers on live Postgres)', () => {
         body: JSON.stringify({ text: 'we need someone tomorrow' }),
       }),
     );
+    expect(res.status).toBe(422);
+    expect((await res.json()).error.code).toBe('parse_failed');
+  });
+
+  it('parse: partial text reports what is missing; the base rate falls back to the role default', async () => {
+    const w = await world();
+    const res = await handle(postParseGap)(
+      w.api,
+      w.req('/api/manager/gaps/parse', {
+        method: 'POST',
+        body: JSON.stringify({ text: 'need a bartender tomorrow' }),
+      }),
+    );
+    expect(res.status).toBe(200);
     const card = ParseResultDto.parse(await res.json());
-    expect(card.missing).toEqual(['role', 'time', 'base_rate']);
-    expect([card.worker_pay_at_cap_cents, card.platform_fee_cents, card.total_hold_cents]).toEqual([
-      null,
-      null,
-      null,
-    ]);
+    expect(card).toMatchObject({
+      role: 'bartender',
+      base_rate_cents: 2400,
+      base_rate_source: 'role_default',
+      missing: ['time'],
+      total_hold_cents: null,
+    });
   });
 
   it('END TO END: create gap -> authorize (stub) -> offer -> worker views -> claims -> manager sees CONFIRMED', async () => {
@@ -333,6 +348,16 @@ describe.skipIf(!hasTestDb)('M1 HTTP API (handlers on live Postgres)', () => {
       pay_total_cents: 17_600,
       expires_at: '2026-10-14T13:55:00.000Z', // 15 min after "now"
       state: 'available',
+      // additive fields (docs/api-m1.md Deviations)
+      wave: 1,
+      server_time: '2026-10-14T13:40:00.000Z',
+      venue_tz: 'America/Los_Angeles',
+      venue_address: '',
+      venue_lat: 45.5231,
+      venue_lng: -122.6765,
+      first_offered_rate_cents: 2200,
+      other_open_offers_count: 0,
+      payout_ready: false,
     });
     expect(viewDto.pay_total_cents).toBe(17_600); // 8h x $22.00
     expect(viewDto.hours).toBe(8);

@@ -117,6 +117,18 @@ describe('hard filters', () => {
     // a shift in the previous week does not count
     expect(reasons({ shifts: [day(5), day(6), day(7), day(8), day(9)] })).toEqual([]);
   });
+  it('search radius is a hard filter in miles; missing home location passes', () => {
+    const at = (radiusMi?: number) => ({ ...gap, radiusMi });
+    // ~0.8 km away: inside any radius
+    expect(filterReasons(base, at(1), MATCHING)).toEqual([]);
+    // ~22 km (13.7 mi) north
+    const far = { ...base, homeLat: 45.72, homeLng: -122.6765 };
+    expect(filterReasons(far, at(10), MATCHING)).toContain('outside_radius');
+    expect(filterReasons(far, at(15), MATCHING)).toEqual([]); // widening admits them
+    expect(filterReasons(far, at(undefined), MATCHING)).toEqual([]); // no radius = no filter
+    expect(filterReasons({ ...far, homeLat: null, homeLng: null }, at(10), MATCHING)).toEqual([]);
+  });
+
   it('reports every failed rule', () => {
     const r = reasons({ skills: [], certs: [], availability: [] });
     expect(r).toEqual(

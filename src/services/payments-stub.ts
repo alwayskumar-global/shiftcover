@@ -1,3 +1,4 @@
+import { latestPayment } from './payment-queries';
 import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { ledgerEntries, payments } from '../db/schema';
@@ -18,7 +19,7 @@ export function assertStubMode(mode: string): void {
 export async function stubAuthorize(db: Db, mode: string, slotId: string, actor = 'system:stub') {
   assertStubMode(mode);
   return db.transaction(async (tx) => {
-    const [pay] = await tx.select().from(payments).where(eq(payments.slotId, slotId));
+    const pay = await latestPayment(tx, slotId);
     if (!pay) throw new ServiceError('not_found', 'payment not found');
     const row = await movePayment(
       tx,
@@ -43,14 +44,18 @@ export async function stubVoid(
   slotId: string,
   actor: string,
 ) {
-  const [pay] = await tx.select().from(payments).where(eq(payments.slotId, slotId));
-  if (!pay || pay.status !== 'AUTHORIZED') return null;
+  const pay = await latestPayment(tx, slotId);
+  if (!pay || !['AUTHORIZED', 'AUTH_PENDING_APPROVAL'].includes(pay.status)) return null;
+  const wasAuthorized = pay.status === 'AUTHORIZED';
   const row = await movePayment(tx, pay.id, 'VOIDED', { actor, meta: { stub: true } });
-  await tx.insert(ledgerEntries).values({
-    paymentId: row.id,
-    type: 'VOIDED',
-    amountCents: row.authorizedCents,
-    ref: row.authorizationId,
-  });
+  if (wasAuthorized) {
+    // A hold that was never authorized has no money to release, so no ledger entry.
+    await tx.insert(ledgerEntries).values({
+      paymentId: row.id,
+      type: 'VOIDED',
+      amountCents: row.authorizedCents,
+      ref: row.authorizationId,
+    });
+  }
   return row;
 }

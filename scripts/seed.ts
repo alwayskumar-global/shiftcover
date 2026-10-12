@@ -207,7 +207,7 @@ async function seed() {
         orgId: org!.id,
         name: w.name,
         email: w.email,
-        paypalEmail: null,
+        paypalEmail: w.email, // synthetic; real sandbox payout accounts come with M2
         skills: w.skills,
         reliabilityScore: w.reliability,
         acceptanceRate: w.acceptance,

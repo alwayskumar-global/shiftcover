@@ -13,7 +13,9 @@ export const TZ = 'America/Los_Angeles';
 // Synthetic downtown-Portland coordinates.
 export const VENUE = {
   name: 'Maple & Rye',
-  area: 'Pearl District',
+  area: 'Portland, OR',
+  address: '1021 NW Everett St, Portland, OR 97209',
+  searchRadiusMi: 10,
   lat: 45.5231,
   lng: -122.6765,
   radiusM: 150,
@@ -215,5 +217,6 @@ export function headlineGap(today: string, orgId = 'demo-org') {
     startAt,
     endAt,
     venue: { orgId, lat: VENUE.lat, lng: VENUE.lng, timezone: TZ },
+    radiusMi: VENUE.searchRadiusMi,
   };
 }

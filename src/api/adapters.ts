@@ -6,7 +6,8 @@ import type { PaymentDto, SlotDto, WorkerOfferDto } from './dto';
 
 /** Internal (camelCase, UPPERCASE states) -> public Section 10.6 contract (snake_case, lowercase states). */
 
-export const KM_PER_MILE = 1.609344;
+export { KM_PER_MILE } from '../domain/matching';
+import { KM_PER_MILE } from '../domain/matching';
 
 export const hoursBetween = (start: Date, end: Date) =>
   Math.round(((end.getTime() - start.getTime()) / 3_600_000) * 100) / 100;
@@ -31,6 +32,21 @@ export function publicPaymentStatus(s: PaymentState): PaymentDto['status'] {
       return s.toLowerCase() as PaymentDto['status'];
   }
 }
+
+export const initialsOf = (name: string) =>
+  name
+    .split(/\s+/)
+    .map((p) => p[0] ?? '')
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
+/** Stable decorative tint 1-5 derived from the id (design data-gap: avatar tint). */
+export const avatarTint = (id: string) => {
+  let h = 0;
+  for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return (h % 5) + 1;
+};
 
 export const primaryRole = (skills: readonly string[]): ShiftRole => {
   const r = skills.find(isShiftRole);
@@ -71,6 +87,15 @@ export function toWorkerOfferDto(view: OfferView): WorkerOfferDto {
       pay_total_cents: null,
       expires_at: null,
       state: view.state,
+      wave: null,
+      server_time: null,
+      venue_tz: null,
+      venue_address: null,
+      venue_lat: null,
+      venue_lng: null,
+      first_offered_rate_cents: null,
+      other_open_offers_count: null,
+      payout_ready: null,
     };
   }
   return {
@@ -85,5 +110,14 @@ export function toWorkerOfferDto(view: OfferView): WorkerOfferDto {
     pay_total_cents: o.estimatedPayCents,
     expires_at: o.expiresAt,
     state: view.state,
+    wave: o.wave,
+    server_time: o.serverTime,
+    venue_tz: o.venueTz,
+    venue_address: o.venueAddress,
+    venue_lat: o.venueLat,
+    venue_lng: o.venueLng,
+    first_offered_rate_cents: o.firstOfferedRateCents,
+    other_open_offers_count: o.otherOpenOffersCount,
+    payout_ready: o.payoutReady,
   };
 }
