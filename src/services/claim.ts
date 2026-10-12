@@ -95,6 +95,13 @@ class Abort extends Error {
   }
 }
 
+/** The guarded slot update matched no row: the transaction is abandoned and the true state is re-derived. */
+class Lost extends Error {
+  constructor() {
+    super('lost');
+  }
+}
+
 /**
  * Atomic first-claim-wins (PLAN.md 6). One transaction: validate token + expiry, take the slot row with
  * `UPDATE ... WHERE status = 'OFFERING'`, then open/claim this offer, withdraw the rest, audit, notify.
@@ -129,7 +136,7 @@ export async function claimOffer(
         })
         .where(and(eq(shiftSlots.id, pre.slot.id), eq(shiftSlots.status, 'OFFERING')))
         .returning({ id: shiftSlots.id });
-      if (won.length === 0) throw new Abort({ state: 'taken', offer: view.offer });
+      if (won.length === 0) throw new Lost();
 
       // 2. Our offer must still be open (an expiry job may have run since the pre-read).
       const [cur] = await tx.select().from(offers).where(eq(offers.id, pre.offer.id)).for('update');
@@ -195,6 +202,16 @@ export async function claimOffer(
     });
   } catch (e) {
     if (e instanceof Abort) return e.result;
+    if (e instanceof Lost) {
+      // Zero rows means the slot was no longer OFFERING. That is not always "taken": a fill deadline, a
+      // cancellation, an expiry or this worker's own concurrent claim may have got there first. Re-read the
+      // committed state and report what a worker should actually be told.
+      const fresh = await loadByToken(deps, token);
+      if (!fresh) return { state: 'invalid' };
+      const result: ClaimResult = toView(fresh, deps.now());
+      if (result.state === 'claimed') result.slotId = fresh.slot.id;
+      return result;
+    }
     throw e;
   }
 }
