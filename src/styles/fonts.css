@@ -1,0 +1,9 @@
+/*
+ * Maps the design tokens' font stacks (tokens.css, unchanged) onto the self-hosted next/font families.
+ * next/font renames each family, so the token names ("Bricolage Grotesque", ...) would not resolve on their own.
+ */
+:root {
+  --sc-font-display: var(--font-display), 'Public Sans', system-ui, sans-serif;
+  --sc-font-body: var(--font-body), system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --sc-font-mono: var(--font-mono), ui-monospace, 'SF Mono', Menlo, monospace;
+}
