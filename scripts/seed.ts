@@ -32,13 +32,18 @@ import {
   workerCertifications,
   workers,
 } from '../src/db/schema';
-import { addDaysToDateString, localDateString, zonedTimeToUtc } from '../src/lib/time';
-
-const ORG_NAME = 'Maple & Rye';
-const MANAGER = { name: 'Dana Whitfield', email: 'dana.whitfield@example.com' };
-const TZ = 'America/Los_Angeles';
-// Synthetic downtown-Portland coordinates for the venue and for worker homes.
-const VENUE = { name: 'Maple & Rye', lat: 45.5231, lng: -122.6765, radiusM: 150 };
+import { localDateString } from '../src/lib/time';
+import {
+  DEMO_ROSTER,
+  DEMO_WORKERS,
+  hhmmToMinutes,
+  MANAGER,
+  ORG_NAME,
+  resolveValidUntil,
+  rosterInstants,
+  TZ,
+  VENUE,
+} from './lib/demo-data';
 
 const args = new Set(process.argv.slice(2));
 const databaseUrl = process.env.DATABASE_URL ?? '';
@@ -60,146 +65,6 @@ if (!loopback && !args.has('--remote')) {
 
 const pool = new Pool(buildPoolConfig(databaseUrl, 'migrate'));
 const db = drizzle(pool, { schema }) as unknown as Db;
-
-type W = {
-  name: string;
-  email: string;
-  skills: string[];
-  reliability: number;
-  acceptance: number;
-  response: number;
-  home: [number, number];
-  certs: Array<{ cert: string; validUntil: string | null }>;
-  /** [weekday list, start HH:MM, end HH:MM] windows, venue-local */
-  avail: Array<[number[], string, string]>;
-};
-
-const ALL = [0, 1, 2, 3, 4, 5, 6];
-const yesterday = () => addDaysToDateString(localDateString(new Date(), TZ), -1);
-
-const WORKERS: W[] = [
-  {
-    name: 'Maria Alvarez',
-    email: 'maria.alvarez@example.com',
-    skills: ['line_cook', 'prep_cook'],
-    reliability: 0.96,
-    acceptance: 0.9,
-    response: 60,
-    home: [45.5202, -122.6742],
-    certs: [{ cert: 'food_handler', validUntil: '2027-06-30' }],
-    avail: [[ALL, '06:00', '23:00']],
-  },
-  {
-    name: 'Jordan Reyes',
-    email: 'jordan.reyes@example.com',
-    skills: ['server', 'host'],
-    reliability: 0.91,
-    acceptance: 0.8,
-    response: 120,
-    home: [45.5311, -122.6861],
-    certs: [],
-    avail: [[ALL, '10:00', '23:59']],
-  },
-  {
-    name: 'Marcus Lee',
-    email: 'marcus.lee@example.com',
-    skills: ['bartender', 'bar_back', 'server', 'line_cook'],
-    reliability: 0.88,
-    acceptance: 0.75,
-    response: 150,
-    home: [45.5121, -122.6587],
-    certs: [
-      { cert: 'alcohol_service', validUntil: '2027-03-01' },
-      { cert: 'food_handler', validUntil: '2027-01-15' },
-    ],
-    avail: [[ALL, '06:00', '23:59']],
-  },
-  {
-    name: 'Chloe Dubois',
-    email: 'chloe.dubois@example.com',
-    skills: ['server', 'host', 'barista'],
-    reliability: 0.93,
-    acceptance: 0.85,
-    response: 90,
-    home: [45.5342, -122.6501],
-    certs: [],
-    avail: [[ALL, '06:00', '23:00']],
-  },
-  {
-    name: 'Devon Brooks',
-    email: 'devon.brooks@example.com',
-    skills: ['line_cook', 'prep_cook', 'dishwasher'],
-    reliability: 0.84,
-    acceptance: 0.7,
-    response: 240,
-    home: [45.4981, -122.6402],
-    certs: [{ cert: 'food_handler', validUntil: '2027-02-10' }],
-    avail: [[ALL, '06:00', '23:00']],
-  },
-  {
-    name: 'Aisha Khan',
-    email: 'aisha.khan@example.com',
-    skills: ['barista', 'server'],
-    reliability: 0.9,
-    acceptance: 0.82,
-    response: 100,
-    home: [45.5405, -122.6812],
-    certs: [],
-    avail: [[ALL, '05:30', '18:00']],
-  },
-  {
-    name: 'Priya Nair',
-    email: 'priya.nair@example.com',
-    skills: ['line_cook', 'prep_cook'],
-    reliability: 0.94,
-    acceptance: 0.88,
-    response: 75,
-    home: [45.5233, -122.6611],
-    certs: [{ cert: 'food_handler', validUntil: '2027-08-20' }],
-    avail: [[ALL, '06:00', '23:00']],
-  },
-  {
-    name: 'Sam Whitfield',
-    email: 'sam.whitfield@example.com',
-    skills: ['bar_back', 'bartender', 'event_staff'],
-    reliability: 0.79,
-    acceptance: 0.65,
-    response: 300,
-    home: [45.4902, -122.6902],
-    certs: [{ cert: 'alcohol_service', validUntil: 'EXPIRED' }],
-    avail: [
-      [[5, 6, 0], '12:00', '23:59'],
-      [[1, 2, 3, 4], '16:00', '23:59'],
-    ],
-  },
-  {
-    name: 'Lena Park',
-    email: 'lena.park@example.com',
-    skills: ['host', 'server', 'event_staff', 'line_cook'],
-    reliability: 0.87,
-    acceptance: 0.78,
-    response: 130,
-    home: [45.5112, -122.6712],
-    certs: [{ cert: 'food_handler', validUntil: 'EXPIRED' }],
-    avail: [[ALL, '08:00', '22:00']],
-  },
-  {
-    name: 'Tom Okafor',
-    email: 'tom.okafor@example.com',
-    skills: ['dishwasher', 'line_cook', 'event_staff'],
-    reliability: 0.82,
-    acceptance: 0.72,
-    response: 200,
-    home: [45.5504, -122.6402],
-    certs: [{ cert: 'food_handler', validUntil: '2027-04-05' }],
-    avail: [[ALL, '06:00', '23:00']],
-  },
-];
-
-const mins = (hhmm: string) => {
-  const [h, m] = hhmm.split(':').map(Number) as [number, number];
-  return h * 60 + m;
-};
 
 async function reset() {
   const [org] = await db.select().from(orgs).where(eq(orgs.name, ORG_NAME));
@@ -334,7 +199,8 @@ async function seed() {
   });
 
   const byName = new Map<string, string>();
-  for (const w of WORKERS) {
+  const today = localDateString(new Date(), TZ);
+  for (const w of DEMO_WORKERS) {
     const [row] = await db
       .insert(workers)
       .values({
@@ -357,7 +223,7 @@ async function seed() {
         w.certs.map((c) => ({
           workerId: row!.id,
           cert: c.cert,
-          validUntil: c.validUntil === 'EXPIRED' ? yesterday() : c.validUntil,
+          validUntil: resolveValidUntil(c.validUntil, today),
         })),
       );
     }
@@ -366,44 +232,30 @@ async function seed() {
         days.map((weekday) => ({
           workerId: row!.id,
           weekday,
-          startMinute: mins(from),
-          endMinute: mins(to),
+          startMinute: hhmmToMinutes(from),
+          endMinute: hhmmToMinutes(to),
         })),
       ),
     );
   }
 
   // A realistic roster for TODAY (venue-local). Maria's 7:00-3:00 Line cook shift is the one that becomes the gap.
-  const today = localDateString(new Date(), TZ);
-  const [y, m, d] = today.split('-').map(Number) as [number, number, number];
-  const at = (day: number, hh: number, mm = 0) => zonedTimeToUtc(y, m, d + day, hh, mm, TZ);
-  const roster: Array<[string, string, number, number, number, number, number, number]> = [
-    // worker, role, startDay, startH, endDay, endH, base cents, premium %
-    ['Maria Alvarez', 'line_cook', 0, 7, 0, 15, 2200, 20],
-    ['Aisha Khan', 'barista', 0, 6, 0, 12, 1700, 15],
-    ['Jordan Reyes', 'server', 0, 11, 0, 19, 1800, 20],
-    ['Lena Park', 'host', 0, 10, 0, 18, 1600, 10],
-    ['Chloe Dubois', 'server', 0, 17, 0, 23, 1800, 20],
-    ['Sam Whitfield', 'bar_back', 0, 18, 1, 2, 1900, 20],
-    // Marcus and Devon work tomorrow so they stay eligible for today's cover (rest rule).
-    ['Marcus Lee', 'bartender', 1, 16, 1, 23, 2400, 25],
-    ['Devon Brooks', 'dishwasher', 1, 10, 1, 18, 1600, 10],
-  ];
-  for (const [who, role, sd, sh, ed, eh, base, prem] of roster) {
+  for (const spec of DEMO_ROSTER) {
+    const { startAt, endAt } = rosterInstants(today, spec);
     await db.insert(shiftSlots).values({
       venueId: venue!.id,
-      role,
-      startAt: at(sd, sh),
-      endAt: at(ed, eh),
-      workerId: byName.get(who)!,
+      role: spec[1],
+      startAt,
+      endAt,
+      workerId: byName.get(spec[0])!,
       status: 'CONFIRMED',
-      baseRateCents: base,
-      maxPremiumPct: prem,
+      baseRateCents: spec[6],
+      maxPremiumPct: spec[7],
       version: 3,
     });
   }
   console.log(
-    `seeded org "${ORG_NAME}": 1 manager, ${WORKERS.length} workers, ${roster.length} roster shifts for ${today}`,
+    `seeded org "${ORG_NAME}": 1 manager, ${DEMO_WORKERS.length} workers, ${DEMO_ROSTER.length} roster shifts for ${today}`,
   );
   console.log(`manager login: ${MANAGER.email} (password from SEED_MANAGER_PASSWORD)`);
 }
