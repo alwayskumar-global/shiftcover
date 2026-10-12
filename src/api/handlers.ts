@@ -11,14 +11,14 @@ import {
 } from '../auth/worker-session';
 import { maxAuthorization } from '../domain/money';
 import { ROLE_LABELS, isShiftRole, type ShiftRole } from '../domain/roles';
-import { addDaysToDateString, localDateString, localDayBounds } from '../lib/time';
+import { localDateString, localDayBounds } from '../lib/time';
 import { rulesGapParser } from '../llm/fallback';
 import { claimOffer, viewOffer, type OfferView } from '../services/claim';
 import { createGap, startOffering } from '../services/gaps';
 import { stubAuthorize } from '../services/payments-stub';
 import { findRecognisedSlot, gapDetail, primaryVenue, roster } from '../services/read-models';
 import { workerShifts } from '../services/worker-data';
-import { ServiceError, type ServiceDeps } from '../services/types';
+import type { ServiceDeps } from '../services/types';
 import {
   ClaimResponse,
   CreateGapRequest,

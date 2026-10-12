@@ -75,7 +75,6 @@ type W = {
 };
 
 const ALL = [0, 1, 2, 3, 4, 5, 6];
-const WEEKDAYS = [1, 2, 3, 4, 5];
 const yesterday = () => addDaysToDateString(localDateString(new Date(), TZ), -1);
 
 const WORKERS: W[] = [
@@ -354,28 +353,24 @@ async function seed() {
       .returning();
     byName.set(w.name, row!.id);
     if (w.certs.length) {
-      await db
-        .insert(workerCertifications)
-        .values(
-          w.certs.map((c) => ({
-            workerId: row!.id,
-            cert: c.cert,
-            validUntil: c.validUntil === 'EXPIRED' ? yesterday() : c.validUntil,
-          })),
-        );
-    }
-    await db
-      .insert(workerAvailability)
-      .values(
-        w.avail.flatMap(([days, from, to]) =>
-          days.map((weekday) => ({
-            workerId: row!.id,
-            weekday,
-            startMinute: mins(from),
-            endMinute: mins(to),
-          })),
-        ),
+      await db.insert(workerCertifications).values(
+        w.certs.map((c) => ({
+          workerId: row!.id,
+          cert: c.cert,
+          validUntil: c.validUntil === 'EXPIRED' ? yesterday() : c.validUntil,
+        })),
       );
+    }
+    await db.insert(workerAvailability).values(
+      w.avail.flatMap(([days, from, to]) =>
+        days.map((weekday) => ({
+          workerId: row!.id,
+          weekday,
+          startMinute: mins(from),
+          endMinute: mins(to),
+        })),
+      ),
+    );
   }
 
   // A realistic roster for TODAY (venue-local). Maria's 7:00-3:00 Line cook shift is the one that becomes the gap.

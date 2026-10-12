@@ -31,12 +31,42 @@ Supabase is used as plain Postgres. Do not add `@supabase/supabase-js`, Supabase
 
 ```bash
 npm run db:migrate      # applies ./drizzle (schema, ledger append-only trigger, RLS lockdown)
+npm run db:generate     # after editing src/db/schema.ts: drizzle-kit + automatic RLS guard for new tables
 npm run db:verify-rls   # read-only: RLS on every public table, no privileges for API roles
 ```
 
 6. Dashboard, Database, **Advisors** (Security): expect no ERROR findings. Re-run after every DDL change.
 
 Connection budget: web 5 + worker 3 + worker pg-boss 2 = 10 connections maximum.
+
+### Manager auth (Better Auth)
+
+Managers sign in with email + password or a magic link (`/api/auth/*`, Better Auth 1.7.7 pinned, no extra env: it
+reuses `SESSION_SECRET` and `APP_BASE_URL`). Sign-up is disabled; a manager exists only when provisioned by the seed
+(which links `auth_user.id` to `users.auth_subject`). Until an email provider exists, sign-in links and offer links are
+written to the `notifications` table (the Outbox) instead of being sent.
+
+New env names in M1: `PAYMENTS_MODE` (`paypal` | `stub`; `stub` is rejected in production), `OFFER_TTL_SECONDS`,
+and, for the seed only, `SEED_MANAGER_PASSWORD`. Set `PAYMENTS_MODE=stub` locally to authorize payments without PayPal.
+
+### Tests
+
+```bash
+npm test            # unit tests (DB tests are skipped)
+npm run test:db     # starts a throwaway local Postgres in Docker (scripts/test-db.sh) and runs everything
+scripts/test-db.sh down
+```
+
+DB-backed tests only ever run against that local container (`TEST_DATABASE_URL` must be loopback), never Supabase.
+
+### Seed (demo data, synthetic)
+
+```bash
+SEED_MANAGER_PASSWORD='...' npm run seed        # org "Maple & Rye", manager Dana Whitfield, 10 workers, today's roster
+npm run seed:reset                              # deletes only the demo org's rows
+```
+
+A non-local `DATABASE_URL` additionally requires `-- --remote` (e.g. `npm run seed -- --remote`).
 
 ### Run
 

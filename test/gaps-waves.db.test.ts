@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import { auditLog, notifications, offers, payments, shiftSlots } from '../src/db/schema';
 import { maxAuthorization } from '../src/domain/money';
 import { createGap, startOffering } from '../src/services/gaps';
@@ -13,8 +13,6 @@ describe.skipIf(!hasTestDb)('gap creation, offering and waves (live Postgres)', 
   const t = hasTestDb ? createTestDb() : undefined;
   afterAll(() => t?.close());
   const db = () => t!.db;
-  let _ = beforeAll;
-  void _;
 
   // Wed 2026-10-14 07:00-15:00 Pacific; "now" is 06:40 Pacific.
   const startAt = new Date('2026-10-14T14:00:00Z');
