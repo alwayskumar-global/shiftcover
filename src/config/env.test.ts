@@ -163,6 +163,35 @@ describe('DATABASE_URL (Supabase session pooler)', () => {
   });
 });
 
+describe('PAYMENTS_MODE', () => {
+  it('defaults to paypal and allows stub outside production', () => {
+    expect(parseServerEnv(base).PAYMENTS_MODE).toBe('paypal');
+    expect(parseServerEnv({ ...base, PAYMENTS_MODE: 'stub' }).PAYMENTS_MODE).toBe('stub');
+    expect(parseServerEnv({ ...base, NODE_ENV: 'test', PAYMENTS_MODE: 'stub' }).PAYMENTS_MODE).toBe(
+      'stub',
+    );
+  });
+
+  it('rejects stub in production', () => {
+    const prod = {
+      ...base,
+      NODE_ENV: 'production',
+      PAYPAL_CLIENT_ID: 'x',
+      PAYPAL_CLIENT_SECRET: 'x',
+      PAYPAL_PLATFORM_EMAIL: 'platform@example.com',
+      LLM_ENABLED: 'false',
+    };
+    expect(() => parseServerEnv({ ...prod, PAYMENTS_MODE: 'stub' })).toThrow(
+      /PAYMENTS_MODE: stub is not allowed in production/,
+    );
+    expect(() => parseServerEnv({ ...prod, PAYMENTS_MODE: 'paypal' })).not.toThrow();
+  });
+
+  it('OFFER_TTL_SECONDS defaults to 15 minutes', () => {
+    expect(parseServerEnv(base).OFFER_TTL_SECONDS).toBe(900);
+  });
+});
+
 describe('scoped requirements', () => {
   it('requirePaypalEnv fails fast when credentials are absent', () => {
     expect(() => requirePaypalEnv(parseServerEnv(base))).toThrow(/PAYPAL_CLIENT_ID/);

@@ -56,6 +56,11 @@ const serverSchema = z
     SESSION_SECRET: z.string().min(32),
     CLAIM_TOKEN_PEPPER: z.string().min(32),
 
+    /** 'stub' fakes payment authorization for local/dev only; rejected in production. */
+    PAYMENTS_MODE: z.enum(['paypal', 'stub']).default('paypal'),
+    /** Worker offer-link lifetime (PLAN.md 2: default 15 min). */
+    OFFER_TTL_SECONDS: int(900, 30),
+
     PAYPAL_ENV: z.literal('sandbox').default('sandbox'),
     PAYPAL_API_BASE: z.literal(SANDBOX_BASE).default(SANDBOX_BASE),
     PAYPAL_CLIENT_ID: z.string().min(1).optional(),
@@ -84,6 +89,13 @@ const serverSchema = z
     MAX_PREMIUM_PCT_DEFAULT: int(20).pipe(z.number().max(100)),
   })
   .superRefine((env, ctx) => {
+    if (env.NODE_ENV === 'production' && env.PAYMENTS_MODE === 'stub') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['PAYMENTS_MODE'],
+        message: 'stub is not allowed in production',
+      });
+    }
     if (env.NODE_ENV !== 'production') return;
     // PAYPAL_WEBHOOK_ID is deliberately NOT required: it only exists after the first deploy (the webhook
     // is registered against the public URL). Until it is set, POST /api/webhooks/paypal answers 503.
