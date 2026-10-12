@@ -1,0 +1,146 @@
+# DRAFT: review before committing. No database block: Postgres is Supabase (PLAN.md 6A).
+# Every sync:false value is entered once in the Render dashboard (never committed).
+# DATABASE_URL = Supabase SESSION pooler string (port 5432, host *.pooler.supabase.com).
+# SESSION_SECRET and CLAIM_TOKEN_PEPPER must be IDENTICAL on web and worker, so they are sync:false
+# (generateValue would create a different value per service and break claim-token hashing).
+# NEXT_PUBLIC_PAYPAL_CLIENT_ID is read at build time: set it before the first web build.
+# The env block is duplicated (no YAML anchors) so the Blueprint parser cannot trip on aliases.
+services:
+  - type: web
+    name: shiftcover-web
+    runtime: node
+    plan: starter
+    region: oregon # same region as Supabase us-west-2 (PLAN.md 6A)
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: '22'
+      - key: NODE_ENV
+        value: production
+      - key: DEMO_MODE
+        value: 'true'
+      - key: PAYPAL_ENV
+        value: sandbox
+      - key: PAYPAL_API_BASE
+        value: https://api-m.sandbox.paypal.com
+      - key: LLM_PROVIDER
+        value: gemini
+      - key: LLM_MODEL
+        value: gemini-3.5-flash-lite
+      - key: LLM_ENABLED
+        value: 'true'
+      - key: LLM_MAX_OUTPUT_TOKENS
+        value: '1024'
+      - key: LLM_DAILY_CALL_CAP
+        value: '500'
+      - key: LLM_PER_USER_HOURLY_CAP
+        value: '20'
+      - key: WAVE_INTERVAL_SECONDS
+        value: '15'
+      - key: PLATFORM_FEE_BPS
+        value: '500'
+      - key: MAX_PREMIUM_PCT_DEFAULT
+        value: '20'
+      - key: DATABASE_URL
+        sync: false
+      - key: APP_BASE_URL
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      - key: CLAIM_TOKEN_PEPPER
+        sync: false
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: NEXT_PUBLIC_PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+      - key: PAYPAL_WEBHOOK_ID
+        sync: false
+      - key: PAYPAL_PLATFORM_EMAIL
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT
+        sync: false
+      - key: EMAIL_PROVIDER
+        sync: false
+      - key: EMAIL_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+
+  - type: worker
+    name: shiftcover-worker
+    runtime: node
+    plan: starter
+    region: oregon # same region as Supabase us-west-2 (PLAN.md 6A)
+    buildCommand: npm ci --include=dev
+    startCommand: npm run worker
+    envVars:
+      - key: NODE_VERSION
+        value: '22'
+      - key: NODE_ENV
+        value: production
+      - key: DEMO_MODE
+        value: 'true'
+      - key: PAYPAL_ENV
+        value: sandbox
+      - key: PAYPAL_API_BASE
+        value: https://api-m.sandbox.paypal.com
+      - key: LLM_PROVIDER
+        value: gemini
+      - key: LLM_MODEL
+        value: gemini-3.5-flash-lite
+      - key: LLM_ENABLED
+        value: 'true'
+      - key: LLM_MAX_OUTPUT_TOKENS
+        value: '1024'
+      - key: LLM_DAILY_CALL_CAP
+        value: '500'
+      - key: LLM_PER_USER_HOURLY_CAP
+        value: '20'
+      - key: WAVE_INTERVAL_SECONDS
+        value: '15'
+      - key: PLATFORM_FEE_BPS
+        value: '500'
+      - key: MAX_PREMIUM_PCT_DEFAULT
+        value: '20'
+      - key: DATABASE_URL
+        sync: false
+      - key: APP_BASE_URL
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      - key: CLAIM_TOKEN_PEPPER
+        sync: false
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: NEXT_PUBLIC_PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+      - key: PAYPAL_WEBHOOK_ID
+        sync: false
+      - key: PAYPAL_PLATFORM_EMAIL
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT
+        sync: false
+      - key: EMAIL_PROVIDER
+        sync: false
+      - key: EMAIL_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false

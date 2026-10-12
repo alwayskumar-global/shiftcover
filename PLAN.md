@@ -175,7 +175,7 @@ Money is integer cents plus `currency = 'USD'`. Never floats.
 
 **Scope:** Supabase provides **Postgres only**. App auth stays with Auth.js or Better Auth. No Supabase client library, Auth, Storage, Realtime, or Edge Functions.
 
-**Project:** name `shiftcover`, in the organization "test@studioq.co.in's Org". Creating it costs $0 (checked with the Supabase MCP `get_cost`). The org already has one project, `triallensdb` (Mumbai, `ap-south-1`); **do not touch it**. The free plan allows 2 active projects, so this is the last free slot. Region: see Section 17 item 1 (cannot be changed after creation).
+**Project:** name `shiftcover`, in the organization "test@studioq.co.in's Org". Creating it costs $0 (checked with the Supabase MCP `get_cost`). The org already has one project, `triallensdb` (Mumbai, `ap-south-1`); **do not touch it**. The free plan allows 2 active projects, so this is the last free slot. Region: **`us-west-2` (West US, Oregon)**, created by Kumar and confirmed healthy via the Supabase MCP (Postgres 17). Paired with Render **Oregon**. Chosen for US-based judges; from India expect roughly 250 ms per query round trip in local dev, so keep dev loops query-light.
 
 **Connections (Supabase "Connect to your database" doc):**
 - Render web, Render worker, local dev, and migrations all use the **Shared pooler, session mode**: `postgres.[PROJECT-REF]@aws-…pooler.supabase.com:5432`. It is IPv4-compatible on every plan and supports prepared statements, advisory locks, and LISTEN/NOTIFY, which pg-boss needs.
@@ -210,7 +210,7 @@ Base URL (sandbox): `https://api-m.sandbox.paypal.com`. Auth: client-credentials
 
 ### 7.2 Authorize (employer approval)
 1. Server: create order, `intent: "AUTHORIZE"`, one purchase unit with `amount` = max authorization, `custom_id = slot_id`, `invoice_id = slot_id + "-" + attempt`.
-2. Client: PayPal JS SDK v6 button; manager approves with a sandbox buyer.
+2. Client: PayPal JS SDK v6 button; manager approves with a sandbox buyer. For redirect-style approval (the M0 spike script), create the order with `payment_source.paypal.experience_context` (`return_url`, `cancel_url`, `landing_page`, `shipping_preference`) and send the buyer to the approval link returned in the create-order response, never a hand-built `checkoutnow` URL. A hand-built link produced PayPal's generic error page in the first spike run.
 3. Server: authorize the order, store `authorization_id`. Also handle webhook `PAYMENT.AUTHORIZATION.CREATED`.
 4. PayPal's webhook docs state authorizations are supported for PayPal-account payments; use the PayPal button, not cards, for this flow.
 
@@ -219,7 +219,7 @@ Base URL (sandbox): `https://api-m.sandbox.paypal.com`. Auth: client-credentials
 
 ### 7.4 Void / reauthorize
 - Void: `POST /v2/payments/authorizations/{id}/void` for unfilled and no-show cases.
-- Authorizations are auto-voided at the 30-day validity limit (webhook `PAYMENT.AUTHORIZATION.VOIDED`). The shorter **honor period** (guaranteed funds) is documented separately; confirm the exact number in PayPal's docs. We capture within hours, so it should not bind. A reauthorize endpoint exists for shifts booked further out.
+- Per PayPal's Orders v2 docs (verified Oct 11, 2026): an authorized payment is best captured within **three days** (the honor period) and can be captured for up to **29 days**; after the three-day honor period the original authorization expires and must be reauthorized. `intent: AUTHORIZE` is not supported with more than one `purchase_unit`. Authorizations are auto-voided at the 30-day limit (webhook `PAYMENT.AUTHORIZATION.VOIDED`). We capture within hours, so the honor period should not bind. A reauthorize endpoint exists for shifts booked further out.
 
 ### 7.5 Payouts
 - `POST /v1/payments/payouts`. Header `PayPal-Request-Id`. Body: `sender_batch_header { sender_batch_id, email_subject, email_message }`, `items[] { recipient_type: "EMAIL", receiver, amount { currency: "USD", value }, note, sender_item_id, purpose: "SERVICES" }`.
@@ -407,7 +407,7 @@ If `CLAUDE.md` was already committed: `git rm --cached CLAUDE.md`, commit, and c
 2. PayPal: create sandbox accounts (7.1) and a sandbox REST app; confirm **Payouts** is enabled on the app; copy client ID and secret into local `.env`.
 3. Gemini: in AI Studio, create a dedicated project and key; confirm the project is on the **paid tier** (billing linked) so content is not used to improve products; confirm the prepaid balance; set a **project spend cap**; leave auto-reload off.
 4. **Spike script** `scripts/spike-paypal.ts`: token, create AUTHORIZE order, approve with a sandbox buyer, authorize, partial capture with `final_capture: true`, payout to a worker account, GET batch, confirm balances. Add `scripts/spike-gemini.ts`: structured intake on 20 seeded phrases with `gemini-3.5-flash-lite`, validate with Zod, record schema-valid rate, accuracy, tokens, and cost. **Go/no-go gate: end of Oct 13.**
-5. **Supabase:** create the `shiftcover` project (Section 6A). In the Dashboard reset or copy the DB password (never in chat), copy the **Session pooler** string into local `.env` as `DATABASE_URL`, and **turn the Data API off**. Run migrations, then the security advisors. Then deploy hello-world to Render (web and worker only; Postgres is Supabase) to get a public HTTPS URL, and claim the Render credits via the hackathon page.
+5. **Supabase:** create the `shiftcover` project (Section 6A). In the Dashboard reset or copy the DB password (never in chat), copy the **Session pooler** string into local `.env` as `DATABASE_URL`, and **turn the Data API off**. Run migrations, then the security advisors. Then deploy hello-world to Render (web and worker only; Postgres is Supabase) to get a public HTTPS URL, and claim the Render credits via the hackathon page. Create both Render services in the **Oregon** region, next to Supabase `us-west-2`.
 6. Register the PayPal webhook (7.6) on that URL; set `PAYPAL_WEBHOOK_ID`; test with the simulator and one real event.
 7. Generate VAPID keys: `npx web-push generate-vapid-keys`.
 8. Install the Bryntum **public trial** packages (Bryntum's docs state the trial npm packages are public, so no registry login; requires Node >= 20 and React >= 16). Commands, to be **confirmed against Bryntum's current React quick-start before running**: core `npm install @bryntum/scheduler@npm:@bryntum/scheduler-trial`; wrapper `npm install @bryntum/scheduler-react`. In Next.js render Bryntum client-only (`'use client'` plus a dynamic import with `ssr: false`) and verify against Bryntum's React guide. Check trial expiry against judging dates (Section 16).
@@ -444,7 +444,7 @@ Each milestone ends with a deployed build and a short written status (what works
 10. LLM disabled (`LLM_ENABLED=false`) or over cap: intake falls back to the rules parser and the demo flow completes.
 11. No secret appears in the repo or its git history (secret scan clean).
 12. Judge path: fresh clone, follow README, reach a completed paid shift in demo mode in under 10 minutes.
-13. Supabase: Data API disabled, RLS enabled on every app table, `anon` and `authenticated` cannot read any app table, and security advisors show no ERROR findings.
+13. Supabase: Data API disabled, RLS enabled on every app table, `anon` and `authenticated` cannot read any app table, and security advisors show no ERROR findings and no WARN findings. The only expected notices are the intentional INFO "RLS enabled, no policy" ones. (Oct 11 run: 13 INFO, 1 WARN for a mutable `search_path` on `ledger_entries_append_only`, to be fixed by migration.)
 
 ---
 
@@ -501,14 +501,13 @@ Each milestone ends with a deployed build and a short written status (what works
 
 ## 17. Decisions log and remaining items
 
-**Resolved (Oct 11, 2026):** A1 authorize-capture-payout; A2 hospitality; A3 Bryntum with `@bryntum/scheduler-react`; A4 Next.js (React) with web and worker on Render and Postgres on Supabase; A8 UI from Claude Design at gates; A9 Gemini with guardrails; A10 `CLAUDE.md` gitignored; A11 private repo until submission.
+**Resolved (Oct 11, 2026):** A1 authorize-capture-payout; A2 hospitality; A3 Bryntum with `@bryntum/scheduler-react`; A4 Next.js (React) with web and worker on Render (Oregon) and Postgres on Supabase (`us-west-2`, Oregon, free plan); A8 UI from Claude Design at gates; A9 Gemini with guardrails; A10 `CLAUDE.md` gitignored; A11 private repo until submission.
 
 **Remaining:**
-1. **Supabase region and plan (confirm before the project is created; region cannot be changed later):** recommended `ap-southeast-1` (Singapore), paired with Render Singapore, on the free plan ($0, pauses after 1 week idle, see 6A). Alternative for judge latency: a US East region paired with Render Ohio.
-2. Confirm `gemini-3.5-flash-lite` intake quality after the Oct 13 spike.
-3. Design handoff format from Claude Design (HTML/CSS/React export, tokens, screenshots). Agree before G1.
-4. Ask Bryntum for a trial extension through Dec 15.
-5. Decide whether `PLAN.md` stays in the public repo (it holds no secrets).
+1. Confirm `gemini-3.5-flash-lite` intake quality after the Oct 13 spike.
+2. Design handoff format from Claude Design (HTML/CSS/React export, tokens, screenshots). Agree before G1.
+3. Ask Bryntum for a trial extension through Dec 15.
+4. Decide whether `PLAN.md` stays in the public repo (it holds no secrets).
 
 ---
 
