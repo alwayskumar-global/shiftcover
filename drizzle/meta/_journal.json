@@ -22,6 +22,13 @@
       "when": 1791722590343,
       "tag": "0002_rls_lockdown",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791777601050,
+      "tag": "0003_ledger_fn_search_path",
+      "breakpoints": true
     }
   ]
 }
