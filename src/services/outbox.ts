@@ -43,13 +43,13 @@ export async function listOutbox(h: DbLike, orgId: string, limit = 50): Promise<
     .where(inArray(notifications.recipient, [...labels.keys()]))
     .orderBy(desc(notifications.createdAt))
     .limit(limit * 2);
-  // Payout-email codes go to the worker's NEW address, which is not a known recipient: match them by worker.
+  // Payout-email codes and worker invites go to an address that is not a known recipient: match them by worker.
   const codes = ws.length
     ? await h
         .select()
         .from(notifications)
         .where(
-          sql`${notifications.recipient} like 'email:%' and ${notifications.payload}->>'kind' = 'payout_email_code' and ${notifications.payload}->>'workerId' in (${sql.join(
+          sql`${notifications.recipient} like 'email:%' and ${notifications.payload}->>'kind' in ('payout_email_code', 'worker_invite') and ${notifications.payload}->>'workerId' in (${sql.join(
             ws.map((w) => sql`${w.id}`),
             sql`, `,
           )})`,

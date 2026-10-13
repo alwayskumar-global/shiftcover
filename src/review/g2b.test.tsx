@@ -5,8 +5,14 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Earnings } from '@/features/worker/Earnings';
 import { LedgerScreen } from '@/features/manager/LedgerScreen';
+import { WorkersScreen } from '@/features/manager/WorkersScreen';
 import { Profile } from '@/features/worker/Profile';
-import type { LedgerDto, WorkerEarningsDto, WorkerProfileDto } from '@/features/client-api';
+import type {
+  LedgerDto,
+  WorkerEarningsDto,
+  WorkerProfileDto,
+  WorkersDto,
+} from '@/features/client-api';
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),
@@ -536,6 +542,181 @@ describe('G2-M6 ledger', () => {
     stub(() => (n++ === 0 ? { status: 500, body: {} } : { body: ledger([row({})]) }));
     render(<LedgerScreen />);
     expect(await screen.findByText("We couldn't load the ledger")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /Try again/ }));
+    await screen.findByText('Jordan Reyes');
+  });
+});
+
+const worker = (over: Partial<WorkersDto['items'][number]>): WorkersDto['items'][number] => ({
+  id: '30000000-0000-4000-8000-000000000001',
+  name: 'Jordan Reyes',
+  initials: 'JR',
+  avatar_tint: 1,
+  email: 'jordan@example.com',
+  status: 'active',
+  skills: ['line_cook', 'prep_cook'],
+  certifications: [
+    { name: 'food_handler', valid_until: '2027-03-01', state: 'valid', days_left: 140 },
+    { name: 'alcohol_service', valid_until: '2026-10-27', state: 'expiring', days_left: 15 },
+  ],
+  availability: 'Mon–Fri 6 AM–2 PM',
+  reliability_pct: 94,
+  reliability_tier: 'reliable',
+  ...over,
+});
+const roster = (
+  items: WorkersDto['items'],
+  over: Partial<WorkersDto['summary']> = {},
+): WorkersDto => ({
+  summary: {
+    total: items.length,
+    active: items.length,
+    invited: 0,
+    certs_needing_attention: 1,
+    ...over,
+  },
+  items,
+});
+const sam = worker({
+  id: '30000000-0000-4000-8000-000000000002',
+  name: 'Sam Okafor',
+  initials: 'SO',
+  email: 'sam@example.com',
+  skills: ['server'],
+  certifications: [
+    { name: 'food_handler', valid_until: '2026-10-01', state: 'expired', days_left: -11 },
+  ],
+  availability: 'Not set',
+  reliability_pct: 60,
+  reliability_tier: 'review',
+});
+
+describe('G2-M7 workers', () => {
+  it('lists skills, certifications with expiry, availability and reliability, all from the API', async () => {
+    stub(() => ({ body: roster([worker({}), sam]) }));
+    render(<WorkersScreen />);
+    await screen.findByText('Jordan Reyes');
+    const jordan = screen.getByText('Jordan Reyes').closest('[role="row"]') as HTMLElement;
+    expect(within(jordan).getByText('Line cook')).toBeInTheDocument();
+    expect(within(jordan).getByText('Food handler card')).toBeInTheDocument();
+    expect(within(jordan).getByText('Valid to Mar 1, 2027')).toBeInTheDocument();
+    expect(within(jordan).getByText('Expires in 15 days')).toBeInTheDocument();
+    expect(within(jordan).getByText('Mon–Fri 6 AM–2 PM')).toBeInTheDocument();
+    expect(within(jordan).getByText('94')).toBeInTheDocument();
+    expect(within(jordan).getByText('Reliable')).toBeInTheDocument();
+    const s = screen.getByText('Sam Okafor').closest('[role="row"]') as HTMLElement;
+    expect(within(s).getByText('Expired Oct 1, 2026')).toBeInTheDocument();
+    expect(within(s).getByText('Review')).toBeInTheDocument();
+    expect(screen.getByLabelText('Summary')).toHaveTextContent('With certs to renew');
+  });
+
+  it('search and the cert / review filters narrow the list', async () => {
+    stub(() => ({ body: roster([worker({}), sam]) }));
+    render(<WorkersScreen />);
+    await screen.findByText('Jordan Reyes');
+    await userEvent.click(screen.getByRole('button', { name: 'Needs review' }));
+    expect(screen.queryByText('Jordan Reyes')).toBeNull();
+    expect(screen.getByText('Sam Okafor')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Everyone' }));
+    await userEvent.type(screen.getByLabelText('Search workers'), 'prep');
+    expect(screen.getByText('Jordan Reyes')).toBeInTheDocument();
+    expect(screen.queryByText('Sam Okafor')).toBeNull();
+    await userEvent.clear(screen.getByLabelText('Search workers'));
+    await userEvent.type(screen.getByLabelText('Search workers'), 'zzz');
+    expect(await screen.findByText('No workers match')).toBeInTheDocument();
+  });
+
+  it('invite: invalid email shows an error and sends nothing', async () => {
+    stub(() => ({ body: roster([worker({})]) }));
+    render(<WorkersScreen />);
+    await screen.findByText('Jordan Reyes');
+    await userEvent.type(screen.getByLabelText('Email address'), 'nope');
+    await userEvent.click(screen.getByRole('button', { name: 'Send invite' }));
+    expect(await screen.findByText(/Enter a full email address/)).toBeInTheDocument();
+    expect(calls.some((c) => c.method === 'POST')).toBe(false);
+  });
+
+  it('invite: sent, then the list reloads with the invited worker', async () => {
+    let invited = false;
+    stub((r) => {
+      if (r.method === 'POST') {
+        invited = true;
+        return {
+          body: {
+            worker_id: '30000000-0000-4000-8000-000000000009',
+            email: 'tessa@example.com',
+            status: 'invited',
+          },
+        };
+      }
+      return {
+        body: roster(
+          invited
+            ? [
+                worker({}),
+                worker({
+                  id: '30000000-0000-4000-8000-000000000009',
+                  name: 'Tessa',
+                  email: 'tessa@example.com',
+                  status: 'invited',
+                  skills: [],
+                  certifications: [],
+                  availability: 'Not set',
+                  reliability_pct: 50,
+                  reliability_tier: 'review',
+                }),
+              ]
+            : [worker({})],
+          invited ? { invited: 1 } : {},
+        ),
+      };
+    });
+    render(<WorkersScreen />);
+    await screen.findByText('Jordan Reyes');
+    await userEvent.type(screen.getByLabelText('Email address'), ' tessa@example.com ');
+    await userEvent.click(screen.getByRole('button', { name: 'Send invite' }));
+    expect(await screen.findByText('Invite sent to tessa@example.com')).toBeInTheDocument();
+    expect(calls.find((c) => c.method === 'POST')).toMatchObject({
+      path: '/api/manager/workers/invite',
+      body: { email: 'tessa@example.com' },
+    });
+    expect(await screen.findByText('Tessa')).toBeInTheDocument();
+    expect(screen.getByText(/Invited · tessa@example.com/)).toBeInTheDocument();
+    expect(screen.getByLabelText('Email address')).toHaveValue('');
+  });
+
+  it('invite: already invited and already on the team', async () => {
+    let code = 'already_invited';
+    stub((r) => (r.method === 'POST' ? err(409, code, 'x') : { body: roster([worker({})]) }));
+    render(<WorkersScreen />);
+    await screen.findByText('Jordan Reyes');
+    await userEvent.type(screen.getByLabelText('Email address'), 'tessa@example.com');
+    await userEvent.click(screen.getByRole('button', { name: 'Send invite' }));
+    expect(await screen.findByText('You already invited this email')).toBeInTheDocument();
+    code = 'already_member';
+    await userEvent.click(screen.getByRole('button', { name: 'Send invite' }));
+    expect(await screen.findByText('That person is already on your team')).toBeInTheDocument();
+  });
+
+  it('invite: a network failure says nothing was sent', async () => {
+    stub((r) => (r.method === 'POST' ? { status: -1 } : { body: roster([worker({})]) }));
+    render(<WorkersScreen />);
+    await screen.findByText('Jordan Reyes');
+    await userEvent.type(screen.getByLabelText('Email address'), 'tessa@example.com');
+    await userEvent.click(screen.getByRole('button', { name: 'Send invite' }));
+    expect(await screen.findByText("We couldn't send the invite")).toBeInTheDocument();
+  });
+
+  it('empty, loading and error states', async () => {
+    stub(() => ({ body: roster([], { certs_needing_attention: 0 }) }));
+    const a = render(<WorkersScreen />);
+    expect(screen.getByRole('table', { name: 'Workers' })).toHaveAttribute('aria-busy', 'true');
+    expect(await screen.findByText('No workers yet')).toBeInTheDocument();
+    a.unmount();
+    let n = 0;
+    stub(() => (n++ === 0 ? { status: 500, body: {} } : { body: roster([worker({})]) }));
+    render(<WorkersScreen />);
+    expect(await screen.findByText("We couldn't load your workers")).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /Try again/ }));
     await screen.findByText('Jordan Reyes');
   });

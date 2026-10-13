@@ -660,3 +660,48 @@ export const LedgerResponse = z
     ),
   })
   .strict();
+
+// ---------------------------------------------------------------- manager workers (G2-M7; additive)
+export const WorkersResponse = z
+  .object({
+    summary: z
+      .object({
+        total: z.number().int().nonnegative(),
+        active: z.number().int().nonnegative(),
+        invited: z.number().int().nonnegative(),
+        certs_needing_attention: z.number().int().nonnegative(),
+      })
+      .strict(),
+    items: z.array(
+      z
+        .object({
+          id: z.uuid(),
+          name: z.string(),
+          initials: z.string(),
+          avatar_tint: z.number().int().min(1).max(5),
+          email: z.string(),
+          status: z.enum(['invited', 'active', 'inactive']),
+          skills: z.array(role),
+          certifications: z.array(
+            z
+              .object({
+                name: z.string(),
+                valid_until: z.string().nullable(),
+                state: z.enum(['valid', 'expiring', 'expired', 'no_expiry']),
+                days_left: z.number().int().nullable(),
+              })
+              .strict(),
+          ),
+          availability: z.string(),
+          reliability_pct: z.number().int().min(0).max(100),
+          reliability_tier: z.enum(['reliable', 'good', 'review']),
+        })
+        .strict(),
+    ),
+  })
+  .strict();
+
+export const InviteWorkerRequest = z.object({ email: z.string().min(1).max(254) }).strict();
+export const InviteWorkerResponse = z
+  .object({ worker_id: z.uuid(), email: z.string(), status: z.literal('invited') })
+  .strict();

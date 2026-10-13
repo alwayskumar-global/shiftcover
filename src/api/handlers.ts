@@ -28,6 +28,7 @@ import { stubAuthorize } from '../services/payments-stub';
 import { listApprovals } from '../services/approvals';
 import { LEDGER_GROUPS, listLedger, type LedgerGroup, type LedgerRange } from '../services/ledger';
 import { listOutbox } from '../services/outbox';
+import { inviteWorker, listWorkers } from '../services/worker-directory';
 import { approveAndPay, authorizePayment, ensureOrder } from '../services/payments';
 import { arrive, finish, managerConfirmTimes, markNoShow } from '../services/shift-day';
 import {
@@ -55,6 +56,8 @@ import {
   CreateGapRequest,
   CreateGapResponse,
   GapDetailResponse,
+  InviteWorkerRequest,
+  InviteWorkerResponse,
   LedgerResponse,
   MeResponse,
   ParseGapRequest,
@@ -86,6 +89,7 @@ import {
   VerifyEmailChangeResponse,
   WorkerEarningsResponse,
   WorkerProfileResponse,
+  WorkersResponse,
   WorkerShiftsResponse,
 } from './dto';
 import { assertSameOrigin, HttpError, noStore, parseBody } from './http';
@@ -748,6 +752,60 @@ export async function getLedger(d: ApiDeps, req: Request) {
         })),
       })),
     }),
+  );
+}
+
+// ---------------------------------------------------------------- G2-M7 workers directory and invites
+export async function getWorkers(d: ApiDeps, req: Request) {
+  const ctx = await mgr(d, req);
+  const r = await listWorkers(d.svc, ctx.orgId);
+  return json(
+    WorkersResponse.parse({
+      summary: {
+        total: r.summary.total,
+        active: r.summary.active,
+        invited: r.summary.invited,
+        certs_needing_attention: r.summary.certsNeedingAttention,
+      },
+      items: r.items.map((w) => ({
+        id: w.id,
+        name: w.name,
+        initials: w.initials,
+        avatar_tint: w.tint,
+        email: w.email,
+        status: w.status,
+        skills: w.skills,
+        certifications: w.certs.map((c) => ({
+          name: c.cert,
+          valid_until: c.validUntil,
+          state: c.state,
+          days_left: c.daysLeft,
+        })),
+        availability: w.availability,
+        reliability_pct: w.reliabilityPct,
+        reliability_tier: w.tier,
+      })),
+    }),
+  );
+}
+
+export async function postInviteWorker(d: ApiDeps, req: Request) {
+  const ctx = await mgr(d, req);
+  managerPost(d, req);
+  if (!d.limiter.hit(`invite:${ctx.userId}`, 20, 3_600_000))
+    throw new HttpError(429, 'rate_limited', 'Too many invites. Try again later.');
+  const b = await parseBody(req, InviteWorkerRequest);
+  const r = await inviteWorker(d.svc, { orgId: ctx.orgId, userId: ctx.userId }, b.email);
+  if (r.kind === 'exists')
+    throw new HttpError(
+      409,
+      r.status === 'invited' ? 'already_invited' : 'already_member',
+      r.status === 'invited'
+        ? 'You already invited this email'
+        : `That person is already on your team (${r.name})`,
+    );
+  return json(
+    InviteWorkerResponse.parse({ worker_id: r.workerId, email: r.email, status: 'invited' }),
   );
 }
 

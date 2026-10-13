@@ -99,6 +99,7 @@ export type WorkerEarningsDto = import('zod').infer<
 export type WorkerProfileDto = import('zod').infer<typeof import('@/api/dto').WorkerProfileResponse>;
 export type UpdateProfileDto = import('zod').infer<typeof import('@/api/dto').UpdateProfileRequest>;
 export type LedgerDto = import('zod').infer<typeof import('@/api/dto').LedgerResponse>;
+export type WorkersDto = import('zod').infer<typeof import('@/api/dto').WorkersResponse>;
 export type ApprovalsDto = import('zod').infer<typeof import('@/api/dto').ApprovalsResponse>;
 export type ApproveAndPayDto = import('zod').infer<
   typeof import('@/api/dto').ApproveAndPayResponse
@@ -136,6 +137,13 @@ export const fetchLedger = async (q: { group?: string; range?: string } = {}) =>
       `/api/manager/ledger${Object.keys(q).length ? `?${new URLSearchParams(q as Record<string, string>)}` : ''}`,
     ),
   );
+export const fetchWorkers = async () => ok(await call<WorkersDto>('/api/manager/workers'));
+export const inviteWorker = async (email: string) =>
+  ok(await post('/api/manager/workers/invite', { email })) as {
+    worker_id: string;
+    email: string;
+    status: 'invited';
+  };
 export const fetchApprovals = async () => ok(await call<ApprovalsDto>('/api/manager/approvals'));
 export const approveAndPay = async (id: string, approvedHours: number) =>
   ok(

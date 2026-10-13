@@ -93,7 +93,15 @@ export function ConsoleShell({ me, children }: { me: MeResponse; children: React
               <span className="sc-nav__label">Approvals</span>
               {waiting !== null && waiting > 0 && <span className="sc-nav__tag">{waiting}</span>}
             </Link>
-            {soon('i-users', 'Workers')}
+            <Link
+              className={`sc-nav__item ${path.startsWith('/app/workers') ? 'is-active' : ''}`}
+              href="/app/workers"
+              aria-current={path.startsWith('/app/workers') ? 'page' : undefined}
+              title="Workers"
+            >
+              <Icon name="i-users" />
+              <span className="sc-nav__label">Workers</span>
+            </Link>
             <Link
               className={`sc-nav__item ${path.startsWith('/app/ledger') ? 'is-active' : ''}`}
               href="/app/ledger"
