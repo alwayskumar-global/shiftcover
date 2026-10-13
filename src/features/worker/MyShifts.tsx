@@ -22,6 +22,7 @@ import {
   formatUsd,
 } from '@/ui/format';
 import { buildViews, type Section, type ShiftView } from './my-shifts-model';
+import { WorkerTabbar } from './WorkerTabbar';
 
 /** G2-W3 My shifts (design/g2). Reads GET /api/w/shifts with the worker session cookie; arrive and finish POST to the shift. */
 
@@ -273,21 +274,7 @@ export function MyShifts() {
         </div>
       )}
 
-      <nav className="sc-tabbar" aria-label="Main">
-        <a className="sc-tabbar__item" href="/w" aria-current="page">
-          <Icon name="i-calendar" size="lg" />
-          My shifts
-        </a>
-        {/* Earnings and Profile arrive in the next phase: present but not yet a destination. */}
-        <span className="sc-tabbar__item" aria-disabled="true" title="Earnings (coming soon)">
-          <Icon name="i-wallet" size="lg" />
-          Earnings
-        </span>
-        <span className="sc-tabbar__item" aria-disabled="true" title="Profile (coming soon)">
-          <Icon name="i-user" size="lg" />
-          Profile
-        </span>
-      </nav>
+      <WorkerTabbar current="shifts" />
     </main>
   );
 }
@@ -331,7 +318,7 @@ function ShiftCard({
   const rate = s.offered_rate_cents ?? 0;
   const formula =
     v.badge.label === 'Cancelled'
-      ? 'Shift cancelled by Maple & Rye'
+      ? `Shift cancelled by ${s.venue_name}`
       : v.badge.label === 'No-show'
         ? 'Marked as a no-show'
         : `${v.payHours} h × ${formatRate(rate).replace('/hr', '')}/hr${v.formulaSuffix}`;

@@ -93,6 +93,9 @@ export const authorizeGap = async (id: string, orderId: string) =>
 
 // ---- G2 worker My shifts (worker session cookie; no token in the URL)
 export type WorkerShiftsDto = import('zod').infer<typeof import('@/api/dto').WorkerShiftsResponse>;
+export type WorkerEarningsDto = import('zod').infer<
+  typeof import('@/api/dto').WorkerEarningsResponse
+>;
 export type ApprovalsDto = import('zod').infer<typeof import('@/api/dto').ApprovalsResponse>;
 export type ApproveAndPayDto = import('zod').infer<
   typeof import('@/api/dto').ApproveAndPayResponse
@@ -100,6 +103,8 @@ export type ApproveAndPayDto = import('zod').infer<
 export type ShiftDayDto = import('zod').infer<typeof import('@/api/dto').ShiftDayResponse>;
 
 export const fetchWorkerShifts = async () => ok(await call<WorkerShiftsDto>('/api/w/shifts'));
+export const fetchWorkerEarnings = async () =>
+  ok(await call<WorkerEarningsDto>('/api/w/earnings'));
 export const arriveShift = async (id: string) =>
   ok(await post(`/api/w/shifts/${id}/arrive`)) as ShiftDayDto;
 export const finishShift = async (id: string) =>

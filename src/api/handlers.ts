@@ -39,6 +39,7 @@ import {
 } from '../services/read-models';
 import type { ServiceDeps } from '../services/types';
 import { workerShifts } from '../services/worker-data';
+import { workerEarnings } from '../services/worker-earnings';
 import { publicPaymentStatus, toWorkerOfferDto } from './adapters';
 import {
   CancelGapRequest,
@@ -70,6 +71,7 @@ import {
   WidenRadiusRequest,
   WidenRadiusResponse,
   WorkerOfferDto,
+  WorkerEarningsResponse,
   WorkerShiftsResponse,
 } from './dto';
 import { assertSameOrigin, HttpError, noStore, parseBody } from './http';
@@ -428,6 +430,39 @@ export async function getWorkerShifts(d: ApiDeps, req: Request) {
         approved_hours: s.approvedHours,
         payment_status: s.paymentStatus ? publicPaymentStatus(s.paymentStatus) : null,
         worker_pay_cents: s.workerPayCents,
+      })),
+    }),
+    { headers: WORKER_HEADERS },
+  );
+}
+
+export async function getWorkerEarnings(d: ApiDeps, req: Request) {
+  const workerId = requireWorker(req.headers, d.sessionSecret, d.svc.now());
+  const now = d.svc.now();
+  const e = await workerEarnings(d.svc.db, workerId, now);
+  const tot = (t: typeof e.week) => ({
+    total_cents: t.totalCents,
+    paid_cents: t.paidCents,
+    on_the_way_cents: t.onTheWayCents,
+  });
+  return json(
+    WorkerEarningsResponse.parse({
+      server_time: now.toISOString(),
+      week: tot(e.week),
+      month: tot(e.month),
+      failed_cents: e.failedCents,
+      items: e.items.map((r) => ({
+        slot_id: r.slotId,
+        role: r.role,
+        venue_name: r.venueName,
+        venue_tz: r.venueTz,
+        start_at: r.startAt.toISOString(),
+        end_at: r.endAt.toISOString(),
+        approved_hours: r.approvedHours,
+        rate_cents: r.rateCents,
+        worker_pay_cents: r.workerPayCents,
+        status: r.status,
+        reference: r.reference,
       })),
     }),
     { headers: WORKER_HEADERS },

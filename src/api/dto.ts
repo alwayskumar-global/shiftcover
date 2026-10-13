@@ -511,3 +511,37 @@ export const ApprovalsResponse = z
     ),
   })
   .strict();
+
+// ---------------------------------------------------------------- worker earnings (G2-W4; additive)
+const EarningTotalDto = z
+  .object({ total_cents: cents, paid_cents: cents, on_the_way_cents: cents })
+  .strict();
+
+/** The worker's own pay only: no authorization, capture or platform fee ever appears here. */
+export const WorkerEarningsResponse = z
+  .object({
+    server_time: iso,
+    week: EarningTotalDto,
+    month: EarningTotalDto,
+    /** Worker pay on payouts that did not reach the worker; excluded from both totals. */
+    failed_cents: cents,
+    items: z.array(
+      z
+        .object({
+          slot_id: z.uuid(),
+          role,
+          venue_name: z.string(),
+          venue_tz: z.string(),
+          start_at: iso,
+          end_at: iso,
+          approved_hours: z.number().positive(),
+          rate_cents: cents,
+          worker_pay_cents: cents,
+          status: z.enum(['approved', 'paying', 'paid', 'failed']),
+          /** PayPal payout reference once a payout was sent. */
+          reference: z.string().nullable(),
+        })
+        .strict(),
+    ),
+  })
+  .strict();
