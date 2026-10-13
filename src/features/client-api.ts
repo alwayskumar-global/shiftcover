@@ -96,7 +96,9 @@ export type WorkerShiftsDto = import('zod').infer<typeof import('@/api/dto').Wor
 export type WorkerEarningsDto = import('zod').infer<
   typeof import('@/api/dto').WorkerEarningsResponse
 >;
-export type WorkerProfileDto = import('zod').infer<typeof import('@/api/dto').WorkerProfileResponse>;
+export type WorkerProfileDto = import('zod').infer<
+  typeof import('@/api/dto').WorkerProfileResponse
+>;
 export type UpdateProfileDto = import('zod').infer<typeof import('@/api/dto').UpdateProfileRequest>;
 export type LedgerDto = import('zod').infer<typeof import('@/api/dto').LedgerResponse>;
 export type WorkersDto = import('zod').infer<typeof import('@/api/dto').WorkersResponse>;
@@ -107,8 +109,7 @@ export type ApproveAndPayDto = import('zod').infer<
 export type ShiftDayDto = import('zod').infer<typeof import('@/api/dto').ShiftDayResponse>;
 
 export const fetchWorkerShifts = async () => ok(await call<WorkerShiftsDto>('/api/w/shifts'));
-export const fetchWorkerEarnings = async () =>
-  ok(await call<WorkerEarningsDto>('/api/w/earnings'));
+export const fetchWorkerEarnings = async () => ok(await call<WorkerEarningsDto>('/api/w/earnings'));
 export const fetchWorkerProfile = async () => ok(await call<WorkerProfileDto>('/api/w/profile'));
 export const updateWorkerProfile = async (patch: UpdateProfileDto) =>
   ok(
