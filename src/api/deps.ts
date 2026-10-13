@@ -19,6 +19,7 @@ export function getApiDeps(): ApiDeps {
       sessionSecret: env.SESSION_SECRET,
       production: env.NODE_ENV === 'production',
       paymentsMode: env.PAYMENTS_MODE,
+      paypalEnv: env.PAYPAL_ENV,
       paypalClientId: env.PAYMENTS_MODE === 'paypal' ? env.PAYPAL_CLIENT_ID : undefined,
       maxPremiumPctDefault: env.MAX_PREMIUM_PCT_DEFAULT,
     };

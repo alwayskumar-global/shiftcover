@@ -433,3 +433,23 @@ export const ShiftDayResponse = z
     actual_hours: z.number().nonnegative().nullable(),
   })
   .strict();
+
+// ---------------------------------------------------------------- sandbox Outbox (additive; sandbox only)
+export const OutboxResponse = z
+  .object({
+    items: z.array(
+      z
+        .object({
+          id: z.uuid(),
+          channel: z.enum(['in_app', 'email', 'push']),
+          kind: z.string(),
+          recipient: z.string(),
+          recipient_label: z.string(),
+          created_at: iso,
+          status: z.enum(['pending', 'sent', 'failed']),
+          link: z.string().nullable(),
+        })
+        .strict(),
+    ),
+  })
+  .strict();

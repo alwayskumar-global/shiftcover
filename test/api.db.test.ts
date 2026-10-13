@@ -69,6 +69,7 @@ describe.skipIf(!hasTestDb)('M1 HTTP API (handlers on live Postgres)', () => {
       sessionSecret: 'k'.repeat(40),
       production: false,
       paymentsMode,
+      paypalEnv: 'sandbox',
       maxPremiumPctDefault: 20,
     };
     const jobs: Array<{ name: string; data: Record<string, unknown> }> = [];
