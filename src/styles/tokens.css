@@ -315,3 +315,12 @@
 
 /* Focus: every interactive element gets the same ring. */
 :where(:focus-visible) { outline: none; box-shadow: var(--sc-ring-focus); }
+
+/* ---------- 14. GATE 2 additions (workers My shifts / Earnings / Profile, manager Approvals / Ledger / Workers) ---------- */
+:root {
+  --sc-tabbar-h: 64px;     /* worker bottom tab bar height (excl. safe area) · .sc-tabbar */
+  --sc-switch-w: 52px;     /* toggle switch track width · .sc-switch__track */
+  --sc-switch-h: 32px;     /* toggle switch track height */
+  --sc-table-row-h: 56px;  /* console data-table row height · .sc-tbl__row */
+  --sc-drawer-w: 420px;    /* console right drawer width · .sc-drawer */
+}

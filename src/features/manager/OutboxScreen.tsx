@@ -79,7 +79,7 @@ export function OutboxScreen() {
             <span role="columnheader">To</span>
             <span role="columnheader">Channel</span>
             <span role="columnheader">Created</span>
-            <span role="columnheader">Offer link</span>
+            <span role="columnheader">Link or code</span>
           </div>
           {items === null && !failed && (
             <div className="sc-offers__row" aria-hidden="true">
@@ -109,7 +109,7 @@ export function OutboxScreen() {
               <span className="sc-offers__time" role="cell">
                 {when(i.created_at)}
               </span>
-              <span role="cell">
+              <span role="cell" style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                 {i.link ? (
                   <>
                     <a
@@ -120,11 +120,26 @@ export function OutboxScreen() {
                     >
                       Open
                     </a>
+                    {/* Per-worker link, shared by the manager's own tap. The link goes only into this URL: it is never
+                        logged, stored or sent to our server. */}
+                    <a
+                      className="sc-btn sc-btn--quiet sc-btn--md"
+                      href={`https://wa.me/?text=${encodeURIComponent(`Shift offer from ShiftCover: ${i.link}`)}`}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      aria-label={`Share ${i.recipient_label}'s link on WhatsApp`}
+                    >
+                      Share on WhatsApp
+                    </a>
                     <Button variant="quiet" size="md" onClick={() => copy(i.id, i.link!)}>
                       <Icon name={copied === i.id ? 'i-check' : 'i-copy'} size="sm" />
                       {copied === i.id ? 'Copied' : 'Copy link'}
                     </Button>
                   </>
+                ) : i.code ? (
+                  <span className="sc-offers__name">
+                    Code <span className="sc-ref">{i.code}</span>
+                  </span>
                 ) : (
                   '–'
                 )}

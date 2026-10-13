@@ -27,6 +27,8 @@ export interface ServiceDeps {
     platformFeeBps: number;
     /** Flat fee per shift in cents (PLATFORM_FIXED_FEE_CENTS); absent means none. */
     platformFixedFeeCents?: number;
+    /** PAYMENTS_MODE. 'stub' (never in production: env.ts refuses it) lets local runs settle without PayPal. */
+    paymentsMode?: 'paypal' | 'stub';
   };
   /** Real PayPal calls. Undefined in PAYMENTS_MODE=stub (state and ledger only). */
   payments?: PaymentsGateway;

@@ -35,6 +35,9 @@ Hackathon: https://paypalaihackathon.devpost.com/
 | A9 | **AI provider: Google Gemini API** (Kumar's AI Studio account, USD 50 balance). **One model for every component: `gemini-3.5-flash-lite`** (cheapest). Strict spend guardrails (Section 9). | **Confirmed** |
 | A10 | `CLAUDE.md` is **gitignored and never committed**. | **Confirmed** |
 | A11 | Repo is **private until submission**, then flipped public after the pre-flip checklist (Section 15). | **Confirmed** |
+| A12 | **WhatsApp, option B only:** per-worker offer links that the manager shares by hand from the sandbox Outbox (a `wa.me` deep link with the message pre-filled). No WhatsApp API or server-side sending; links are never logged or stored by the share button. Refines A5 (no automated WhatsApp or SMS). | **Confirmed** |
+| A13 | **Widen the cap is deferred.** The control is shown disabled ("Coming soon"); no dialog and no API call until it is built. | **Confirmed** |
+| A14 | **Gemini intake is planned after the demo.** The running app uses the rules parser only; no Gemini call is made. See `docs/after-demo.md`. | **Confirmed** |
 
 ---
 

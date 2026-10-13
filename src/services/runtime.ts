@@ -37,6 +37,7 @@ export function buildServiceDeps(enqueue: Enqueue): ServiceDeps {
       waveIntervalSeconds: env.WAVE_INTERVAL_SECONDS,
       platformFeeBps: env.PLATFORM_FEE_BPS,
       platformFixedFeeCents: env.PLATFORM_FIXED_FEE_CENTS,
+      paymentsMode: env.PAYMENTS_MODE,
     },
     payments: buildGateway(env),
   };

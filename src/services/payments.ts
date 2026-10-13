@@ -13,9 +13,11 @@ import {
 import { PaypalError } from '../paypal/client';
 import { senderBatchIdFor } from '../paypal/ids';
 import { managersForVenue } from './managers';
+import { stubSettle } from './payments-stub';
 import { latestPayment } from './payment-queries';
 import { moveSlot, patchPayment, movePayment, tryMovePayment } from './transitions';
 import { ServiceError, type ServiceDeps, type Tx } from './types';
+import { workerChannels } from './worker-profile';
 
 /**
  * Real money (PLAN.md 4C/4D/4E, 7). Rules that hold throughout:
@@ -250,19 +252,14 @@ export async function approveAndPay(
   approvedHours: number,
 ): Promise<SettleResult> {
   const actor = `user:${ctx.userId}`;
-  const { slot, venue } = await loadOwned(deps, ctx.orgId, slotId);
+  const { venue } = await loadOwned(deps, ctx.orgId, slotId);
   if (!(approvedHours > 0) || Math.round(approvedHours * 100) / 100 !== approvedHours)
     throw new ServiceError(
       'invalid_input',
       'approved hours must be a positive number with at most 2 decimals',
     );
-  const scheduledMinutes = Math.round((slot.endAt.getTime() - slot.startAt.getTime()) / 60_000);
   const minutes = Math.round(approvedHours * 60);
-  if (minutes > scheduledMinutes)
-    throw new ServiceError(
-      'invalid_input',
-      'approved hours are above the hours the hold was sized for',
-    );
+  // Hours whose pay + fee exceed the hold are rejected below by computeSettlement, before any PayPal call.
 
   // 1. validate, compute and record the settlement; slot PENDING_APPROVAL -> SETTLING.
   await deps.db.transaction(async (tx) => {
@@ -327,6 +324,21 @@ export async function continueSettlement(
   actor: string,
   venueId?: string,
 ): Promise<SettleResult> {
+  if (!deps.payments && deps.config.paymentsMode === 'stub') {
+    // Local run without PayPal: settle in state and ledger only (see stubSettle).
+    const done = await stubSettle(deps.db, 'stub', slotId, actor);
+    const [s2] = await deps.db
+      .select({ status: shiftSlots.status })
+      .from(shiftSlots)
+      .where(eq(shiftSlots.id, slotId));
+    return {
+      slotStatus: s2!.status,
+      paymentStatus: done.status,
+      captureCents: done.capturedCents,
+      workerPayCents: done.workerPayCents,
+      platformFeeCents: done.platformFeeCents,
+    };
+  }
   const gw = requireGateway(deps);
   let pay = (await latestPayment(deps.db, slotId))!;
   const [slot] = await deps.db.select().from(shiftSlots).where(eq(shiftSlots.id, slotId));
@@ -623,7 +635,7 @@ export async function applyPayoutItem(
           if (slot?.workerId)
             await deps.notifier(tx).send({
               recipient: `worker:${slot.workerId}`,
-              channels: ['in_app', 'email', 'push'],
+              channels: await workerChannels(tx, slot.workerId, 'worker_paid'),
               kind: 'worker_paid',
               payload: {
                 slotId: slot.id,
@@ -730,22 +742,25 @@ export async function applyPayoutItem(
  * Safety net (PLAN.md 7.7): advances every non-terminal payment from PayPal's own records, so the system converges
  * even if no webhook ever arrives. Idempotent; each payment is handled independently.
  */
-export async function reconcilePayments(deps: ServiceDeps) {
+export async function reconcilePayments(deps: ServiceDeps, opts: { slotIds?: string[] } = {}) {
   const actor = 'system:reconcile';
   const gw = deps.payments;
   const open = await deps.db
     .select()
     .from(payments)
     .where(
-      inArray(payments.status, [
-        'AUTH_PENDING_APPROVAL',
-        'AUTHORIZED',
-        'CAPTURE_DECLINED',
-        'CAPTURED',
-        'PAYOUT_PENDING',
-        'PAYOUT_FAILED',
-        'PAYOUT_UNCLAIMED',
-      ]),
+      and(
+        opts.slotIds ? inArray(payments.slotId, opts.slotIds) : undefined, // tests narrow it; the job never does
+        inArray(payments.status, [
+          'AUTH_PENDING_APPROVAL',
+          'AUTHORIZED',
+          'CAPTURE_DECLINED',
+          'CAPTURED',
+          'PAYOUT_PENDING',
+          'PAYOUT_FAILED',
+          'PAYOUT_UNCLAIMED',
+        ]),
+      ),
     );
   let advanced = 0;
   for (const p of open) {

@@ -25,7 +25,10 @@ import { claimOffer, declineOffer, viewOffer } from '../services/claim';
 import { cancelGap, createGap, startOffering, widenRadius } from '../services/gaps';
 import { resendOfferLink } from '../services/offer-link';
 import { stubAuthorize } from '../services/payments-stub';
+import { listApprovals } from '../services/approvals';
+import { LEDGER_GROUPS, listLedger, type LedgerGroup, type LedgerRange } from '../services/ledger';
 import { listOutbox } from '../services/outbox';
+import { inviteWorker, listWorkers } from '../services/worker-directory';
 import { approveAndPay, authorizePayment, ensureOrder } from '../services/payments';
 import { arrive, finish, managerConfirmTimes, markNoShow } from '../services/shift-day';
 import {
@@ -38,7 +41,14 @@ import {
 } from '../services/read-models';
 import type { ServiceDeps } from '../services/types';
 import { workerShifts } from '../services/worker-data';
-import { toWorkerOfferDto } from './adapters';
+import { workerEarnings } from '../services/worker-earnings';
+import {
+  getProfile,
+  startEmailChange,
+  updateProfile,
+  verifyEmailChange,
+} from '../services/worker-profile';
+import { avatarTint, initialsOf, publicPaymentStatus, toWorkerOfferDto } from './adapters';
 import {
   CancelGapRequest,
   CancelGapResponse,
@@ -46,6 +56,9 @@ import {
   CreateGapRequest,
   CreateGapResponse,
   GapDetailResponse,
+  InviteWorkerRequest,
+  InviteWorkerResponse,
+  LedgerResponse,
   MeResponse,
   ParseGapRequest,
   ParseResultDto,
@@ -55,6 +68,7 @@ import {
   RosterResponse,
   StartOfferingResponse,
   StubAuthorizeResponse,
+  ApprovalsResponse,
   ApproveAndPayRequest,
   ApproveAndPayResponse,
   AuthorizeRequest,
@@ -68,6 +82,14 @@ import {
   WidenRadiusRequest,
   WidenRadiusResponse,
   WorkerOfferDto,
+  StartEmailChangeRequest,
+  StartEmailChangeResponse,
+  UpdateProfileRequest,
+  VerifyEmailChangeRequest,
+  VerifyEmailChangeResponse,
+  WorkerEarningsResponse,
+  WorkerProfileResponse,
+  WorkersResponse,
   WorkerShiftsResponse,
 } from './dto';
 import { assertSameOrigin, HttpError, noStore, parseBody } from './http';
@@ -402,6 +424,7 @@ export async function getWorkerShifts(d: ApiDeps, req: Request) {
   const shifts = await workerShifts(d.svc.db, workerId);
   return json(
     WorkerShiftsResponse.parse({
+      server_time: d.svc.now().toISOString(),
       shifts: shifts.map((s) => ({
         offer_id: s.offerId,
         offer_status: s.offerStatus.toLowerCase(),
@@ -414,10 +437,131 @@ export async function getWorkerShifts(d: ApiDeps, req: Request) {
         end_at: s.endAt,
         venue_name: s.venueName,
         is_mine: s.isMine,
+        venue_area: s.venueArea,
+        venue_tz: s.venueTz,
+        venue_address: s.venueAddress,
+        manager_name: s.managerName,
+        hours: s.hours,
+        offered_rate_cents: s.offeredRateCents,
+        check_in_at: s.checkInAt,
+        check_out_at: s.checkOutAt,
+        approved_hours: s.approvedHours,
+        payment_status: s.paymentStatus ? publicPaymentStatus(s.paymentStatus) : null,
+        worker_pay_cents: s.workerPayCents,
       })),
     }),
     { headers: WORKER_HEADERS },
   );
+}
+
+export async function getWorkerEarnings(d: ApiDeps, req: Request) {
+  const workerId = requireWorker(req.headers, d.sessionSecret, d.svc.now());
+  const now = d.svc.now();
+  const e = await workerEarnings(d.svc.db, workerId, now);
+  const tot = (t: typeof e.week) => ({
+    total_cents: t.totalCents,
+    paid_cents: t.paidCents,
+    on_the_way_cents: t.onTheWayCents,
+  });
+  return json(
+    WorkerEarningsResponse.parse({
+      server_time: now.toISOString(),
+      week: tot(e.week),
+      month: tot(e.month),
+      failed_cents: e.failedCents,
+      items: e.items.map((r) => ({
+        slot_id: r.slotId,
+        role: r.role,
+        venue_name: r.venueName,
+        venue_tz: r.venueTz,
+        start_at: r.startAt.toISOString(),
+        end_at: r.endAt.toISOString(),
+        approved_hours: r.approvedHours,
+        rate_cents: r.rateCents,
+        worker_pay_cents: r.workerPayCents,
+        status: r.status,
+        reference: r.reference,
+      })),
+    }),
+    { headers: WORKER_HEADERS },
+  );
+}
+
+// ---------------------------------------------------------------- G2-W5 worker profile
+const profileBody = async (d: ApiDeps, workerId: string) => {
+  const p = await getProfile(d.svc.db, workerId);
+  return WorkerProfileResponse.parse({
+    name: p.name,
+    initials: initialsOf(p.name),
+    avatar_tint: avatarTint(p.id),
+    email: p.email,
+    paypal_email: p.paypalEmail,
+    skills: p.skills,
+    home_area: p.homeArea,
+    notifications: p.prefs,
+  });
+};
+
+export async function getWorkerProfile(d: ApiDeps, req: Request) {
+  const workerId = requireWorker(req.headers, d.sessionSecret, d.svc.now());
+  return json(await profileBody(d, workerId), { headers: WORKER_HEADERS });
+}
+
+export async function patchWorkerProfile(d: ApiDeps, req: Request) {
+  assertSameOrigin(req, d.svc.config.appBaseUrl);
+  const workerId = requireWorker(req.headers, d.sessionSecret, d.svc.now());
+  if (!d.limiter.hit(`profile:${workerId}`, 60, 60_000)) throw new HttpError(429, 'rate_limited');
+  const b = await parseBody(req, UpdateProfileRequest);
+  await updateProfile(d.svc.db, workerId, {
+    skills: b.skills,
+    homeArea: b.home_area,
+    prefs: b.notifications,
+  });
+  return json(await profileBody(d, workerId), { headers: WORKER_HEADERS });
+}
+
+/** Step 1: send a 6-digit code to the NEW address. The code is not in the response and is never logged. */
+export async function postStartEmailChange(d: ApiDeps, req: Request) {
+  assertSameOrigin(req, d.svc.config.appBaseUrl);
+  const workerId = requireWorker(req.headers, d.sessionSecret, d.svc.now());
+  if (
+    !d.limiter.hit(`email-change:${workerId}`, 5, 3_600_000) ||
+    !d.limiter.hit(`email-change-ip:${clientIp(req.headers)}`, 20, 3_600_000)
+  )
+    throw new HttpError(429, 'rate_limited', 'Too many codes requested. Try again later.');
+  const b = await parseBody(req, StartEmailChangeRequest);
+  const r = await startEmailChange(d.svc, workerId, b.email);
+  return json(
+    StartEmailChangeResponse.parse({
+      new_email: r.newEmail,
+      expires_in_seconds: r.expiresInSeconds,
+    }),
+    { headers: WORKER_HEADERS },
+  );
+}
+
+/** Step 2: check the code. 410 when it expired, 422 when it is wrong, 429 once the tries are used up. */
+export async function postVerifyEmailChange(d: ApiDeps, req: Request) {
+  assertSameOrigin(req, d.svc.config.appBaseUrl);
+  const workerId = requireWorker(req.headers, d.sessionSecret, d.svc.now());
+  if (!d.limiter.hit(`email-verify:${workerId}`, 20, 3_600_000))
+    throw new HttpError(429, 'rate_limited');
+  const b = await parseBody(req, VerifyEmailChangeRequest);
+  const r = await verifyEmailChange(d.svc, workerId, b.code);
+  if (!r.ok) {
+    if (r.reason === 'expired' || r.reason === 'none')
+      throw new HttpError(410, 'code_expired', 'This code has expired. Send a new one.');
+    if (r.reason === 'locked')
+      throw new HttpError(429, 'too_many_attempts', 'Too many wrong tries. Send a new code.');
+    throw new HttpError(
+      422,
+      'code_wrong',
+      `That code isn't right. ${r.attemptsLeft} ${r.attemptsLeft === 1 ? 'try' : 'tries'} left.`,
+    );
+  }
+  return json(VerifyEmailChangeResponse.parse({ paypal_email: r.paypalEmail }), {
+    headers: WORKER_HEADERS,
+  });
 }
 
 // ---------------------------------------------------------------- M2: money
@@ -545,6 +689,154 @@ export async function getOutbox(d: ApiDeps, req: Request) {
         created_at: i.createdAt.toISOString(),
         status: i.status,
         link: i.link,
+        code: i.code,
+      })),
+    }),
+  );
+}
+
+// ---------------------------------------------------------------- G2-M6 money ledger
+const LedgerQuery = z
+  .object({
+    group: z.enum(LEDGER_GROUPS as [LedgerGroup, ...LedgerGroup[]]).optional(),
+    range: z.enum(['7d', '30d', 'all']).optional(),
+  })
+  .strict();
+
+export async function getLedger(d: ApiDeps, req: Request) {
+  const ctx = await mgr(d, req);
+  const url = new URL(req.url);
+  const q = LedgerQuery.safeParse(Object.fromEntries(url.searchParams));
+  if (!q.success) throw new HttpError(400, 'invalid_request', 'Unknown filter');
+  const r = await listLedger(d.svc, ctx.orgId, {
+    group: q.data.group,
+    range: q.data.range as LedgerRange | undefined,
+  });
+  return json(
+    LedgerResponse.parse({
+      server_time: r.serverTime.toISOString(),
+      truncated: r.truncated,
+      totals: {
+        authorized_cents: r.totals.authorizedCents,
+        captured_cents: r.totals.capturedCents,
+        worker_pay_cents: r.totals.workerPayCents,
+        platform_fee_cents: r.totals.platformFeeCents,
+      },
+      items: r.items.map((i) => ({
+        payment_id: i.paymentId,
+        slot_id: i.slotId,
+        attempt: i.attempt,
+        role: i.role,
+        worker_name: i.workerName,
+        venue_tz: i.venueTz,
+        start_at: i.startAt.toISOString(),
+        end_at: i.endAt.toISOString(),
+        approved_hours: i.approvedHours,
+        status: publicPaymentStatus(i.status),
+        group: i.group,
+        last_error: i.lastError,
+        authorized_cents: i.authorizedCents,
+        captured_cents: i.capturedCents,
+        worker_pay_cents: i.workerPayCents,
+        platform_fee_cents: i.platformFeeCents,
+        paypal_capture_fee_cents: i.paypalCaptureFeeCents,
+        paypal_payout_fee_cents: i.paypalPayoutFeeCents,
+        released_cents: i.releasedCents,
+        references: i.references,
+        entries: i.entries.map((e) => ({
+          id: e.id,
+          type: e.type,
+          amount_cents: e.amountCents,
+          ref: e.ref,
+          created_at: e.createdAt.toISOString(),
+        })),
+      })),
+    }),
+  );
+}
+
+// ---------------------------------------------------------------- G2-M7 workers directory and invites
+export async function getWorkers(d: ApiDeps, req: Request) {
+  const ctx = await mgr(d, req);
+  const r = await listWorkers(d.svc, ctx.orgId);
+  return json(
+    WorkersResponse.parse({
+      summary: {
+        total: r.summary.total,
+        active: r.summary.active,
+        invited: r.summary.invited,
+        certs_needing_attention: r.summary.certsNeedingAttention,
+      },
+      items: r.items.map((w) => ({
+        id: w.id,
+        name: w.name,
+        initials: w.initials,
+        avatar_tint: w.tint,
+        email: w.email,
+        status: w.status,
+        skills: w.skills,
+        certifications: w.certs.map((c) => ({
+          name: c.cert,
+          valid_until: c.validUntil,
+          state: c.state,
+          days_left: c.daysLeft,
+        })),
+        availability: w.availability,
+        reliability_pct: w.reliabilityPct,
+        reliability_tier: w.tier,
+      })),
+    }),
+  );
+}
+
+export async function postInviteWorker(d: ApiDeps, req: Request) {
+  const ctx = await mgr(d, req);
+  managerPost(d, req);
+  if (!d.limiter.hit(`invite:${ctx.userId}`, 20, 3_600_000))
+    throw new HttpError(429, 'rate_limited', 'Too many invites. Try again later.');
+  const b = await parseBody(req, InviteWorkerRequest);
+  const r = await inviteWorker(d.svc, { orgId: ctx.orgId, userId: ctx.userId }, b.email);
+  if (r.kind === 'exists')
+    throw new HttpError(
+      409,
+      r.status === 'invited' ? 'already_invited' : 'already_member',
+      r.status === 'invited'
+        ? 'You already invited this email'
+        : `That person is already on your team (${r.name})`,
+    );
+  return json(
+    InviteWorkerResponse.parse({ worker_id: r.workerId, email: r.email, status: 'invited' }),
+  );
+}
+
+// ---------------------------------------------------------------- M2/G2: approvals list
+export async function getApprovals(d: ApiDeps, req: Request) {
+  const ctx = await mgr(d, req);
+  const r = await listApprovals(d.svc, ctx.orgId);
+  return json(
+    ApprovalsResponse.parse({
+      server_time: r.serverTime.toISOString(),
+      fee_bps: r.feeBps,
+      fixed_fee_cents: r.fixedFeeCents,
+      items: r.items.map((i) => ({
+        slot_id: i.slotId,
+        slot_status: i.slotStatus.toLowerCase(),
+        worker: { name: i.workerName, initials: i.workerInitials, avatar_tint: i.workerTint },
+        role: i.role,
+        venue_tz: i.venueTz,
+        start_at: i.startAt.toISOString(),
+        end_at: i.endAt.toISOString(),
+        scheduled_hours: i.scheduledHours,
+        check_in_at: i.checkInAt?.toISOString() ?? null,
+        check_out_at: i.checkOutAt?.toISOString() ?? null,
+        actual_hours: i.actualHours,
+        approved_hours: i.approvedHours,
+        rate_cents: i.rateCents,
+        authorized_cents: i.authorizedCents,
+        max_hours: i.maxHours,
+        payment_status: i.paymentStatus,
+        last_error: i.lastError,
+        capture_reference: i.captureReference,
       })),
     }),
   );

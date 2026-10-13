@@ -498,10 +498,22 @@ export type Step =
   | { select: string; value: string }
   | { wait: number };
 
+export type MyShiftsVariant =
+  'notArrived' | 'onShift' | 'finished' | 'pending' | 'empty' | 'error' | 'offline' | 'signed-out';
+export type ApprovalsVariant =
+  'list' | 'pending' | 'empty' | 'error' | 'declined' | 'fixed-fee' | 'decline-on-approve';
+
 export type Scene = {
   id: string;
   group:
-    'W1 claim card' | 'W2 booked' | 'M1 login' | 'M2 roster' | 'M3 report a gap' | 'M4 gap detail';
+    | 'W1 claim card'
+    | 'W2 booked'
+    | 'M1 login'
+    | 'M2 roster'
+    | 'M3 report a gap'
+    | 'M4 gap detail'
+    | 'G2-W3 my shifts'
+    | 'G2-M5 approvals';
   label: string;
   /** What the harness renders. */
   render:
@@ -509,7 +521,9 @@ export type Scene = {
     | { kind: 'login' }
     | { kind: 'roster'; roster: RosterKey | 'error' | 'pending' }
     | { kind: 'gap-new'; payments?: 'paypal' }
-    | { kind: 'gap-detail'; detail: GapDetailKey };
+    | { kind: 'gap-detail'; detail: GapDetailKey }
+    | { kind: 'my-shifts'; variant: MyShiftsVariant }
+    | { kind: 'approvals'; variant: ApprovalsVariant };
   /** Interactions applied after load (shared by axe and screenshots). Selectors are Playwright text/CSS selectors. */
   steps?: Step[];
   viewport: { width: number; height: number };
@@ -706,5 +720,71 @@ export const SCENES: Scene[] = [
     design: { file: 'M4-gap-detail.dc.html', hash: 'offering' },
   },
 ];
+
+const w3 = (
+  id: string,
+  label: string,
+  variant: MyShiftsVariant,
+  hash: string,
+  steps?: Step[],
+): Scene => ({
+  id,
+  group: 'G2-W3 my shifts',
+  label,
+  render: { kind: 'my-shifts', variant },
+  steps,
+  viewport: M,
+  design: { file: 'G2-W3-my-shifts.dc.html', hash },
+});
+const m5 = (
+  id: string,
+  label: string,
+  variant: ApprovalsVariant,
+  hash: string,
+  steps?: Step[],
+): Scene => ({
+  id,
+  group: 'G2-M5 approvals',
+  label,
+  render: { kind: 'approvals', variant },
+  steps,
+  viewport: D,
+  design: { file: 'G2-M5-approvals.dc.html', hash },
+});
+const approveFirst: Step[] = [
+  { click: 'article:first-of-type button:has-text("Approve and pay")' },
+  { wait: 300 },
+];
+
+SCENES.push(
+  w3('w3-booked', 'My shifts, booked (arrive)', 'notArrived', 'populated'),
+  w3('w3-onshift', 'My shifts, on shift (finish)', 'onShift', 'populated'),
+  w3('w3-finish-confirm', 'My shifts, finish confirm', 'onShift', 'populated', [
+    { click: 'button:has-text("Finished")' },
+    { wait: 200 },
+  ]),
+  w3('w3-finished', 'My shifts, waiting for approval', 'finished', 'populated'),
+  w3('w3-loading', 'My shifts, loading', 'pending', 'loading'),
+  w3('w3-empty', 'My shifts, empty', 'empty', 'empty'),
+  w3('w3-error', 'My shifts, error with retry', 'error', 'error'),
+  w3('w3-offline', 'My shifts, offline notice', 'offline', 'offline'),
+  w3('w3-signed-out', 'My shifts, no session', 'signed-out', 'error'),
+  m5('m5-pending', 'Approvals, pending', 'list', 'pending'),
+  m5('m5-loading', 'Approvals, loading', 'pending', 'loading'),
+  m5('m5-empty', 'Approvals, all caught up', 'empty', 'empty'),
+  m5('m5-error', 'Approvals, error', 'error', 'error'),
+  m5('m5-overmax', 'Approvals, hours over the hold', 'list', 'overmax', [
+    { fill: 'article:first-of-type input', value: '9' },
+    ...approveFirst,
+  ]),
+  m5('m5-dialog', 'Approvals, confirm step', 'list', 'pending', approveFirst),
+  m5('m5-approved', 'Approvals, approved', 'list', 'approved', [
+    ...approveFirst,
+    { click: '[role="alertdialog"] button:has-text("Approve and pay")' },
+    { wait: 600 },
+  ]),
+  m5('m5-declined', 'Approvals, capture declined', 'declined', 'declined'),
+  m5('m5-fixed-fee', 'Approvals, with a fixed fee', 'fixed-fee', 'pending'),
+);
 
 export const sceneById = (id: string) => SCENES.find((s) => s.id === id);

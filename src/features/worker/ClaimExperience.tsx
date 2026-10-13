@@ -422,10 +422,7 @@ export function ClaimExperience({ token: urlToken }: { token?: string }) {
             {view === 'taken' && (
               <div className="sc-notice__actions">
                 {others > 0 ? (
-                  <a
-                    className="sc-btn sc-btn--secondary sc-btn--lg sc-btn--block"
-                    href="#my-shifts"
-                  >
+                  <a className="sc-btn sc-btn--secondary sc-btn--lg sc-btn--block" href="/w">
                     See {others} other open {others === 1 ? 'shift' : 'shifts'}
                   </a>
                 ) : (
@@ -657,7 +654,7 @@ function Booked({ offer }: { offer: WorkerOfferDto }) {
       </section>
       <footer className="sc-app__footer">
         <div className="sc-app__footer-inner">
-          <a className="sc-btn sc-btn--primary sc-btn--lg sc-btn--block" href="#my-shifts">
+          <a className="sc-btn sc-btn--primary sc-btn--lg sc-btn--block" href="/w">
             Go to My shifts
             <Icon name="i-arrow-right" />
           </a>

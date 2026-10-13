@@ -332,6 +332,8 @@ export const ClaimResponse = WorkerOfferDto;
 // ---------------------------------------------------------------- GET /api/w/shifts (not a Gate 1 screen)
 export const WorkerShiftsResponse = z
   .object({
+    /** Additive: the server clock, so "today" and the 14-day window never use the device clock. */
+    server_time: iso,
     shifts: z.array(
       z
         .object({
@@ -346,6 +348,20 @@ export const WorkerShiftsResponse = z
           end_at: iso,
           venue_name: z.string(),
           is_mine: z.boolean(),
+          // ---- additive (My shifts): what the worker sees about their own booked shift ----
+          venue_area: z.string(),
+          venue_tz: z.string(),
+          /** Street address from venues.address (empty when unset): "Open in Maps" uses it. */
+          venue_address: z.string(),
+          /** The organisation's manager, for "<name> is checking your hours". */
+          manager_name: z.string().nullable(),
+          hours: z.number().positive(),
+          offered_rate_cents: cents.nullable(),
+          check_in_at: iso.nullable(),
+          check_out_at: iso.nullable(),
+          approved_hours: z.number().nonnegative().nullable(),
+          payment_status: z.enum(PAYMENT_STATUS_PUBLIC).nullable(),
+          worker_pay_cents: cents,
         })
         .strict(),
     ),
@@ -448,8 +464,244 @@ export const OutboxResponse = z
           created_at: iso,
           status: z.enum(['pending', 'sent', 'failed']),
           link: z.string().nullable(),
+          /** Payout-email code (kind payout_email_code); sandbox Outbox only. */
+          code: z.string().nullable(),
         })
         .strict(),
     ),
   })
+  .strict();
+
+// ---------------------------------------------------------------- manager approvals (G2-M5; additive)
+export const ApprovalsResponse = z
+  .object({
+    server_time: iso,
+    /** The fee config the charge preview uses: percentage in basis points plus an optional flat fee. */
+    fee_bps: z.number().int().nonnegative(),
+    fixed_fee_cents: z.number().int().nonnegative(),
+    items: z.array(
+      z
+        .object({
+          slot_id: z.uuid(),
+          slot_status: z.enum(SLOT_STATUS_PUBLIC),
+          worker: z
+            .object({
+              name: z.string(),
+              initials: z.string(),
+              avatar_tint: z.number().int().min(1).max(5),
+            })
+            .strict(),
+          role,
+          venue_tz: z.string(),
+          start_at: iso,
+          end_at: iso,
+          scheduled_hours: z.number().positive(),
+          check_in_at: iso.nullable(),
+          check_out_at: iso.nullable(),
+          actual_hours: z.number().nonnegative().nullable(),
+          /** Set once an approval started (a declined charge being retried): that retry must use the same hours. */
+          approved_hours: z.number().nonnegative().nullable(),
+          rate_cents: cents,
+          authorized_cents: cents,
+          /** The most hours the hold covers at this rate, fee included. */
+          max_hours: z.number().nonnegative(),
+          payment_status: z.enum(PAYMENT_STATUS_PUBLIC),
+          last_error: z.string().nullable(),
+          capture_reference: z.string().nullable(),
+        })
+        .strict(),
+    ),
+  })
+  .strict();
+
+// ---------------------------------------------------------------- worker earnings (G2-W4; additive)
+const EarningTotalDto = z
+  .object({ total_cents: cents, paid_cents: cents, on_the_way_cents: cents })
+  .strict();
+
+/** The worker's own pay only: no authorization, capture or platform fee ever appears here. */
+export const WorkerEarningsResponse = z
+  .object({
+    server_time: iso,
+    week: EarningTotalDto,
+    month: EarningTotalDto,
+    /** Worker pay on payouts that did not reach the worker; excluded from both totals. */
+    failed_cents: cents,
+    items: z.array(
+      z
+        .object({
+          slot_id: z.uuid(),
+          role,
+          venue_name: z.string(),
+          venue_tz: z.string(),
+          start_at: iso,
+          end_at: iso,
+          approved_hours: z.number().positive(),
+          rate_cents: cents,
+          worker_pay_cents: cents,
+          status: z.enum(['approved', 'paying', 'paid', 'failed']),
+          /** PayPal payout reference once a payout was sent. */
+          reference: z.string().nullable(),
+        })
+        .strict(),
+    ),
+  })
+  .strict();
+
+// ---------------------------------------------------------------- worker profile (G2-W5; additive)
+const NotifyPrefsDto = z
+  .object({ offers_email: z.boolean(), offers_push: z.boolean(), pay_email: z.boolean() })
+  .strict();
+
+export const WorkerProfileResponse = z
+  .object({
+    name: z.string(),
+    initials: z.string(),
+    avatar_tint: z.number().int().min(1).max(5),
+    /** The sign-in address the offer links go to. */
+    email: z.string(),
+    /** Where payouts go; null until the worker adds one. */
+    paypal_email: z.string().nullable(),
+    skills: z.array(role),
+    home_area: z.string(),
+    notifications: NotifyPrefsDto,
+  })
+  .strict();
+
+export const UpdateProfileRequest = z
+  .object({
+    skills: z.array(role).min(1).max(9).optional(),
+    home_area: z.string().max(60).optional(),
+    notifications: NotifyPrefsDto.partial().strict().optional(),
+  })
+  .strict();
+
+export const StartEmailChangeRequest = z.object({ email: z.string().min(1).max(254) }).strict();
+export const StartEmailChangeResponse = z
+  .object({ new_email: z.string(), expires_in_seconds: z.number().int().positive() })
+  .strict();
+export const VerifyEmailChangeRequest = z.object({ code: z.string().min(1).max(12) }).strict();
+export const VerifyEmailChangeResponse = z.object({ paypal_email: z.string() }).strict();
+
+// ---------------------------------------------------------------- manager ledger (G2-M6; additive)
+export const LEDGER_ENTRY_TYPES = [
+  'AUTHORIZED',
+  'CAPTURED',
+  'VOIDED',
+  'PAYOUT_SENT',
+  'PAID',
+  'PAYOUT_FAILED',
+  'RETURNED',
+  'PLATFORM_FEE',
+  'PAYPAL_CAPTURE_FEE',
+  'PAYPAL_PAYOUT_FEE',
+  'CAPTURE_DECLINED',
+  'PAYOUT_UNCLAIMED',
+  'REFUNDED',
+  'REVERSED',
+] as const;
+
+export const LedgerResponse = z
+  .object({
+    server_time: iso,
+    /** True when more rows matched than are listed (the newest are shown). */
+    truncated: z.boolean(),
+    totals: z
+      .object({
+        authorized_cents: cents,
+        captured_cents: cents,
+        worker_pay_cents: cents,
+        platform_fee_cents: cents,
+      })
+      .strict(),
+    items: z.array(
+      z
+        .object({
+          payment_id: z.uuid(),
+          slot_id: z.uuid(),
+          attempt: z.number().int().positive(),
+          role,
+          worker_name: z.string().nullable(),
+          venue_tz: z.string(),
+          start_at: iso,
+          end_at: iso,
+          approved_hours: z.number().nonnegative().nullable(),
+          status: z.enum(PAYMENT_STATUS_PUBLIC),
+          group: z.enum(['held', 'in_progress', 'paid', 'failed', 'voided']),
+          last_error: z.string().nullable(),
+          authorized_cents: cents,
+          captured_cents: cents,
+          worker_pay_cents: cents,
+          platform_fee_cents: cents,
+          paypal_capture_fee_cents: cents,
+          paypal_payout_fee_cents: cents,
+          released_cents: cents.nullable(),
+          references: z
+            .object({
+              order: z.string().nullable(),
+              authorization: z.string().nullable(),
+              capture: z.string().nullable(),
+              payout: z.string().nullable(),
+            })
+            .strict(),
+          entries: z.array(
+            z
+              .object({
+                id: z.uuid(),
+                type: z.enum(LEDGER_ENTRY_TYPES),
+                amount_cents: cents,
+                ref: z.string().nullable(),
+                created_at: iso,
+              })
+              .strict(),
+          ),
+        })
+        .strict(),
+    ),
+  })
+  .strict();
+
+// ---------------------------------------------------------------- manager workers (G2-M7; additive)
+export const WorkersResponse = z
+  .object({
+    summary: z
+      .object({
+        total: z.number().int().nonnegative(),
+        active: z.number().int().nonnegative(),
+        invited: z.number().int().nonnegative(),
+        certs_needing_attention: z.number().int().nonnegative(),
+      })
+      .strict(),
+    items: z.array(
+      z
+        .object({
+          id: z.uuid(),
+          name: z.string(),
+          initials: z.string(),
+          avatar_tint: z.number().int().min(1).max(5),
+          email: z.string(),
+          status: z.enum(['invited', 'active', 'inactive']),
+          skills: z.array(role),
+          certifications: z.array(
+            z
+              .object({
+                name: z.string(),
+                valid_until: z.string().nullable(),
+                state: z.enum(['valid', 'expiring', 'expired', 'no_expiry']),
+                days_left: z.number().int().nullable(),
+              })
+              .strict(),
+          ),
+          availability: z.string(),
+          reliability_pct: z.number().int().min(0).max(100),
+          reliability_tier: z.enum(['reliable', 'good', 'review']),
+        })
+        .strict(),
+    ),
+  })
+  .strict();
+
+export const InviteWorkerRequest = z.object({ email: z.string().min(1).max(254) }).strict();
+export const InviteWorkerResponse = z
+  .object({ worker_id: z.uuid(), email: z.string(), status: z.literal('invited') })
   .strict();

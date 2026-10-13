@@ -90,3 +90,63 @@ export const orderForGap = async (id: string) =>
   ok(await post(`/api/manager/gaps/${id}/order`)) as { order_id: string };
 export const authorizeGap = async (id: string, orderId: string) =>
   ok(await post(`/api/manager/gaps/${id}/authorize`, { order_id: orderId }));
+
+// ---- G2 worker My shifts (worker session cookie; no token in the URL)
+export type WorkerShiftsDto = import('zod').infer<typeof import('@/api/dto').WorkerShiftsResponse>;
+export type WorkerEarningsDto = import('zod').infer<
+  typeof import('@/api/dto').WorkerEarningsResponse
+>;
+export type WorkerProfileDto = import('zod').infer<
+  typeof import('@/api/dto').WorkerProfileResponse
+>;
+export type UpdateProfileDto = import('zod').infer<typeof import('@/api/dto').UpdateProfileRequest>;
+export type LedgerDto = import('zod').infer<typeof import('@/api/dto').LedgerResponse>;
+export type WorkersDto = import('zod').infer<typeof import('@/api/dto').WorkersResponse>;
+export type ApprovalsDto = import('zod').infer<typeof import('@/api/dto').ApprovalsResponse>;
+export type ApproveAndPayDto = import('zod').infer<
+  typeof import('@/api/dto').ApproveAndPayResponse
+>;
+export type ShiftDayDto = import('zod').infer<typeof import('@/api/dto').ShiftDayResponse>;
+
+export const fetchWorkerShifts = async () => ok(await call<WorkerShiftsDto>('/api/w/shifts'));
+export const fetchWorkerEarnings = async () => ok(await call<WorkerEarningsDto>('/api/w/earnings'));
+export const fetchWorkerProfile = async () => ok(await call<WorkerProfileDto>('/api/w/profile'));
+export const updateWorkerProfile = async (patch: UpdateProfileDto) =>
+  ok(
+    await call<WorkerProfileDto>('/api/w/profile', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(patch),
+    }),
+  );
+export const startPayoutEmailChange = async (email: string) =>
+  ok(await post('/api/w/profile/payout-email', { email })) as {
+    new_email: string;
+    expires_in_seconds: number;
+  };
+export const verifyPayoutEmailChange = async (code: string) =>
+  ok(await post('/api/w/profile/payout-email/verify', { code })) as { paypal_email: string };
+export const arriveShift = async (id: string) =>
+  ok(await post(`/api/w/shifts/${id}/arrive`)) as ShiftDayDto;
+export const finishShift = async (id: string) =>
+  ok(await post(`/api/w/shifts/${id}/finish`)) as ShiftDayDto;
+
+// ---- G2 manager approvals
+export const fetchLedger = async (q: { group?: string; range?: string } = {}) =>
+  ok(
+    await call<LedgerDto>(
+      `/api/manager/ledger${Object.keys(q).length ? `?${new URLSearchParams(q as Record<string, string>)}` : ''}`,
+    ),
+  );
+export const fetchWorkers = async () => ok(await call<WorkersDto>('/api/manager/workers'));
+export const inviteWorker = async (email: string) =>
+  ok(await post('/api/manager/workers/invite', { email })) as {
+    worker_id: string;
+    email: string;
+    status: 'invited';
+  };
+export const fetchApprovals = async () => ok(await call<ApprovalsDto>('/api/manager/approvals'));
+export const approveAndPay = async (id: string, approvedHours: number) =>
+  ok(
+    await post(`/api/manager/shifts/${id}/approve-and-pay`, { approved_hours: approvedHours }),
+  ) as ApproveAndPayDto;

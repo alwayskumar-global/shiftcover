@@ -1,6 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { Pool } from 'pg';
-import { E2E_DATABASE_URL, MANAGER_EMAIL, MANAGER_PASSWORD } from './../env';
+import { MANAGER_EMAIL, MANAGER_PASSWORD, localPool } from './../env';
 
 // The brief's note is "... 7 to 3 today". A shift that has already started has no time left to offer it in (the fill
 // deadline fires at once), so after 06:00 venue time the run says "tomorrow" instead; the parser path is identical.
@@ -15,7 +14,7 @@ const DAY = venueHour < 6 ? 'today' : 'tomorrow';
 const NOTE = `Maria called in sick, need a line cook 7 to 3 ${DAY}`;
 
 async function waveOneLinks(): Promise<string[]> {
-  const pool = new Pool({ connectionString: E2E_DATABASE_URL, max: 1 });
+  const pool = localPool();
   try {
     for (let i = 0; i < 40; i++) {
       const { rows } = await pool.query<{ link: string }>(

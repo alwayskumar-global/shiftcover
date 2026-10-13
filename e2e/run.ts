@@ -51,6 +51,19 @@ async function warm() {
     '/api/manager/roster',
     '/api/manager/gaps/parse',
     '/api/c/warmup',
+    // Phase B screens and their APIs, so their first compile does not land inside a test
+    '/app/ledger',
+    '/app/workers',
+    '/app/outbox',
+    '/app/approvals',
+    '/api/manager/ledger',
+    '/api/manager/workers',
+    '/api/manager/approvals',
+    '/w',
+    '/w/earnings',
+    '/w/profile',
+    '/api/w/earnings',
+    '/api/w/profile',
   ])
     await hit(path, { headers: cookie });
 }
