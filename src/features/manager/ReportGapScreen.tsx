@@ -5,10 +5,18 @@ import { useRef, useState } from 'react';
 import { maxAuthorization } from '@/domain/money';
 import { ROLE_LABELS, isShiftRole, type ShiftRole } from '@/domain/roles';
 import { localDateString, zonedTimeToUtc } from '@/lib/time';
-import { createGap, parseGap, startOffering, stubAuthorize } from '@/features/client-api';
+import {
+  authorizeGap,
+  createGap,
+  orderForGap,
+  parseGap,
+  startOffering,
+  stubAuthorize,
+} from '@/features/client-api';
 import { Alert, Badge, Button } from '@/ui/primitives';
 import { Icon } from '@/ui/icon';
 import { formatUsd } from '@/ui/format';
+import { PayPalSlot } from './PayPalSlot';
 import { useMe } from './me-context';
 
 /** M3 report a gap (design/g1: M3-report-gap). Describe -> check details -> approve the hold. */
@@ -86,6 +94,7 @@ export function ReportGapScreen() {
     reason: null,
   });
   const lock = useRef(false);
+  const [slotKey, setSlotKey] = useState(0);
   const created = useRef<string | null>(null);
   const [extraRole, setExtraRole] = useState<ShiftRole | null>(null);
 
@@ -201,30 +210,34 @@ export function ReportGapScreen() {
     window.setTimeout(() => setSlotLoading(false), 400);
   }
 
+  /** Creates the gap once (the server also creates its PayPal order); later calls reuse it. */
+  async function ensureGap(): Promise<string> {
+    if (created.current) return created.current;
+    if (!m || !form.role) throw new Error('incomplete');
+    const [y, mo, d] = form.date.split('-').map(Number) as [number, number, number];
+    const toIso = (t: string) =>
+      zonedTimeToUtc(y, mo, d, Number(t.slice(0, 2)), Number(t.slice(3)), tz).toISOString();
+    const res = await createGap({
+      venue_id: me.venue.id,
+      role: form.role,
+      start_at: toIso(form.start),
+      end_at: toIso(form.end),
+      base_rate_cents: m.rate,
+      max_premium_pct: m.prem,
+      ...(meta.current.replaces ? { replaces_slot_id: meta.current.replaces } : {}),
+      ...(meta.current.reason ? { gap_reason: meta.current.reason } : {}),
+    });
+    created.current = res.slot.id;
+    return res.slot.id;
+  }
+
   /** Stub-only: creates the gap, authorizes the hold without PayPal, then starts offering. */
   async function onStubApprove() {
     if (lock.current || slotLoading || !m || !form.role) return;
     lock.current = true;
     setPhase('paypalWaiting');
     try {
-      const [y, mo, d] = form.date.split('-').map(Number) as [number, number, number];
-      const toIso = (t: string) =>
-        zonedTimeToUtc(y, mo, d, Number(t.slice(0, 2)), Number(t.slice(3)), tz).toISOString();
-      let id = created.current;
-      if (!id) {
-        const res = await createGap({
-          venue_id: me.venue.id,
-          role: form.role,
-          start_at: toIso(form.start),
-          end_at: toIso(form.end),
-          base_rate_cents: m.rate,
-          max_premium_pct: m.prem,
-          ...(meta.current.replaces ? { replaces_slot_id: meta.current.replaces } : {}),
-          ...(meta.current.reason ? { gap_reason: meta.current.reason } : {}),
-        });
-        id = res.slot.id;
-        created.current = id;
-      }
+      const id = await ensureGap();
       await stubAuthorize(id);
       await startOffering(id);
       setGapId(id);
@@ -234,6 +247,21 @@ export function ReportGapScreen() {
     } finally {
       lock.current = false;
     }
+  }
+
+  // ---- PAYMENTS_MODE=paypal: the PayPal button's callbacks. Amounts never come from here: the server holds them.
+  const payPalMode = config.payments_mode === 'paypal';
+  async function payPalCreateOrder(): Promise<string> {
+    const id = await ensureGap();
+    return (await orderForGap(id)).order_id;
+  }
+  async function payPalApproved(orderId: string) {
+    const id = created.current;
+    if (!id) throw new Error('no gap');
+    await authorizeGap(id, orderId);
+    await startOffering(id);
+    setGapId(id);
+    setPhase('approved');
   }
 
   // ---- derived view bits
@@ -723,10 +751,27 @@ export function ReportGapScreen() {
                 {/* PayPal slot. M2 mounts the PayPal SDK v6 button into #paypal-button-container (52px, full width).
                     The stub button below exists only in stub mode and never in a production build. */}
                 {phase !== 'paypalFailed' && (
-                  <div id="paypal-button-container">
-                    {process.env.NODE_ENV !== 'production' &&
-                    config.payments_mode === 'stub' &&
-                    (slotReady || phase === 'paypalWaiting') ? (
+                  <div
+                    id={
+                      payPalMode && (slotReady || phase === 'paypalWaiting')
+                        ? undefined
+                        : 'paypal-button-container'
+                    }
+                  >
+                    {payPalMode && (slotReady || phase === 'paypalWaiting') ? (
+                      <PayPalSlot
+                        key={slotKey}
+                        clientId={config.paypal_client_id}
+                        createOrder={payPalCreateOrder}
+                        onStart={() => setPhase('paypalWaiting')}
+                        onApproved={payPalApproved}
+                        onCancel={() => setPhase('paypalCancelled')}
+                        onError={() => setPhase('paypalFailed')}
+                        onUnavailable={() => setPhase('paypalFailed')}
+                      />
+                    ) : process.env.NODE_ENV !== 'production' &&
+                      config.payments_mode === 'stub' &&
+                      (slotReady || phase === 'paypalWaiting') ? (
                       <button
                         className={`sc-paypal__slot ${slotLoading ? 'sc-paypal__slot--loading' : ''} ${phase === 'paypalWaiting' ? 'sc-paypal__slot--waiting' : ''}`}
                         type="button"
@@ -762,7 +807,14 @@ export function ReportGapScreen() {
                   </div>
                 )}
                 {phase === 'paypalFailed' && (
-                  <Button variant="secondary" size="md" onClick={() => setPhase('confirmed')}>
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    onClick={() => {
+                      setSlotKey((k) => k + 1);
+                      setPhase('confirmed');
+                    }}
+                  >
                     <Icon name="i-retry" size="sm" />
                     Try again
                   </Button>

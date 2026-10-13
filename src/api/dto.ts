@@ -377,6 +377,8 @@ export const MeResponse = z
         link_ttl_minutes: z.number().int(),
         role_default_rate_cents: z.record(z.string(), cents),
         paypal_env: z.literal('sandbox'),
+        /** Additive: the sandbox REST app's client id (public by design) for the PayPal JS SDK; null in stub mode. */
+        paypal_client_id: z.string().nullable(),
         payments_mode: z.enum(['paypal', 'stub']),
       })
       .strict(),

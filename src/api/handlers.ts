@@ -79,6 +79,8 @@ export interface ApiDeps {
   sessionSecret: string;
   production: boolean;
   paymentsMode: 'paypal' | 'stub';
+  /** Public PayPal client id for the browser SDK (PAYPAL_CLIENT_ID; public by design). */
+  paypalClientId?: string;
   maxPremiumPctDefault: number;
 }
 
@@ -122,6 +124,7 @@ export async function buildMe(d: ApiDeps, ctx: { orgId: string; email: string; n
       link_ttl_minutes: MAGIC_LINK_TTL_MINUTES,
       role_default_rate_cents: ROLE_DEFAULT_RATE_CENTS,
       paypal_env: 'sandbox',
+      paypal_client_id: d.paypalClientId ?? null,
       payments_mode: d.paymentsMode,
     },
   });

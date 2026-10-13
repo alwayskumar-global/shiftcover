@@ -42,8 +42,15 @@ export const ME: MeResponse = {
     link_ttl_minutes: 15,
     role_default_rate_cents: { line_cook: 2200, prep_cook: 1900, server: 1600, bartender: 1800 },
     paypal_env: 'sandbox',
+    paypal_client_id: null,
     payments_mode: 'stub',
   },
+};
+
+/** PAYMENTS_MODE=paypal without a usable SDK client id: the PayPal slot cannot load, so the error state shows. */
+export const ME_PAYPAL: MeResponse = {
+  ...ME,
+  config: { ...ME.config, payments_mode: 'paypal', paypal_client_id: null },
 };
 
 // ------------------------------------------------------------------------------------------ worker (W1, W2)
@@ -501,7 +508,7 @@ export type Scene = {
     | { kind: 'worker'; offer: WorkerOfferKey | 'network-error' }
     | { kind: 'login' }
     | { kind: 'roster'; roster: RosterKey | 'error' | 'pending' }
-    | { kind: 'gap-new' }
+    | { kind: 'gap-new'; payments?: 'paypal' }
     | { kind: 'gap-detail'; detail: GapDetailKey };
   /** Interactions applied after load (shared by axe and screenshots). Selectors are Playwright text/CSS selectors. */
   steps?: Step[];
@@ -680,6 +687,15 @@ export const SCENES: Scene[] = [
     viewport: D,
     design: { file: 'M4-gap-detail.dc.html', hash },
   })),
+  {
+    id: 'm3-paypal-unavailable',
+    group: 'M3 report a gap',
+    label: 'PayPal button could not load (paypal mode)',
+    render: { kind: 'gap-new', payments: 'paypal' },
+    steps: confirmSteps,
+    viewport: D,
+    design: { file: 'M3-report-gap.dc.html', hash: 'paypalFailed' },
+  },
   {
     id: 'm4-cancel-dialog',
     group: 'M4 gap detail',
