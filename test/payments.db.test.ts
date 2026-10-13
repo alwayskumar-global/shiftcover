@@ -32,7 +32,7 @@ describe.skipIf(!hasTestDb)(
 
     async function world(now = END) {
       const o = await makeOrg(db());
-      const worker = await makeWorker(db(), o.org.id, { name: 'Jordan' });
+      const worker = await makeWorker(db(), o.org.id, { name: 'Jordan', paypalEmail: true });
       const gw = new FakeGateway();
       const { deps, jobs } = testDeps(db(), { now: () => now });
       deps.payments = gw;

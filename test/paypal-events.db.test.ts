@@ -21,7 +21,7 @@ describe.skipIf(!hasTestDb)('PayPal webhook events (live Postgres, fake PayPal)'
 
   async function worked(now = new Date('2026-10-14T22:05:00Z')) {
     const o = await makeOrg(db());
-    const worker = await makeWorker(db(), o.org.id, { name: 'Jordan' });
+    const worker = await makeWorker(db(), o.org.id, { name: 'Jordan', paypalEmail: true });
     const gw = new FakeGateway();
     const { deps, jobs } = testDeps(db(), { now: () => now });
     deps.payments = gw;

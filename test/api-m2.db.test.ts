@@ -92,7 +92,7 @@ describe.skipIf(!hasTestDb)(
           body: JSON.stringify(body),
         });
       };
-      const worker = await makeWorker(db(), o.org.id, { name: 'Jordan' });
+      const worker = await makeWorker(db(), o.org.id, { name: 'Jordan', paypalEmail: true });
       const workerReq = (path: string, workerId = worker.id) =>
         new Request(`${BASE}${path}`, {
           method: 'POST',
