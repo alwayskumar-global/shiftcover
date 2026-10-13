@@ -96,6 +96,8 @@ export type WorkerShiftsDto = import('zod').infer<typeof import('@/api/dto').Wor
 export type WorkerEarningsDto = import('zod').infer<
   typeof import('@/api/dto').WorkerEarningsResponse
 >;
+export type WorkerProfileDto = import('zod').infer<typeof import('@/api/dto').WorkerProfileResponse>;
+export type UpdateProfileDto = import('zod').infer<typeof import('@/api/dto').UpdateProfileRequest>;
 export type ApprovalsDto = import('zod').infer<typeof import('@/api/dto').ApprovalsResponse>;
 export type ApproveAndPayDto = import('zod').infer<
   typeof import('@/api/dto').ApproveAndPayResponse
@@ -105,6 +107,22 @@ export type ShiftDayDto = import('zod').infer<typeof import('@/api/dto').ShiftDa
 export const fetchWorkerShifts = async () => ok(await call<WorkerShiftsDto>('/api/w/shifts'));
 export const fetchWorkerEarnings = async () =>
   ok(await call<WorkerEarningsDto>('/api/w/earnings'));
+export const fetchWorkerProfile = async () => ok(await call<WorkerProfileDto>('/api/w/profile'));
+export const updateWorkerProfile = async (patch: UpdateProfileDto) =>
+  ok(
+    await call<WorkerProfileDto>('/api/w/profile', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(patch),
+    }),
+  );
+export const startPayoutEmailChange = async (email: string) =>
+  ok(await post('/api/w/profile/payout-email', { email })) as {
+    new_email: string;
+    expires_in_seconds: number;
+  };
+export const verifyPayoutEmailChange = async (code: string) =>
+  ok(await post('/api/w/profile/payout-email/verify', { code })) as { paypal_email: string };
 export const arriveShift = async (id: string) =>
   ok(await post(`/api/w/shifts/${id}/arrive`)) as ShiftDayDto;
 export const finishShift = async (id: string) =>

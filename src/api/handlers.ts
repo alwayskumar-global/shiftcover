@@ -40,7 +40,13 @@ import {
 import type { ServiceDeps } from '../services/types';
 import { workerShifts } from '../services/worker-data';
 import { workerEarnings } from '../services/worker-earnings';
-import { publicPaymentStatus, toWorkerOfferDto } from './adapters';
+import {
+  getProfile,
+  startEmailChange,
+  updateProfile,
+  verifyEmailChange,
+} from '../services/worker-profile';
+import { avatarTint, initialsOf, publicPaymentStatus, toWorkerOfferDto } from './adapters';
 import {
   CancelGapRequest,
   CancelGapResponse,
@@ -71,7 +77,13 @@ import {
   WidenRadiusRequest,
   WidenRadiusResponse,
   WorkerOfferDto,
+  StartEmailChangeRequest,
+  StartEmailChangeResponse,
+  UpdateProfileRequest,
+  VerifyEmailChangeRequest,
+  VerifyEmailChangeResponse,
   WorkerEarningsResponse,
+  WorkerProfileResponse,
   WorkerShiftsResponse,
 } from './dto';
 import { assertSameOrigin, HttpError, noStore, parseBody } from './http';
@@ -469,6 +481,83 @@ export async function getWorkerEarnings(d: ApiDeps, req: Request) {
   );
 }
 
+// ---------------------------------------------------------------- G2-W5 worker profile
+const profileBody = async (d: ApiDeps, workerId: string) => {
+  const p = await getProfile(d.svc.db, workerId);
+  return WorkerProfileResponse.parse({
+    name: p.name,
+    initials: initialsOf(p.name),
+    avatar_tint: avatarTint(p.id),
+    email: p.email,
+    paypal_email: p.paypalEmail,
+    skills: p.skills,
+    home_area: p.homeArea,
+    notifications: p.prefs,
+  });
+};
+
+export async function getWorkerProfile(d: ApiDeps, req: Request) {
+  const workerId = requireWorker(req.headers, d.sessionSecret, d.svc.now());
+  return json(await profileBody(d, workerId), { headers: WORKER_HEADERS });
+}
+
+export async function patchWorkerProfile(d: ApiDeps, req: Request) {
+  assertSameOrigin(req, d.svc.config.appBaseUrl);
+  const workerId = requireWorker(req.headers, d.sessionSecret, d.svc.now());
+  if (!d.limiter.hit(`profile:${workerId}`, 60, 60_000)) throw new HttpError(429, 'rate_limited');
+  const b = await parseBody(req, UpdateProfileRequest);
+  await updateProfile(d.svc.db, workerId, {
+    skills: b.skills,
+    homeArea: b.home_area,
+    prefs: b.notifications,
+  });
+  return json(await profileBody(d, workerId), { headers: WORKER_HEADERS });
+}
+
+/** Step 1: send a 6-digit code to the NEW address. The code is not in the response and is never logged. */
+export async function postStartEmailChange(d: ApiDeps, req: Request) {
+  assertSameOrigin(req, d.svc.config.appBaseUrl);
+  const workerId = requireWorker(req.headers, d.sessionSecret, d.svc.now());
+  if (
+    !d.limiter.hit(`email-change:${workerId}`, 5, 3_600_000) ||
+    !d.limiter.hit(`email-change-ip:${clientIp(req.headers)}`, 20, 3_600_000)
+  )
+    throw new HttpError(429, 'rate_limited', 'Too many codes requested. Try again later.');
+  const b = await parseBody(req, StartEmailChangeRequest);
+  const r = await startEmailChange(d.svc, workerId, b.email);
+  return json(
+    StartEmailChangeResponse.parse({
+      new_email: r.newEmail,
+      expires_in_seconds: r.expiresInSeconds,
+    }),
+    { headers: WORKER_HEADERS },
+  );
+}
+
+/** Step 2: check the code. 410 when it expired, 422 when it is wrong, 429 once the tries are used up. */
+export async function postVerifyEmailChange(d: ApiDeps, req: Request) {
+  assertSameOrigin(req, d.svc.config.appBaseUrl);
+  const workerId = requireWorker(req.headers, d.sessionSecret, d.svc.now());
+  if (!d.limiter.hit(`email-verify:${workerId}`, 20, 3_600_000))
+    throw new HttpError(429, 'rate_limited');
+  const b = await parseBody(req, VerifyEmailChangeRequest);
+  const r = await verifyEmailChange(d.svc, workerId, b.code);
+  if (!r.ok) {
+    if (r.reason === 'expired' || r.reason === 'none')
+      throw new HttpError(410, 'code_expired', 'This code has expired. Send a new one.');
+    if (r.reason === 'locked')
+      throw new HttpError(429, 'too_many_attempts', 'Too many wrong tries. Send a new code.');
+    throw new HttpError(
+      422,
+      'code_wrong',
+      `That code isn't right. ${r.attemptsLeft} ${r.attemptsLeft === 1 ? 'try' : 'tries'} left.`,
+    );
+  }
+  return json(VerifyEmailChangeResponse.parse({ paypal_email: r.paypalEmail }), {
+    headers: WORKER_HEADERS,
+  });
+}
+
 // ---------------------------------------------------------------- M2: money
 const sid = slotId;
 
@@ -594,6 +683,7 @@ export async function getOutbox(d: ApiDeps, req: Request) {
         created_at: i.createdAt.toISOString(),
         status: i.status,
         link: i.link,
+        code: i.code,
       })),
     }),
   );

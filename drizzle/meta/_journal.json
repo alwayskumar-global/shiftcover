@@ -64,6 +64,13 @@
       "when": 1791871862267,
       "tag": "0008_m2_money",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791892072714,
+      "tag": "0009_g2_worker_profile",
+      "breakpoints": true
     }
   ]
 }

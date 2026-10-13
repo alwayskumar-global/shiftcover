@@ -17,6 +17,7 @@ import { stubSettle } from './payments-stub';
 import { latestPayment } from './payment-queries';
 import { moveSlot, patchPayment, movePayment, tryMovePayment } from './transitions';
 import { ServiceError, type ServiceDeps, type Tx } from './types';
+import { workerChannels } from './worker-profile';
 
 /**
  * Real money (PLAN.md 4C/4D/4E, 7). Rules that hold throughout:
@@ -634,7 +635,7 @@ export async function applyPayoutItem(
           if (slot?.workerId)
             await deps.notifier(tx).send({
               recipient: `worker:${slot.workerId}`,
-              channels: ['in_app', 'email', 'push'],
+              channels: await workerChannels(tx, slot.workerId, 'worker_paid'),
               kind: 'worker_paid',
               payload: {
                 slotId: slot.id,

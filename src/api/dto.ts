@@ -464,6 +464,8 @@ export const OutboxResponse = z
           created_at: iso,
           status: z.enum(['pending', 'sent', 'failed']),
           link: z.string().nullable(),
+          /** Payout-email code (kind payout_email_code); sandbox Outbox only. */
+          code: z.string().nullable(),
         })
         .strict(),
     ),
@@ -545,3 +547,38 @@ export const WorkerEarningsResponse = z
     ),
   })
   .strict();
+
+// ---------------------------------------------------------------- worker profile (G2-W5; additive)
+const NotifyPrefsDto = z
+  .object({ offers_email: z.boolean(), offers_push: z.boolean(), pay_email: z.boolean() })
+  .strict();
+
+export const WorkerProfileResponse = z
+  .object({
+    name: z.string(),
+    initials: z.string(),
+    avatar_tint: z.number().int().min(1).max(5),
+    /** The sign-in address the offer links go to. */
+    email: z.string(),
+    /** Where payouts go; null until the worker adds one. */
+    paypal_email: z.string().nullable(),
+    skills: z.array(role),
+    home_area: z.string(),
+    notifications: NotifyPrefsDto,
+  })
+  .strict();
+
+export const UpdateProfileRequest = z
+  .object({
+    skills: z.array(role).min(1).max(9).optional(),
+    home_area: z.string().max(60).optional(),
+    notifications: NotifyPrefsDto.partial().strict().optional(),
+  })
+  .strict();
+
+export const StartEmailChangeRequest = z.object({ email: z.string().min(1).max(254) }).strict();
+export const StartEmailChangeResponse = z
+  .object({ new_email: z.string(), expires_in_seconds: z.number().int().positive() })
+  .strict();
+export const VerifyEmailChangeRequest = z.object({ code: z.string().min(1).max(12) }).strict();
+export const VerifyEmailChangeResponse = z.object({ paypal_email: z.string() }).strict();

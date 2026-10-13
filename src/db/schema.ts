@@ -137,6 +137,12 @@ export const workers = pgTable(
     /** Mean seconds from offer sent to opened. Feeds ranking. */
     avgResponseSeconds: integer('avg_response_seconds').notNull().default(300),
     status: workerStatus('status').notNull().default('invited'),
+    /** Neighbourhood label the worker picks on their profile (matching itself uses home_lat/home_lng). */
+    homeArea: text('home_area').notNull().default(''),
+    /** Worker notification choices: { offers_email, offers_push, pay_email }. Read where messages are sent. */
+    notifyPrefs: jsonb('notify_prefs')
+      .notNull()
+      .default(sql`'{"offers_email":true,"offers_push":true,"pay_email":true}'::jsonb`),
     createdAt: createdAt(),
   },
   (t) => [
@@ -146,6 +152,22 @@ export const workers = pgTable(
     check('workers_acceptance_ck', sql`${t.acceptanceRate} between 0 and 1`),
   ],
 );
+
+/**
+ * A pending payout-email change (G2-W5): the new address and the hash of the 6-digit code sent to it.
+ * One row per worker; replaced when a new code is requested, deleted when the change completes.
+ */
+export const workerEmailChanges = pgTable('worker_email_changes', {
+  workerId: uuid('worker_id')
+    .primaryKey()
+    .references(() => workers.id),
+  newEmail: text('new_email').notNull(),
+  /** sha256(code + pepper); the code itself is only ever in the notification payload. */
+  codeHash: text('code_hash').notNull(),
+  expiresAt: ts('expires_at').notNull(),
+  attempts: smallint('attempts').notNull().default(0),
+  createdAt: createdAt(),
+});
 
 export const shiftSlots = pgTable(
   'shift_slots',

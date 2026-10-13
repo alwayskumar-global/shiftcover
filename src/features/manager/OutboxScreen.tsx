@@ -79,7 +79,7 @@ export function OutboxScreen() {
             <span role="columnheader">To</span>
             <span role="columnheader">Channel</span>
             <span role="columnheader">Created</span>
-            <span role="columnheader">Offer link</span>
+            <span role="columnheader">Link or code</span>
           </div>
           {items === null && !failed && (
             <div className="sc-offers__row" aria-hidden="true">
@@ -136,6 +136,10 @@ export function OutboxScreen() {
                       {copied === i.id ? 'Copied' : 'Copy link'}
                     </Button>
                   </>
+                ) : i.code ? (
+                  <span className="sc-offers__name">
+                    Code <span className="sc-ref">{i.code}</span>
+                  </span>
                 ) : (
                   '–'
                 )}

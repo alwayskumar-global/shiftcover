@@ -1,4 +1,4 @@
-import { desc, eq, inArray } from 'drizzle-orm';
+import { desc, eq, inArray, sql } from 'drizzle-orm';
 import { notifications, users, workers } from '../db/schema';
 import type { DbLike } from './types';
 
@@ -12,6 +12,8 @@ export interface OutboxItem {
   status: string;
   /** The offer link carried by the notification, when it has one. Never logged. */
   link: string | null;
+  /** The 6-digit payout-email code, for kind payout_email_code only (sandbox testing aid). Never logged. */
+  code: string | null;
 }
 
 /**
@@ -41,9 +43,31 @@ export async function listOutbox(h: DbLike, orgId: string, limit = 50): Promise<
     .where(inArray(notifications.recipient, [...labels.keys()]))
     .orderBy(desc(notifications.createdAt))
     .limit(limit * 2);
-  return rows
+  // Payout-email codes go to the worker's NEW address, which is not a known recipient: match them by worker.
+  const codes = ws.length
+    ? await h
+        .select()
+        .from(notifications)
+        .where(
+          sql`${notifications.recipient} like 'email:%' and ${notifications.payload}->>'kind' = 'payout_email_code' and ${notifications.payload}->>'workerId' in (${sql.join(
+            ws.map((w) => sql`${w.id}`),
+            sql`, `,
+          )})`,
+        )
+        .orderBy(desc(notifications.createdAt))
+        .limit(limit)
+    : [];
+  for (const c of codes) {
+    const wid = (c.payload as { workerId?: string }).workerId;
+    labels.set(
+      c.recipient,
+      `${ws.find((w) => w.id === wid)?.name ?? 'Worker'} · ${c.recipient.slice(6)}`,
+    );
+  }
+  return [...rows, ...codes]
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
     .map((r) => {
-      const p = (r.payload ?? {}) as { kind?: unknown; link?: unknown };
+      const p = (r.payload ?? {}) as { kind?: unknown; link?: unknown; code?: unknown };
       return {
         id: r.id,
         channel: r.channel,
@@ -53,6 +77,7 @@ export async function listOutbox(h: DbLike, orgId: string, limit = 50): Promise<
         createdAt: r.createdAt,
         status: r.status,
         link: typeof p.link === 'string' ? p.link : null,
+        code: p.kind === 'payout_email_code' && typeof p.code === 'string' ? p.code : null,
       };
     })
     .filter((i) => i.kind !== 'sign_in_link')

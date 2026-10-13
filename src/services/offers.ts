@@ -8,6 +8,7 @@ import { matchForSlot } from './candidates';
 import { releaseHold } from './payments';
 import { moveOffer, moveSlot } from './transitions';
 import type { ServiceDeps } from './types';
+import { workerChannels } from './worker-profile';
 
 /** Hourly rate for a wave: base + wave premium, never above the slot's own cap (PLAN.md 8). */
 export function waveRateCents(
@@ -88,7 +89,7 @@ export async function sendWave(
       created.push({ offerId });
       await deps.notifier(tx).send({
         recipient: `worker:${cand.workerId}`,
-        channels: ['in_app', 'email', 'push'],
+        channels: await workerChannels(tx, cand.workerId, 'offer'),
         kind: 'offer',
         payload: {
           offerId,
