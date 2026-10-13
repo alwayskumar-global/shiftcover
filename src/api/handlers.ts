@@ -25,6 +25,7 @@ import { claimOffer, declineOffer, viewOffer } from '../services/claim';
 import { cancelGap, createGap, startOffering, widenRadius } from '../services/gaps';
 import { resendOfferLink } from '../services/offer-link';
 import { stubAuthorize } from '../services/payments-stub';
+import { listOutbox } from '../services/outbox';
 import { approveAndPay, authorizePayment, ensureOrder } from '../services/payments';
 import { arrive, finish, managerConfirmTimes, markNoShow } from '../services/shift-day';
 import {
@@ -62,6 +63,7 @@ import {
   ConfirmTimesResponse,
   NoShowResponse,
   OrderResponse,
+  OutboxResponse,
   ShiftDayResponse,
   WidenRadiusRequest,
   WidenRadiusResponse,
@@ -79,6 +81,8 @@ export interface ApiDeps {
   sessionSecret: string;
   production: boolean;
   paymentsMode: 'paypal' | 'stub';
+  /** PAYPAL_ENV. The sandbox Outbox page and API exist only when this is 'sandbox'. */
+  paypalEnv: string;
   /** Public PayPal client id for the browser SDK (PAYPAL_CLIENT_ID; public by design). */
   paypalClientId?: string;
   maxPremiumPctDefault: number;
@@ -522,4 +526,26 @@ export async function postFinish(d: ApiDeps, req: Request, id: string) {
   if (!d.limiter.hit(`shiftday:${workerId}`, 30, 60_000)) throw new HttpError(429, 'rate_limited');
   await parseBody(req, z.object({}).strict());
   return json(shiftDay(await finish(d.svc, workerId, sid(id))), { headers: WORKER_HEADERS });
+}
+
+// ---------------------------------------------------------------- sandbox Outbox
+/** Manager-only testing aid: 404 outside the PayPal sandbox (checked first, so it does not reveal itself). */
+export async function getOutbox(d: ApiDeps, req: Request) {
+  if (d.paypalEnv !== 'sandbox') throw new HttpError(404, 'not_found');
+  const ctx = await mgr(d, req);
+  const items = await listOutbox(d.svc.db, ctx.orgId);
+  return json(
+    OutboxResponse.parse({
+      items: items.map((i) => ({
+        id: i.id,
+        channel: i.channel,
+        kind: i.kind,
+        recipient: i.recipient,
+        recipient_label: i.recipientLabel,
+        created_at: i.createdAt.toISOString(),
+        status: i.status,
+        link: i.link,
+      })),
+    }),
+  );
 }

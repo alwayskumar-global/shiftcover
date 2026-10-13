@@ -74,6 +74,7 @@ describe.skipIf(!hasTestDb)(
         sessionSecret: WORKER_SECRET,
         production: false,
         paymentsMode: 'paypal',
+        paypalEnv: 'sandbox',
         maxPremiumPctDefault: 20,
       };
       const req = (
