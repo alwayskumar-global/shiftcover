@@ -122,6 +122,8 @@ export const OfferDto = z
     declined_at: iso.nullable(),
     expired_at: iso.nullable(),
     withdrawn_at: iso.nullable(),
+    /** Sandbox only, and omitted otherwise: the worker's stored offer link (for a live offer), so a tester can open it. */
+    offer_link: z.string().optional(),
   })
   .strict();
 export type OfferDto = z.infer<typeof OfferDto>;

@@ -27,6 +27,7 @@ import {
   formatTimeRange,
   formatUsd,
 } from '@/ui/format';
+import { CopyOfferLink } from './CopyOfferLink';
 import { PayPalSlot } from './PayPalSlot';
 import { usePolling } from './use-polling';
 import { useMe } from './me-context';
@@ -717,11 +718,15 @@ export function GapDetailScreen({ id }: { id: string }) {
                   </span>
                 </span>
                 <span role="cell">Wave {o.wave}</span>
-                <span role="cell">
+                <span
+                  role="cell"
+                  style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}
+                >
                   <span className={`sc-badge sc-badge--sm ${b.cls}`}>
                     <Icon name={b.icon} size="sm" />
                     {b.label}
                   </span>
+                  {o.offer_link && <CopyOfferLink link={o.offer_link} workerName={o.worker.name} />}
                 </span>
                 <span className="sc-offers__time" role="cell" title={formatClock(at, tz)}>
                   {b.label} {rel(Date.parse(at), nowMs)}

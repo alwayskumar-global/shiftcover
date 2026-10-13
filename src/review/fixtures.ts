@@ -415,6 +415,29 @@ export const GAP_DETAILS = {
     ],
     pay({}),
   ),
+  // Sandbox view: live offers (sent, opened) carry their stored link; settled ones (declined) do not. Fake links only.
+  'offering-links': (() => {
+    const d = detail(
+      gapSlot({ status: 'offering', current_wave: 2 }),
+      [wave(1, { declined_count: 1, opened_count: 1 }), wave(2, { opened_count: 1 })],
+      [
+        offer('marcus', 1, 'declined'),
+        offer('chloe', 1, 'opened'),
+        offer('sam', 1, 'sent'),
+        offer('jordan', 2, 'opened'),
+        offer('priya', 2, 'sent'),
+      ],
+      pay({}),
+    );
+    return {
+      ...d,
+      offers: d.offers.map((o) =>
+        o.status === 'sent' || o.status === 'opened'
+          ? { ...o, offer_link: `https://app.example.test/c/EXAMPLE-LINK-${o.id.slice(-4)}` }
+          : o,
+      ),
+    };
+  })(),
   filled: detail(filledSlot('confirmed'), filledWaves(), filledOffers(), pay({})),
   'in-progress': detail(
     filledSlot('in_progress'),
@@ -711,6 +734,21 @@ export const SCENES: Scene[] = [
     steps: confirmSteps,
     viewport: D,
     design: { file: 'M3-report-gap.dc.html', hash: 'paypalFailed' },
+  },
+  {
+    id: 'm4-offering-links',
+    group: 'M4 gap detail',
+    label: 'Offering, sandbox links (Copy link)',
+    render: { kind: 'gap-detail', detail: 'offering-links' },
+    viewport: D,
+  },
+  {
+    id: 'm4-offering-links-copied',
+    group: 'M4 gap detail',
+    label: 'Offering, after Copy link',
+    render: { kind: 'gap-detail', detail: 'offering-links' },
+    steps: [{ click: 'button:has-text("Copy link")' }, { wait: 200 }],
+    viewport: D,
   },
   {
     id: 'm4-cancel-dialog',

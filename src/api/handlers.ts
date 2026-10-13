@@ -348,7 +348,9 @@ export async function postCreateGap(d: ApiDeps, req: Request) {
 export async function getGap(d: ApiDeps, req: Request, id: string) {
   const ctx = await mgr(d, req);
   const sid_ = slotId(id);
-  const detail = await gapDetail(d.svc.db, ctx.orgId, sid_, d.svc.now());
+  const detail = await gapDetail(d.svc.db, ctx.orgId, sid_, d.svc.now(), {
+    offerLinks: d.paypalEnv === 'sandbox',
+  });
   detail.best_matches = await bestMatches(d.svc.db, d.why, ctx.userId, sid_);
   return json(GapDetailResponse.parse(detail));
 }
