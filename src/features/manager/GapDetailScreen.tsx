@@ -630,6 +630,47 @@ export function GapDetailScreen({ id }: { id: string }) {
         </div>
       </section>
 
+      {data.best_matches.length > 0 && (
+        <section className="sc-card sc-card--flush" aria-labelledby="m-title">
+          <div className="sc-section__head">
+            <h2 className="sc-card__title" id="m-title">
+              Best matches
+            </h2>
+            <span className="sc-section__note">
+              Ranked by reliability, response, distance and history at this venue
+            </span>
+          </div>
+          <ol
+            className="sc-offers"
+            aria-label="Best matches"
+            style={{ listStyle: 'none', margin: 0, padding: 0 }}
+          >
+            {data.best_matches.map((m) => (
+              <li
+                className="sc-offers__row"
+                key={m.rank}
+                style={{ gridTemplateColumns: 'minmax(0, 1fr)' }}
+              >
+                <span className="sc-offers__who">
+                  <span
+                    className={`sc-avatar sc-avatar--${m.worker.avatar_tint}`}
+                    aria-hidden="true"
+                  >
+                    {m.worker.initials}
+                  </span>
+                  <span>
+                    <span className="sc-offers__name">
+                      {m.rank}. {m.worker.name}
+                    </span>
+                    <span className="sc-offers__role">{m.reason}</span>
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
+
       <section className="sc-card sc-card--flush" aria-labelledby="b-title">
         <div className="sc-section__head">
           <h2 className="sc-card__title" id="b-title">

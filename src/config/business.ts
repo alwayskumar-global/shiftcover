@@ -2,6 +2,11 @@ import type { ShiftRole } from '../domain/roles';
 
 /** Business rules the manager UI needs (design data-gaps). One place; synthetic defaults. */
 export const PREMIUM_RANGE = { minPct: 0, maxPct: 50 } as const;
+/**
+ * Sanity bounds for an hourly base rate that did not come from the manager typing it into the form (a model read it
+ * out of free text). Outside this range the value is rejected and the rules parser is used instead.
+ */
+export const PARSED_RATE_LIMITS = { minCents: 500, maxCents: 10_000 } as const;
 export const GAP_DATE_LIMITS = { maxDaysAhead: 14 } as const;
 export const MAGIC_LINK_TTL_MINUTES = 15;
 

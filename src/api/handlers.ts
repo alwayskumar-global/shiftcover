@@ -13,6 +13,7 @@ import {
 import {
   GAP_DATE_LIMITS,
   MAGIC_LINK_TTL_MINUTES,
+  PARSED_RATE_LIMITS,
   PREMIUM_RANGE,
   ROLE_DEFAULT_RATE_CENTS,
 } from '../config/business';
@@ -21,6 +22,9 @@ import { maxAuthorization } from '../domain/money';
 import { isShiftRole, type ShiftRole } from '../domain/roles';
 import { localDateString, localDayBounds, localParts } from '../lib/time';
 import { rulesGapParser } from '../llm/fallback';
+import type { LlmPort } from '../llm/gemini';
+import type { WhyService } from '../llm/why-worker';
+import { parseGapWithLlm, type IntakeFailure } from '../llm/intake';
 import { claimOffer, declineOffer, viewOffer } from '../services/claim';
 import { cancelGap, createGap, startOffering, widenRadius } from '../services/gaps';
 import { resendOfferLink } from '../services/offer-link';
@@ -49,6 +53,7 @@ import {
   verifyEmailChange,
 } from '../services/worker-profile';
 import { avatarTint, initialsOf, publicPaymentStatus, toWorkerOfferDto } from './adapters';
+import { bestMatches } from './best-matches';
 import {
   CancelGapRequest,
   CancelGapResponse,
@@ -108,6 +113,10 @@ export interface ApiDeps {
   /** Public PayPal client id for the browser SDK (PAYPAL_CLIENT_ID; public by design). */
   paypalClientId?: string;
   maxPremiumPctDefault: number;
+  /** Gemini behind the guarded wrapper (kill switch, caps, 5 s timeout). Absent = rules parser only. */
+  llm?: LlmPort;
+  /** "Why this worker" reasons: cached, background-filled, template when Gemini is unavailable. */
+  why?: WhyService;
 }
 
 const json = (body: unknown, init: ResponseInit = {}) =>
@@ -179,7 +188,51 @@ export async function postParseGap(d: ApiDeps, req: Request) {
   const { text } = await parseBody(req, ParseGapRequest);
   const venue = await primaryVenue(d.svc.db, ctx.orgId);
   const now = d.svc.now();
-  const p = rulesGapParser.parse(text, { now, timezone: venue.timezone });
+  const started = Date.now();
+  // The rules parser always runs: it is the fallback, and it supplies the called-out name for the roster lookup.
+  const rules = rulesGapParser.parse(text, { now, timezone: venue.timezone });
+  let p = rules;
+  let source: 'llm' | 'rules' = 'rules';
+  let fallbackReason: IntakeFailure | null = 'disabled';
+  if (d.llm) {
+    const r = await parseGapWithLlm(d.llm, text, {
+      now,
+      timezone: venue.timezone,
+      venueName: venue.name,
+      userKey: ctx.userId,
+    });
+    if (r.ok) {
+      p = { ...r.parse, calledOutName: rules?.calledOutName ?? null };
+      source = 'llm';
+      fallbackReason = null;
+    } else {
+      fallbackReason = r.reason;
+    }
+  }
+  // Only the source, the reason code and the latency are logged: never the note, the prompt or the model output.
+  console.info(
+    JSON.stringify({
+      event: 'gap_parse',
+      source,
+      reason: fallbackReason,
+      ms: Date.now() - started,
+    }),
+  );
+  // A rate or premium read out of free text (either parser) that is outside the allowed range is ignored, never clamped
+  // or trusted: the role default / configured default applies instead and the manager sets the figure in the form.
+  if (p) {
+    const badRate =
+      p.baseRateCents !== null &&
+      (p.baseRateCents < PARSED_RATE_LIMITS.minCents ||
+        p.baseRateCents > PARSED_RATE_LIMITS.maxCents);
+    const badPremium = p.maxPremiumPct !== null && p.maxPremiumPct > PREMIUM_RANGE.maxPct;
+    if (badRate || badPremium)
+      p = {
+        ...p,
+        baseRateCents: badRate ? null : p.baseRateCents,
+        maxPremiumPct: badPremium ? null : p.maxPremiumPct,
+      };
+  }
   if (!p || (!p.role && !p.startAt && p.baseRateCents === null && !p.calledOutName)) {
     // Nothing usable was found: the UI shows "We couldn't read that note" and fills nothing in.
     throw new HttpError(422, 'parse_failed', 'Nothing could be read from that note');
@@ -235,7 +288,8 @@ export async function postParseGap(d: ApiDeps, req: Request) {
 
   return json(
     ParseResultDto.parse({
-      source: 'rules',
+      source,
+      fallback_reason: fallbackReason,
       role,
       date: p.startAt ? localDateString(p.startAt, venue.timezone) : null,
       start: p.startAt ? hhmm(p.startAt, venue.timezone) : null,
@@ -293,9 +347,10 @@ export async function postCreateGap(d: ApiDeps, req: Request) {
 // ---------------------------------------------------------------- manager: gap detail + actions
 export async function getGap(d: ApiDeps, req: Request, id: string) {
   const ctx = await mgr(d, req);
-  return json(
-    GapDetailResponse.parse(await gapDetail(d.svc.db, ctx.orgId, slotId(id), d.svc.now())),
-  );
+  const sid_ = slotId(id);
+  const detail = await gapDetail(d.svc.db, ctx.orgId, sid_, d.svc.now());
+  detail.best_matches = await bestMatches(d.svc.db, d.why, ctx.userId, sid_);
+  return json(GapDetailResponse.parse(detail));
 }
 
 export async function postStartOffering(d: ApiDeps, req: Request, id: string) {

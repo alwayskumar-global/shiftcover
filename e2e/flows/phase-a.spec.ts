@@ -70,6 +70,11 @@ test('claim -> My shifts -> arrive -> finish -> approve and pay -> Paid -> Earni
   await page.getByRole('link', { name: /View gap/ }).click();
   await expect(page).toHaveURL(/\/app\/gaps\/[0-9a-f-]{36}/);
   const slotId = page.url().split('/').pop()!;
+  // M3: the top candidates with a reason each; Gemini is off in e2e, so these are the deterministic templates
+  await expect(page.getByRole('heading', { name: 'Best matches' })).toBeVisible();
+  await expect(
+    page.getByRole('list', { name: 'Best matches' }).getByRole('listitem').first(),
+  ).toContainText(/Line cook,/);
 
   // the first worker claims on a phone, then follows "Go to My shifts"
   const link = await firstOfferLink(slotId);

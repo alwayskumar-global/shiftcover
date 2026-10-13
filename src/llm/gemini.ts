@@ -44,7 +44,7 @@ export interface UsageStore {
 }
 
 export type LlmFailureReason =
-  'disabled' | 'daily_cap' | 'user_cap' | 'provider_error' | 'invalid_output';
+  'disabled' | 'daily_cap' | 'user_cap' | 'timeout' | 'provider_error' | 'invalid_output';
 
 export interface LlmUsageInfo {
   inputTokens: number;
@@ -55,10 +55,16 @@ export interface LlmUsageInfo {
 export type LlmResult<T> =
   { ok: true; data: T; usage: LlmUsageInfo; raw: string } | { ok: false; reason: LlmFailureReason };
 
+/** Per-call time limit (Section 9.3: the demo must never wait on the model). */
+export const LLM_TIMEOUT_MS = 5000;
+
 /** Minimal slice of the SDK we rely on; lets tests inject a fake. */
 export interface InteractionsClient {
   interactions: {
-    create(params: Record<string, unknown>): Promise<{
+    create(
+      params: Record<string, unknown>,
+      options?: { fetchOptions?: { signal?: AbortSignal }; maxRetries?: number },
+    ): Promise<{
       output_text?: string;
       usage?: {
         total_input_tokens?: number;
@@ -80,8 +86,29 @@ export interface GenerateStructuredArgs<T> {
   schema: z.ZodType<T>;
 }
 
+/**
+ * One line per call for operations: component, outcome, latency, token counts. NEVER the prompt, the input, the output
+ * or anything derived from them (they can contain names).
+ */
+export interface LlmCallEvent {
+  component: string;
+  ok: boolean;
+  reason?: LlmFailureReason;
+  latencyMs: number;
+  inputTokens: number;
+  outputTokens: number;
+}
+
+/** What callers need: the guarded structured call. Tests and services depend on this, not on the SDK. */
+export interface LlmPort {
+  generateStructured<T>(args: GenerateStructuredArgs<T>): Promise<LlmResult<T>>;
+}
+
 export interface LlmOptions {
   limits: LlmLimits;
+  /** Defaults to LLM_TIMEOUT_MS. */
+  timeoutMs?: number;
+  onCall?: (e: LlmCallEvent) => void;
   store: UsageStore;
   /** Provide an API key (server-only) or inject a client for tests. */
   apiKey?: string;
@@ -127,82 +154,127 @@ export function createLlm(opts: LlmOptions) {
     return client;
   };
 
-  return {
-    async generateStructured<T>(args: GenerateStructuredArgs<T>): Promise<LlmResult<T>> {
-      const { limits, store } = opts;
-      if (!limits.enabled) return { ok: false, reason: 'disabled' };
+  const timeoutMs = opts.timeoutMs ?? LLM_TIMEOUT_MS;
 
-      const userKey = args.userKey ?? '';
-      const bucket = bucketFor(now(), userKey, args.component);
+  async function run<T>(
+    args: GenerateStructuredArgs<T>,
+    acc: { input: number; output: number },
+  ): Promise<LlmResult<T>> {
+    const { limits, store } = opts;
+    if (!limits.enabled) return { ok: false, reason: 'disabled' };
 
+    const userKey = args.userKey ?? '';
+    const bucket = bucketFor(now(), userKey, args.component);
+
+    try {
+      const counts = await store.counts(bucket);
+      if (counts.dailyCalls >= limits.dailyCallCap) return { ok: false, reason: 'daily_cap' };
+      if (userKey && counts.userHourlyCalls >= limits.perUserHourlyCap) {
+        return { ok: false, reason: 'user_cap' };
+      }
+    } catch {
+      // If we cannot verify the caps we must not spend.
+      return { ok: false, reason: 'provider_error' };
+    }
+
+    const params = {
+      model: LLM_MODEL,
+      system_instruction: `${args.system}\n\n${DATA_ONLY_NOTE}`,
+      input: args.input,
+      response_format: {
+        type: 'text',
+        mime_type: 'application/json',
+        schema: z.toJSONSchema(args.schema),
+      },
+      generation_config: {
+        max_output_tokens: limits.maxOutputTokens,
+        thinking_level: 'minimal', // thinking tokens are billed as output
+      },
+      store: false,
+    };
+
+    // At most one retry (2 attempts), transient errors only, never after a timeout. Each attempt counts as a call.
+    for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        const counts = await store.counts(bucket);
-        if (counts.dailyCalls >= limits.dailyCallCap) return { ok: false, reason: 'daily_cap' };
-        if (userKey && counts.userHourlyCalls >= limits.perUserHourlyCap) {
-          return { ok: false, reason: 'user_cap' };
-        }
+        await store.reserveCall(bucket);
       } catch {
-        // If we cannot verify the caps we must not spend.
         return { ok: false, reason: 'provider_error' };
       }
-
-      const params = {
-        model: LLM_MODEL,
-        system_instruction: `${args.system}\n\n${DATA_ONLY_NOTE}`,
-        input: args.input,
-        response_format: {
-          type: 'text',
-          mime_type: 'application/json',
-          schema: z.toJSONSchema(args.schema),
-        },
-        generation_config: {
-          max_output_tokens: limits.maxOutputTokens,
-          thinking_level: 'minimal', // thinking tokens are billed as output
-        },
-        store: false,
-      };
-
-      // At most one retry (2 attempts), transient errors only. Each attempt counts as a call.
-      for (let attempt = 0; attempt < 2; attempt++) {
+      const controller = new AbortController();
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const timedOut = new Promise<'timeout'>((resolve) => {
+        timer = setTimeout(() => {
+          controller.abort(); // cancel the HTTP request, not just stop waiting for it
+          resolve('timeout');
+        }, timeoutMs);
+      });
+      try {
+        const call = getClient().interactions.create(params, {
+          fetchOptions: { signal: controller.signal },
+          maxRetries: 0, // the SDK must not retry on its own: we own the single allowed retry
+        });
+        call.catch(() => undefined); // a late failure after a timeout is not an unhandled rejection
+        const res = await Promise.race([call, timedOut]);
+        if (res === 'timeout') return { ok: false, reason: 'timeout' };
+        const input = res.usage?.total_input_tokens ?? 0;
+        const output =
+          (res.usage?.total_output_tokens ?? 0) + (res.usage?.total_thought_tokens ?? 0);
+        await store.addTokens(bucket, input, output).catch(() => undefined);
+        const raw = res.output_text ?? '';
+        let parsed: T;
         try {
-          await store.reserveCall(bucket);
+          parsed = args.schema.parse(JSON.parse(raw));
         } catch {
-          return { ok: false, reason: 'provider_error' };
+          acc.input = input;
+          acc.output = output;
+          return { ok: false, reason: 'invalid_output' };
         }
-        try {
-          const res = await getClient().interactions.create(params);
-          const input = res.usage?.total_input_tokens ?? 0;
-          const output =
-            (res.usage?.total_output_tokens ?? 0) + (res.usage?.total_thought_tokens ?? 0);
-          await store.addTokens(bucket, input, output).catch(() => undefined);
-          const raw = res.output_text ?? '';
-          let parsed: T;
-          try {
-            parsed = args.schema.parse(JSON.parse(raw));
-          } catch {
-            return { ok: false, reason: 'invalid_output' };
-          }
-          return {
-            ok: true,
-            data: parsed,
-            raw,
-            usage: {
-              inputTokens: input,
-              outputTokens: output,
-              estimatedCostUsd: estimateCostUsd(input, output),
-            },
-          };
-        } catch (err) {
-          if (attempt === 0 && isTransient(err)) {
-            await sleep(retryDelayMs);
-            continue;
-          }
-          return { ok: false, reason: 'provider_error' };
+        acc.input = input;
+        acc.output = output;
+        return {
+          ok: true,
+          data: parsed,
+          raw,
+          usage: {
+            inputTokens: input,
+            outputTokens: output,
+            estimatedCostUsd: estimateCostUsd(input, output),
+          },
+        };
+      } catch (err) {
+        if (controller.signal.aborted) return { ok: false, reason: 'timeout' };
+        if (attempt === 0 && isTransient(err)) {
+          await sleep(retryDelayMs);
+          continue;
         }
+        return { ok: false, reason: 'provider_error' };
+      } finally {
+        clearTimeout(timer);
       }
-      return { ok: false, reason: 'provider_error' };
+    }
+    return { ok: false, reason: 'provider_error' };
+  }
+
+  return {
+    async generateStructured<T>(args: GenerateStructuredArgs<T>): Promise<LlmResult<T>> {
+      const started = Date.now();
+      const tokens = { input: 0, output: 0 };
+      const result = await run(args, tokens);
+      try {
+        opts.onCall?.({
+          component: args.component,
+          ok: result.ok,
+          reason: result.ok ? undefined : result.reason,
+          latencyMs: Date.now() - started,
+          inputTokens: result.ok ? result.usage.inputTokens : tokens.input,
+          outputTokens: result.ok ? result.usage.outputTokens : tokens.output,
+        });
+      } catch {
+        // a logging hook must never change the outcome
+      }
+      return result;
     },
-  };
+  } satisfies LlmPort;
 }
 
 export type Llm = ReturnType<typeof createLlm>;

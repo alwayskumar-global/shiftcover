@@ -74,7 +74,7 @@ const serverSchema = z
     LLM_ENABLED: z.stringbool().default(true),
     LLM_MAX_OUTPUT_TOKENS: int(1024, 1),
     LLM_DAILY_CALL_CAP: int(500),
-    LLM_PER_USER_HOURLY_CAP: int(20),
+    LLM_PER_USER_HOURLY_CAP: int(60),
 
     VAPID_PUBLIC_KEY: z.string().min(1).optional(),
     VAPID_PRIVATE_KEY: z.string().min(1).optional(),
