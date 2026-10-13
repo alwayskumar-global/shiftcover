@@ -8,6 +8,7 @@ import {
   maxRateCents,
   parseUsd,
   payForMinutesCents,
+  platformFee,
   platformFeeCents,
 } from './money';
 
@@ -160,5 +161,56 @@ describe('payForMinutesCents', () => {
   it('rounds to the cent', () => {
     expect(payForMinutesCents(2000, 90)).toBe(3000);
     expect(payForMinutesCents(1999, 1)).toBe(33); // 33.32
+  });
+});
+
+describe('fee config: percentage plus optional fixed fee', () => {
+  it('default is percentage only (500 bps, no fixed fee)', () => {
+    const h = maxAuthorization({
+      baseRateCents: 2200,
+      maxPremiumPct: 20,
+      minutes: 480,
+      feeBps: 500,
+    });
+    expect(h).toMatchObject({
+      maxWorkerPayCents: 21120,
+      maxFeeCents: 1056,
+      authorizedCents: 22176,
+    });
+  });
+  it('a fixed fee is added once on top and is part of the hold and the settlement', () => {
+    const h = maxAuthorization({
+      baseRateCents: 2200,
+      maxPremiumPct: 20,
+      minutes: 480,
+      feeBps: 500,
+      fixedFeeCents: 100,
+    });
+    expect(h.maxFeeCents).toBe(1156);
+    expect(h.authorizedCents).toBe(22276);
+    const s = computeSettlement({
+      rateCents: 2420,
+      maxRateCents: 2640,
+      actualMinutes: 480,
+      feeBps: 500,
+      fixedFeeCents: 100,
+      authorizedCents: 22276,
+    });
+    expect(s).toEqual({ workerPayCents: 19360, platformFeeCents: 1068, captureCents: 20428 });
+  });
+  it('no pay means no fee, fixed or not', () => {
+    expect(platformFee(0, { feeBps: 500, fixedFeeCents: 100 })).toBe(0);
+  });
+  it('a settlement can never exceed the hold even with a fixed fee', () => {
+    expect(() =>
+      computeSettlement({
+        rateCents: 2640,
+        maxRateCents: 2640,
+        actualMinutes: 480,
+        feeBps: 500,
+        fixedFeeCents: 100,
+        authorizedCents: 22176,
+      }),
+    ).toThrow();
   });
 });
