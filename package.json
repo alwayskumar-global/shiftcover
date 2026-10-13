@@ -21,7 +21,9 @@
     "db:verify-rls": "tsx scripts/verify-rls.ts",
     "test:db": "scripts/test-db.sh up && TEST_DATABASE_URL=$(scripts/test-db.sh url) vitest run",
     "seed": "tsx scripts/seed.ts",
-    "seed:reset": "tsx scripts/seed.ts --reset"
+    "seed:reset": "tsx scripts/seed.ts --reset",
+    "e2e": "tsx e2e/run.ts",
+    "e2e:review": "playwright test -c playwright.review.config.ts"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "1.7.7",

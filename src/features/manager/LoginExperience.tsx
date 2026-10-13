@@ -111,7 +111,13 @@ export function LoginExperience() {
         </aside>
 
         <section className="sc-login__main">
-          <form className="sc-login__card" onSubmit={onSubmit} noValidate aria-busy={busy}>
+          <form
+            className="sc-login__card"
+            method="post"
+            onSubmit={onSubmit}
+            noValidate
+            aria-busy={busy}
+          >
             <h1 className="sc-login__title">{link ? 'Get a sign-in link' : 'Sign in'}</h1>
             <p className="sc-login__lead">
               {link
