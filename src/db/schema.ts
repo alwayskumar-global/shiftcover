@@ -7,6 +7,7 @@ import {
   index,
   integer,
   jsonb,
+  numeric,
   pgEnum,
   pgTable,
   smallint,
@@ -39,6 +40,11 @@ export const ledgerEntryType = pgEnum('ledger_entry_type', [
   'PLATFORM_FEE',
   'PAYPAL_CAPTURE_FEE',
   'PAYPAL_PAYOUT_FEE',
+  // M2: webhook-reported movements that change no payment state.
+  'CAPTURE_DECLINED',
+  'PAYOUT_UNCLAIMED',
+  'REFUNDED',
+  'REVERSED',
 ]);
 export const notificationChannel = pgEnum('notification_channel', ['in_app', 'email', 'push']);
 export const notificationStatus = pgEnum('notification_status', ['pending', 'sent', 'failed']);
@@ -168,6 +174,18 @@ export const shiftSlots = pgTable(
     cancelledBy: text('cancelled_by'),
     /** Defaults to start_at minus 30 min when the gap is posted. */
     fillBy: ts('fill_by'),
+    /** Shift day (M2). Times from the worker's arrive/finish taps, or a manager confirming them. */
+    checkInAt: ts('check_in_at'),
+    checkOutAt: ts('check_out_at'),
+    /** 'worker' or 'user:<id>' (manager confirmed). Nothing else about location is stored. */
+    checkInBy: text('check_in_by'),
+    checkOutBy: text('check_out_by'),
+    /** Hours between check-in and check-out (2 decimals); what the manager sees before approving. */
+    actualHours: numeric('actual_hours', { precision: 5, scale: 2 }),
+    /** Hours the manager approved for pay (never above the scheduled hours the hold was sized for). */
+    approvedHours: numeric('approved_hours', { precision: 5, scale: 2 }),
+    approvedAt: ts('approved_at'),
+    approvedBy: text('approved_by'),
     /** Optimistic-lock counter; incremented on every state change. */
     version: integer('version').notNull().default(0),
     createdAt: createdAt(),
@@ -254,6 +272,15 @@ export const payments = pgTable(
     platformFeeCents: integer('platform_fee_cents').notNull().default(0),
     status: paymentStatus('status').notNull().default('NONE'),
     lastError: text('last_error'),
+    /** Capture and payout retries use a fresh PayPal-Request-Id / sender_batch_id; plain retries of one attempt reuse it. */
+    captureAttempt: integer('capture_attempt').notNull().default(1),
+    payoutAttempt: integer('payout_attempt').notNull().default(1),
+    /** Last payout item status from PayPal (SUCCESS, PENDING, UNCLAIMED, ...), for the ledger view. */
+    payoutStatus: text('payout_status'),
+    paypalCaptureFeeCents: integer('paypal_capture_fee_cents').notNull().default(0),
+    paypalPayoutFeeCents: integer('paypal_payout_fee_cents').notNull().default(0),
+    /** From the authorize response (expiration_time); the honor period is about three days. */
+    authorizationExpiresAt: ts('authorization_expires_at'),
     createdAt: createdAt(),
     updatedAt: ts('updated_at').notNull().defaultNow(),
   },

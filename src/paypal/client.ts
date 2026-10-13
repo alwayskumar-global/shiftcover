@@ -19,6 +19,8 @@ export interface PaypalIssue {
   issue?: string;
   description?: string;
   field?: string;
+  /** HATEOAS links PayPal attaches to an issue (e.g. the original payout of a duplicate sender_batch_id). */
+  link?: Array<{ href?: string; rel?: string }>;
 }
 
 export class PaypalError extends Error {
@@ -113,6 +115,7 @@ async function toPaypalError(res: Response): Promise<PaypalError> {
     issue: d.issue,
     description: d.description,
     field: d.field,
+    link: Array.isArray(d.link) ? d.link.map((l) => ({ href: l?.href, rel: l?.rel })) : undefined,
   }));
   const code = issues[0]?.issue ?? payload.name ?? payload.error;
   let kind = kindFor(res.status);

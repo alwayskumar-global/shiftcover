@@ -74,6 +74,8 @@ export async function makeWorker(
   orgId: string,
   over: Partial<{
     name: string;
+    /** Give the worker a PayPal payout email (the same as their email). Off by default. */
+    paypalEmail: boolean;
     skills: string[];
     reliability: number;
     acceptance: number;
@@ -85,12 +87,14 @@ export async function makeWorker(
     availability: Array<{ weekday: number; startMinute: number; endMinute: number }>;
   }> = {},
 ) {
+  const email = `w-${randomUUID()}@example.com`;
   const [w] = await db
     .insert(workers)
     .values({
       orgId,
       name: over.name ?? `Worker ${randomUUID().slice(0, 6)}`,
-      email: `w-${randomUUID()}@example.com`,
+      email: email,
+      paypalEmail: over.paypalEmail ? email : null,
       skills: over.skills ?? ['line_cook'],
       reliabilityScore: over.reliability ?? 0.8,
       acceptanceRate: over.acceptance ?? 0.7,

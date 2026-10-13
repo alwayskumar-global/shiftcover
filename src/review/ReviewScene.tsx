@@ -7,7 +7,7 @@ import { LoginExperience } from '@/features/manager/LoginExperience';
 import { ReportGapScreen } from '@/features/manager/ReportGapScreen';
 import { RosterScreen } from '@/features/manager/RosterScreen';
 import { ClaimExperience } from '@/features/worker/ClaimExperience';
-import { GAP_DETAILS, ME, type Scene } from './fixtures';
+import { GAP_DETAILS, ME, ME_PAYPAL, type Scene } from './fixtures';
 import { installStubFetch } from './stub-fetch';
 
 /** Renders one fixture scene with the real screen components. Review harness only (UI_REVIEW=true). */
@@ -37,7 +37,7 @@ export function ReviewScene({ scene }: { scene: Scene }) {
       );
     case 'gap-new':
       return (
-        <ConsoleShell me={ME}>
+        <ConsoleShell me={r.payments === 'paypal' ? ME_PAYPAL : ME}>
           <ReportGapScreen />
         </ConsoleShell>
       );

@@ -32,6 +32,29 @@ type SlotRow = typeof shiftSlots.$inferSelect;
 type OfferRow = typeof offers.$inferSelect;
 type PaymentRow = typeof payments.$inferSelect;
 
+type PaymentPatch = Partial<
+  Pick<
+    PaymentRow,
+    | 'paypalOrderId'
+    | 'authorizationId'
+    | 'captureId'
+    | 'payoutBatchId'
+    | 'payoutItemId'
+    | 'senderBatchId'
+    | 'authorizedCents'
+    | 'capturedCents'
+    | 'workerPayCents'
+    | 'platformFeeCents'
+    | 'lastError'
+    | 'captureAttempt'
+    | 'payoutAttempt'
+    | 'payoutStatus'
+    | 'paypalCaptureFeeCents'
+    | 'paypalPayoutFeeCents'
+    | 'authorizationExpiresAt'
+  >
+>;
+
 export async function moveSlot(
   tx: Tx,
   slotId: string,
@@ -47,6 +70,14 @@ export async function moveSlot(
       | 'cancelledAt'
       | 'cancelledBy'
       | 'gapReason'
+      | 'checkInAt'
+      | 'checkOutAt'
+      | 'checkInBy'
+      | 'checkOutBy'
+      | 'actualHours'
+      | 'approvedHours'
+      | 'approvedAt'
+      | 'approvedBy'
     >
   > = {},
 ): Promise<SlotRow> {
@@ -103,19 +134,7 @@ export async function movePayment(
   paymentId: string,
   to: PaymentState,
   ctx: MoveCtx,
-  patch: Partial<
-    Pick<
-      PaymentRow,
-      | 'paypalOrderId'
-      | 'authorizationId'
-      | 'captureId'
-      | 'authorizedCents'
-      | 'capturedCents'
-      | 'workerPayCents'
-      | 'platformFeeCents'
-      | 'lastError'
-    >
-  > = {},
+  patch: PaymentPatch = {},
 ): Promise<PaymentRow> {
   const [cur] = await tx.select().from(payments).where(eq(payments.id, paymentId)).for('update');
   if (!cur) throw new ServiceError('not_found', 'payment not found');
@@ -130,5 +149,47 @@ export async function movePayment(
     .where(eq(payments.id, paymentId))
     .returning();
   await writeAudit(tx, r.audit);
+  return row!;
+}
+
+/**
+ * Like movePayment, but a transition the machine does not allow from the CURRENT state returns null instead of
+ * throwing. Webhooks and reconciliation use it: a duplicate or out-of-order event must never regress a state,
+ * and being late for a payment that has already moved on is not an error.
+ */
+export async function tryMovePayment(
+  tx: Tx,
+  paymentId: string,
+  to: PaymentState,
+  ctx: MoveCtx,
+  patch: PaymentPatch = {},
+): Promise<PaymentRow | null> {
+  const [cur] = await tx.select().from(payments).where(eq(payments.id, paymentId)).for('update');
+  if (!cur || !paymentMachine.canTransition(cur.status, to)) return null;
+  return movePayment(tx, paymentId, to, ctx, patch);
+}
+
+/** Field-only update (references, attempt counters, last error) with an audit row; the status is untouched. */
+export async function patchPayment(
+  tx: Tx,
+  paymentId: string,
+  ctx: MoveCtx & { action: string },
+  patch: PaymentPatch,
+): Promise<PaymentRow> {
+  const [cur] = await tx.select().from(payments).where(eq(payments.id, paymentId)).for('update');
+  if (!cur) throw new ServiceError('not_found', 'payment not found');
+  const [row] = await tx
+    .update(payments)
+    .set({ ...patch, updatedAt: sql`now()` })
+    .where(eq(payments.id, paymentId))
+    .returning();
+  await writeAudit(tx, {
+    actor: ctx.actor,
+    action: ctx.action,
+    entity: 'payment',
+    entityId: paymentId,
+    before: { status: cur.status },
+    after: { status: cur.status, ...ctx.meta },
+  });
   return row!;
 }

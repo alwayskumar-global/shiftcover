@@ -41,6 +41,8 @@ export function jsonError(e: unknown): Response {
         payment_not_authorized: 409,
         invalid_state: 409,
         stub_disabled: 404,
+        payment_failed: 409,
+        unavailable: 503,
       } as const
     )[e.code];
     return Response.json({ error: { code: e.code, message: e.message } } satisfies ErrorBody, {

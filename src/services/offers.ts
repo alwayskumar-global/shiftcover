@@ -1,13 +1,13 @@
 import { and, eq, inArray, ne } from 'drizzle-orm';
 import { WAVES } from '../config/matching';
-import { offers, shiftSlots, users, venues } from '../db/schema';
+import { offers, shiftSlots, venues } from '../db/schema';
 import { maxRateCents } from '../domain/money';
 import { ROLE_LABELS, isShiftRole } from '../domain/roles';
 import { generateToken, hashToken } from '../lib/tokens';
 import { matchForSlot } from './candidates';
-import { stubVoid } from './payments-stub';
+import { releaseHold } from './payments';
 import { moveOffer, moveSlot } from './transitions';
-import type { ServiceDeps, Tx } from './types';
+import type { ServiceDeps } from './types';
 
 /** Hourly rate for a wave: base + wave premium, never above the slot's own cap (PLAN.md 8). */
 export function waveRateCents(
@@ -21,18 +21,17 @@ export function waveRateCents(
 export const offerLink = (appBaseUrl: string, token: string) =>
   `${appBaseUrl.replace(/\/+$/, '')}/c/${token}`;
 
-/** Managers of the org that owns this venue, for notifications. */
-export async function managersForVenue(tx: Tx, venueId: string) {
-  const [v] = await tx.select({ orgId: venues.orgId }).from(venues).where(eq(venues.id, venueId));
-  if (!v) return [];
-  return tx.select({ id: users.id }).from(users).where(eq(users.orgId, v.orgId));
-}
+export { managersForVenue } from './managers';
+import { managersForVenue } from './managers';
 
 /**
  * Send one wave. Idempotent and safe to re-run: offers are unique per (slot, worker, wave), only newly
  * inserted offers get a token and a notification, and follow-up jobs use singleton keys.
  */
-export async function sendWave(deps: ServiceDeps, input: { slotId: string; wave: number }) {
+export async function sendWave(
+  deps: ServiceDeps,
+  input: { slotId: string; wave: number; reoffer?: boolean },
+) {
   const plan = WAVES.find((w) => w.wave === input.wave);
   if (!plan) return { sent: 0, reason: 'unknown_wave' as const };
   const { config } = deps;
@@ -53,7 +52,12 @@ export async function sendWave(deps: ServiceDeps, input: { slotId: string; wave:
     const existing = await tx
       .select({ workerId: offers.workerId })
       .from(offers)
-      .where(and(eq(offers.slotId, slot.id), ne(offers.wave, input.wave)));
+      // A re-offer (after a no-show) skips everyone who already had an offer on this slot, whatever the wave.
+      .where(
+        input.reoffer
+          ? eq(offers.slotId, slot.id)
+          : and(eq(offers.slotId, slot.id), ne(offers.wave, input.wave)),
+      );
     const already = new Set(existing.map((o) => o.workerId));
     const audience = match.ranked
       .filter((c) => !already.has(c.workerId))
@@ -146,7 +150,7 @@ export async function expireOffer(deps: ServiceDeps, input: { offerId: string })
  */
 export async function fillDeadline(deps: ServiceDeps, input: { slotId: string }) {
   const actor = 'system:fill_deadline';
-  return deps.db.transaction(async (tx) => {
+  const unfilled = await deps.db.transaction(async (tx) => {
     const [slot] = await tx
       .select()
       .from(shiftSlots)
@@ -160,7 +164,6 @@ export async function fillDeadline(deps: ServiceDeps, input: { slotId: string })
       .where(and(eq(offers.slotId, slot.id), inArray(offers.status, ['SENT', 'OPENED'])));
     for (const o of open)
       await moveOffer(tx, o.id, 'WITHDRAWN', { actor, meta: { reason: 'unfilled' } });
-    await stubVoid(tx, slot.id, actor);
     for (const m of await managersForVenue(tx, slot.venueId)) {
       await deps.notifier(tx).send({
         recipient: `manager:${m.id}`,
@@ -171,6 +174,10 @@ export async function fillDeadline(deps: ServiceDeps, input: { slotId: string })
     }
     return true;
   });
+  // The hold is released after the commit: the void is a PayPal call and must not sit inside a transaction.
+  // If it fails the payment stays AUTHORIZED on a finished slot and reconciliation voids it.
+  if (unfilled) await releaseHold(deps, input.slotId, actor);
+  return unfilled;
 }
 
 const RECOVER_GRACE_SECONDS = 45;

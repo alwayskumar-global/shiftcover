@@ -62,6 +62,9 @@ export function installStubFetch(scene: Scene): () => void {
       if (path === '/api/manager/gaps/parse')
         return json(PARSE_RESULT(localDateString(new Date(), ME.venue.timezone)));
       if (path === '/api/manager/gaps' && method === 'POST') return json(CREATE_GAP_RESPONSE, 201);
+      if (path.endsWith('/order')) return json({ order_id: 'ORDFIXTURE' });
+      if (path.endsWith('/authorize') && !path.endsWith('stub-authorize'))
+        return json({ payment: CREATE_GAP_RESPONSE.payment, slot: CREATE_GAP_RESPONSE.slot });
       if (path.endsWith('/stub-authorize')) return json({ payment: CREATE_GAP_RESPONSE.payment });
       if (path.endsWith('/start-offering')) return json({ slot: CREATE_GAP_RESPONSE.slot });
     }

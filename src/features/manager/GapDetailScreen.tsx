@@ -8,8 +8,10 @@ import { maxRateCents, payForMinutesCents } from '@/domain/money';
 import { ROLE_LABELS } from '@/domain/roles';
 import {
   ApiFailure,
+  authorizeGap,
   cancelGap,
   fetchGap,
+  orderForGap,
   startOffering,
   stubAuthorize,
   widenRadius,
@@ -25,6 +27,7 @@ import {
   formatTimeRange,
   formatUsd,
 } from '@/ui/format';
+import { PayPalSlot } from './PayPalSlot';
 import { usePolling } from './use-polling';
 import { useMe } from './me-context';
 import { STATUS } from './roster-model';
@@ -73,6 +76,8 @@ export function GapDetailScreen({ id }: { id: string }) {
   const [dlg, setDlg] = useState<'cancel' | null>(null);
   const [toast, setToast] = useState('');
   const [busy, setBusy] = useState<null | 'cancel' | 'radius' | 'approve'>(null);
+  const [slotKey, setSlotKey] = useState(0);
+  const [slotUnavailable, setSlotUnavailable] = useState(false);
   const [actionError, setActionError] = useState('');
   const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -714,30 +719,79 @@ export function GapDetailScreen({ id }: { id: string }) {
           </span>
         </div>
         {awaitingApproval && (
-          <Alert
-            tone="info"
-            icon="i-info"
-            title={`Approve the ${holdText} hold to offer this shift`}
-          >
-            Workers only see the shift once the hold is placed.
-            {/* PayPal slot: M2 mounts the SDK v6 button here. The stub button exists only in stub mode, never in a production build. */}
-            <span id="paypal-button-container" style={{ display: 'block' }}>
-              {process.env.NODE_ENV !== 'production' && me.config.payments_mode === 'stub' && (
-                <button
-                  className="sc-paypal__slot"
-                  type="button"
-                  data-testid="stub-approve"
-                  aria-disabled={busy === 'approve'}
-                  aria-busy={busy === 'approve'}
-                  onClick={onStubApprove}
-                >
-                  {busy === 'approve'
-                    ? 'Waiting for PayPal…'
-                    : 'Test mode: approve hold without PayPal'}
-                </button>
-              )}
-            </span>
-          </Alert>
+          <>
+            <Alert
+              tone="info"
+              icon="i-info"
+              title={`Approve the ${holdText} hold to offer this shift`}
+            >
+              Workers only see the shift once the hold is placed.
+            </Alert>
+            {/* PayPal slot (#paypal-button-container). paypal mode: PayPal's own SDK button. stub mode (never in a
+                production build): the labelled test button. */}
+            {me.config.payments_mode === 'paypal' ? (
+              slotUnavailable ? (
+                <>
+                  <Alert
+                    tone="error"
+                    icon="i-warn"
+                    title="PayPal couldn’t place the hold"
+                    role="alert"
+                  >
+                    Nothing was charged. Check your PayPal funding source, then try again.
+                  </Alert>
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    onClick={() => {
+                      setSlotUnavailable(false);
+                      setSlotKey((k) => k + 1);
+                    }}
+                  >
+                    <Icon name="i-retry" size="sm" />
+                    Try again
+                  </Button>
+                </>
+              ) : (
+                <PayPalSlot
+                  key={slotKey}
+                  clientId={me.config.paypal_client_id}
+                  createOrder={async () => (await orderForGap(id)).order_id}
+                  onStart={() => setBusy('approve')}
+                  onApproved={async (orderId) => {
+                    await authorizeGap(id, orderId);
+                    await startOffering(id);
+                    say(`Hold placed: ${holdText}`);
+                    setBusy(null);
+                    await load();
+                  }}
+                  onCancel={() => setBusy(null)}
+                  onError={() => {
+                    setBusy(null);
+                    setSlotUnavailable(true);
+                  }}
+                  onUnavailable={() => setSlotUnavailable(true)}
+                />
+              )
+            ) : (
+              <span id="paypal-button-container" style={{ display: 'block' }}>
+                {process.env.NODE_ENV !== 'production' && me.config.payments_mode === 'stub' && (
+                  <button
+                    className="sc-paypal__slot"
+                    type="button"
+                    data-testid="stub-approve"
+                    aria-disabled={busy === 'approve'}
+                    aria-busy={busy === 'approve'}
+                    onClick={onStubApprove}
+                  >
+                    {busy === 'approve'
+                      ? 'Waiting for PayPal…'
+                      : 'Test mode: approve hold without PayPal'}
+                  </button>
+                )}
+              </span>
+            )}
+          </>
         )}
         <div className="sc-pass">
           {money.map((m, i) => (

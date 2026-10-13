@@ -131,6 +131,23 @@ per IP (`rate_limited` 429).
 Auth: `sc_worker` cookie. `{ shifts: [{offer_id, offer_status, rate_cents, expires_at, slot_id, slot_status, role, start_at, end_at, venue_name, is_mine}] }`
 for the calling worker only.
 
+## M2: money endpoints (see [`paypal-m2.md`](paypal-m2.md))
+
+Manager endpoints take Origin = `APP_BASE_URL` and JSON. None accepts an amount: the server computes every figure.
+
+- `POST /api/manager/gaps/[id]/order` `{}` -> `{ order_id }`. Idempotent. 503 `unavailable` when PayPal is not configured.
+- `POST /api/manager/gaps/[id]/authorize` `{ order_id }` -> `{ payment, slot }`. 422 `invalid_input` for an order that is not this
+  gap's or an authorized amount that differs from the hold; 409 `payment_not_authorized` while the buyer has not approved.
+- `POST /api/manager/shifts/[id]/approve-and-pay` `{ approved_hours }` -> `{ slot, payment, capture_cents, worker_pay_cents,
+platform_fee_cents }`. 422 above the scheduled hours or the hold; 409 `invalid_state` if the shift is not pending approval or was
+  approved for other hours; 409 `payment_failed` / 503 `unavailable` for PayPal failures (safe to repeat).
+- `POST /api/manager/shifts/[id]/no-show` `{}` -> `{ slot, reoffered }`.
+- `POST /api/manager/shifts/[id]/confirm-times` `{ check_in_at, check_out_at? }` -> `{ slot }` (manager fallback).
+- `POST /api/w/shifts/[id]/arrive` and `/finish` `{}` (worker session cookie) -> `{ slot_id, status, check_in_at, check_out_at,
+actual_hours }`. No location data exists to return.
+- `GET /api/manager/me` config gains `platform_fixed_fee_cents` and `paypal_client_id` (the public sandbox client id for the
+  browser SDK; null in stub mode).
+
 ## Deviations from Section 10.6 (all additive, none removes or renames a listed field)
 
 | Where                                             | Addition                                                                                                                                                                                                | Why                                                                                                        |
@@ -147,6 +164,7 @@ for the calling worker only.
 | Create gap request                                | `gap_reason?`                                                                                                                                                                                           | why the gap exists (called in sick)                                                                        |
 | Payment `status`                                  | `PAYOUT_UNCLAIMED` and `RETURNED` (DB) map to `payout_failed`                                                                                                                                           | 10.6 does not list them; lossy until the contract does                                                     |
 | Endpoints                                         | `GET /api/manager/me`, `POST .../widen-radius`, `POST .../cancel`, `POST /api/c/[token]/decline`, `POST /api/offer-link/resend`                                                                         | actions and context the Gate 1 screens need; 10.6 defines shapes, not endpoints                            |
+| Me config                                         | `platform_fixed_fee_cents`, `paypal_client_id`                                                                                                                                                          | fee breakdown in the money table; the PayPal SDK needs the public client id                                |
 | Envelopes                                         | `{slot, payment, hold}`, `{slot}`, `{payment}`, `{shifts}`, `{slot, reopened}`, `{ok}` wrappers                                                                                                         | 10.6 defines shapes, not endpoint envelopes                                                                |
 | Schema                                            | `venues.area` (0006); `offers.declined_at/expired_at/withdrawn_at`, `shift_slots.gap_reason/search_radius_mi/cancelled_at/cancelled_by`, `venues.address/search_radius_mi` plus two range checks (0007) | sources for the fields above; **not yet applied to any hosted database**                                   |
 

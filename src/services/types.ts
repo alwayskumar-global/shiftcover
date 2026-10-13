@@ -1,6 +1,7 @@
 import type { Db } from '../db/client';
 import type { Notifier } from './notifier';
 import type { JobName } from '../jobs/names';
+import type { PaymentsGateway } from '../paypal/gateway';
 
 /** A Drizzle transaction handle. Services accept either a Db or a Tx. */
 export type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
@@ -24,7 +25,11 @@ export interface ServiceDeps {
     offerTtlSeconds: number;
     waveIntervalSeconds: number;
     platformFeeBps: number;
+    /** Flat fee per shift in cents (PLATFORM_FIXED_FEE_CENTS); absent means none. */
+    platformFixedFeeCents?: number;
   };
+  /** Real PayPal calls. Undefined in PAYMENTS_MODE=stub (state and ledger only). */
+  payments?: PaymentsGateway;
 }
 
 export class ServiceError extends Error {
@@ -35,7 +40,9 @@ export class ServiceError extends Error {
       | 'invalid_input'
       | 'payment_not_authorized'
       | 'invalid_state'
-      | 'stub_disabled',
+      | 'stub_disabled'
+      | 'payment_failed'
+      | 'unavailable',
     message: string,
   ) {
     super(message);

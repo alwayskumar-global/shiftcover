@@ -84,3 +84,9 @@ export const widenRadius = async (id: string, search_radius_mi: number) =>
   ok(await post(`/api/manager/gaps/${id}/widen-radius`, { search_radius_mi }));
 export const cancelGap = async (id: string, reason?: string) =>
   ok(await post(`/api/manager/gaps/${id}/cancel`, reason ? { reason } : {}));
+
+// ---- M2 money (PayPal button path)
+export const orderForGap = async (id: string) =>
+  ok(await post(`/api/manager/gaps/${id}/order`)) as { order_id: string };
+export const authorizeGap = async (id: string, orderId: string) =>
+  ok(await post(`/api/manager/gaps/${id}/authorize`, { order_id: orderId }));

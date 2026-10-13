@@ -17,3 +17,13 @@ export const ROLE_DEFAULT_RATE_CENTS: Record<ShiftRole, number> = {
   host: 1600,
   event_staff: 2000,
 };
+
+/** M2 shift-day rules. Config, not hard-coded in the services. */
+export const SHIFT_DAY = {
+  /** A worker may tap "I've arrived" up to this long before the start time. */
+  arriveEarlyMinutes: 60,
+  /** After a no-show the shift is re-offered only if at least this much of it is left. */
+  noShowReofferMinRemainingMinutes: 60,
+  /** Fill window for a no-show re-offer: how long the new waves have before the slot is UNFILLED. */
+  noShowReofferFillMinutes: 30,
+} as const;
