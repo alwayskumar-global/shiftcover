@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, inArray, lt, max, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, lt, max, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import {
   avatarTint,
@@ -16,7 +16,7 @@ import type {
   WaveSummaryDto,
 } from '../api/dto';
 import { MATCHING, WAVES } from '../config/matching';
-import { offers, shiftSlots, venues, workers } from '../db/schema';
+import { notifications, offers, shiftSlots, venues, workers } from '../db/schema';
 import { rankCandidates } from '../domain/matching';
 import { isShiftRole } from '../domain/roles';
 import { addDaysToDateString, localDateString, localDayBounds, localWeekKey } from '../lib/time';
@@ -176,11 +176,41 @@ export async function roster(
   };
 }
 
+const LINKABLE = new Set(['SENT', 'OPENED', 'CLAIMED']);
+
+/**
+ * The newest stored offer link per offer, from the same notifications the Outbox lists (the original offer message or a
+ * later "new link" message: a resend replaces the token, so the newest one is the one that works). Offers that are
+ * withdrawn, declined or expired get none. The caller passes only offers of the manager's own slot.
+ */
+async function storedOfferLinks(h: DbLike, rows: Array<typeof offers.$inferSelect>) {
+  const ids = rows.filter((o) => LINKABLE.has(o.status)).map((o) => o.id);
+  const out = new Map<string, string>();
+  if (ids.length === 0) return out;
+  const found = await h
+    .select({ payload: notifications.payload })
+    .from(notifications)
+    .where(
+      and(
+        inArray(sql`${notifications.payload}->>'kind'`, ['offer', 'offer_link_resent']),
+        inArray(sql`${notifications.payload}->>'offerId'`, ids),
+      ),
+    )
+    .orderBy(desc(notifications.createdAt), desc(notifications.id));
+  for (const r of found) {
+    const p = r.payload as { offerId?: unknown; link?: unknown };
+    if (typeof p.offerId === 'string' && typeof p.link === 'string' && !out.has(p.offerId))
+      out.set(p.offerId, p.link);
+  }
+  return out;
+}
+
 export async function gapDetail(
   h: DbLike,
   orgId: string,
   slotId: string,
   now: Date,
+  opts: { offerLinks?: boolean } = {},
 ): Promise<GapDetailResponse> {
   const slot = await slotDto(h, orgId, slotId);
   const [slotRow] = await h.select().from(shiftSlots).where(eq(shiftSlots.id, slotId));
@@ -212,6 +242,14 @@ export async function gapDetail(
     };
   });
 
+  // Sandbox only (the caller decides): the link the Outbox already holds for each live offer. Nothing is minted here.
+  const links = opts.offerLinks
+    ? await storedOfferLinks(
+        h,
+        os.map((o) => o.offer),
+      )
+    : new Map<string, string>();
+
   const offerDtos: OfferDto[] = os.map(({ offer, worker }) => ({
     id: offer.id,
     worker: {
@@ -230,6 +268,7 @@ export async function gapDetail(
     declined_at: offer.declinedAt?.toISOString() ?? null,
     expired_at: offer.expiredAt?.toISOString() ?? null,
     withdrawn_at: offer.withdrawnAt?.toISOString() ?? null,
+    ...(links.has(offer.id) ? { offer_link: links.get(offer.id)! } : {}),
   }));
 
   // How many more workers the maximum radius would reach (only meaningful while the gap is unfilled).

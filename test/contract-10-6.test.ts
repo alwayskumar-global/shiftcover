@@ -47,7 +47,7 @@ const DEVIATIONS = {
     'search_radius_mi',
     'venue_tz',
   ],
-  offer: ['declined_at', 'expired_at', 'withdrawn_at'],
+  offer: ['declined_at', 'expired_at', 'offer_link', 'withdrawn_at'],
   wave: ['declined_count', 'expired_count', 'opened_count', 'withdrawn_count'],
   workerOffer: [
     'first_offered_rate_cents',
