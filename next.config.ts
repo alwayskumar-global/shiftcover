@@ -8,6 +8,9 @@ const workerPrivacyHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // The /review harness lives in *.review.tsx files, which only count as pages when UI_REVIEW=true at build or dev
+  // start. A normal (production) build never compiles them in, so no review route or fixture ships.
+  pageExtensions: process.env.UI_REVIEW === 'true' ? ['tsx', 'ts', 'review.tsx'] : ['tsx', 'ts'],
   serverExternalPackages: ['pg', 'pg-boss'],
   // PLAN.md 2: worker link pages and APIs must never leak the token via Referer or be indexed.
   async headers() {

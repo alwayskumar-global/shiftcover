@@ -215,7 +215,7 @@ export function RosterScreen() {
         </div>
       )}
 
-      <div className="sc-legend" role="list" aria-label="Shift status legend">
+      <div className="sc-legend" role="group" aria-label="Shift status legend">
         <span className="sc-legend__title">Status</span>
         {LEGEND.map((l) => (
           <Badge

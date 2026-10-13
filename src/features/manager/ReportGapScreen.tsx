@@ -660,7 +660,14 @@ export function ReportGapScreen() {
             </div>
 
             {!confirmed && (
-              <Button variant="primary" size="md" block inert={!m || reading} onClick={onConfirm}>
+              <Button
+                variant="primary"
+                size="md"
+                block
+                inert={reading}
+                aria-disabled={!m || reading ? true : undefined}
+                onClick={onConfirm}
+              >
                 <Icon name="i-check" size="sm" />
                 Details are correct
               </Button>
