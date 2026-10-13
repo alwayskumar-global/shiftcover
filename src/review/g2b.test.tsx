@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Earnings } from '@/features/worker/Earnings';
+import { LedgerScreen } from '@/features/manager/LedgerScreen';
 import { Profile } from '@/features/worker/Profile';
-import type { WorkerEarningsDto, WorkerProfileDto } from '@/features/client-api';
+import type { LedgerDto, WorkerEarningsDto, WorkerProfileDto } from '@/features/client-api';
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),
@@ -320,5 +321,222 @@ describe('G2-W5 profile', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Send code' }));
     expect(await screen.findByText("We couldn't send the code")).toBeInTheDocument();
     expect(screen.getByLabelText('New PayPal email')).toBeInTheDocument();
+  });
+});
+
+const entry = (
+  n: number,
+  type: LedgerDto['items'][number]['entries'][number]['type'],
+  amount: number,
+  ref: string | null = null,
+) => ({
+  id: `00000000-0000-4000-8000-00000000000${n}`,
+  type,
+  amount_cents: amount,
+  ref,
+  created_at: `2026-10-14T2${n}:00:00.000Z`,
+});
+const row = (over: Partial<LedgerDto['items'][number]>): LedgerDto['items'][number] => ({
+  payment_id: '10000000-0000-4000-8000-000000000001',
+  slot_id: '20000000-0000-4000-8000-000000000001',
+  attempt: 1,
+  role: 'line_cook',
+  worker_name: 'Jordan Reyes',
+  venue_tz: 'America/Los_Angeles',
+  start_at: '2026-10-14T14:00:00.000Z',
+  end_at: '2026-10-14T22:00:00.000Z',
+  approved_hours: 8,
+  status: 'paid',
+  group: 'paid',
+  last_error: null,
+  authorized_cents: 22176,
+  captured_cents: 20328,
+  worker_pay_cents: 19360,
+  platform_fee_cents: 968,
+  paypal_capture_fee_cents: 0,
+  paypal_payout_fee_cents: 0,
+  released_cents: 1848,
+  references: { order: 'ORDER-1', authorization: 'AUTH-1', capture: 'CAP-1', payout: 'BATCH-1' },
+  entries: [
+    entry(0, 'AUTHORIZED', 22176, 'AUTH-1'),
+    entry(1, 'CAPTURED', 20328, 'CAP-1'),
+    entry(2, 'PAID', 19360, 'BATCH-1'),
+  ],
+  ...over,
+});
+const ledger = (items: LedgerDto['items'], over: Partial<LedgerDto> = {}): LedgerDto => ({
+  server_time: '2026-10-15T00:00:00.000Z',
+  truncated: false,
+  totals: {
+    authorized_cents: 44352,
+    captured_cents: 20328,
+    worker_pay_cents: 19360,
+    platform_fee_cents: 968,
+  },
+  items,
+  ...over,
+});
+const failedRow = row({
+  payment_id: '10000000-0000-4000-8000-000000000002',
+  slot_id: '20000000-0000-4000-8000-000000000002',
+  worker_name: 'Sam Okafor',
+  status: 'payout_failed',
+  group: 'failed',
+  last_error: 'The PayPal email was not recognised.',
+  entries: [
+    entry(0, 'AUTHORIZED', 22176),
+    entry(1, 'CAPTURED', 20328),
+    entry(2, 'PAYOUT_FAILED', 19360),
+  ],
+});
+
+describe('G2-M6 ledger', () => {
+  it('shows the entries table with the API figures, status chips and totals', async () => {
+    stub(() => ({ body: ledger([row({}), failedRow]) }));
+    render(<LedgerScreen />);
+    await screen.findByText('Jordan Reyes');
+    const table = screen.getByRole('table', { name: 'Money ledger' });
+    for (const h of [
+      'Date',
+      'Shift',
+      'Worker',
+      'Authorized',
+      'Captured',
+      'Worker pay',
+      'Fee',
+      'Status',
+    ])
+      expect(within(table).getByRole('columnheader', { name: h })).toBeInTheDocument();
+    expect(within(table).getAllByText('$221.76')).toHaveLength(2);
+    expect(within(table).getAllByText('$193.60').length).toBeGreaterThan(0);
+    expect(within(table).getByText('Paid', { selector: '.sc-badge' })).toBeInTheDocument();
+    expect(within(table).getByText('Payout failed', { selector: '.sc-badge' })).toBeInTheDocument();
+    const stats = screen.getByLabelText('Totals in this view');
+    expect(stats).toHaveTextContent('$443.52');
+    expect(stats).toHaveTextContent('$9.68');
+  });
+
+  it('filters ask the server (range and status) and the search narrows the rows', async () => {
+    stub(() => ({ body: ledger([row({}), failedRow]) }));
+    render(<LedgerScreen />);
+    await screen.findByText('Jordan Reyes');
+    expect(calls[0]!.path).toBe('/api/manager/ledger?range=30d');
+    await userEvent.click(screen.getByRole('button', { name: '7 days' }));
+    await waitFor(() => expect(calls.at(-1)!.path).toBe('/api/manager/ledger?range=7d'));
+    await userEvent.selectOptions(screen.getByLabelText('Status'), 'failed');
+    await waitFor(() =>
+      expect(calls.at(-1)!.path).toBe('/api/manager/ledger?range=7d&group=failed'),
+    );
+    await screen.findByText('Jordan Reyes');
+    await userEvent.type(screen.getByLabelText('Search worker or role'), 'sam');
+    expect(screen.queryByText('Jordan Reyes')).toBeNull();
+    expect(screen.getByText('Sam Okafor')).toBeInTheDocument();
+  });
+
+  it('opens the per-shift breakdown with server figures, entries and references', async () => {
+    stub(() => ({ body: ledger([row({})]) }));
+    render(<LedgerScreen />);
+    await userEvent.click(
+      await screen.findByRole('button', { name: /Open breakdown for Line cook/ }),
+    );
+    const panel = screen.getByRole('dialog', { name: 'Shift breakdown' });
+    expect(within(panel).getByText('Charged to you').closest('.sc-money__row')).toHaveTextContent(
+      '$203.28',
+    );
+    expect(within(panel).getByText('Hold not used').closest('.sc-money__row')).toHaveTextContent(
+      '$18.48',
+    );
+    const entries = within(panel).getByRole('list', { name: 'Ledger entries' });
+    expect(
+      within(entries)
+        .getAllByRole('listitem')
+        .map((li) => li.querySelector('strong')!.textContent),
+    ).toEqual(['Hold placed', 'Charged', 'Payout delivered']);
+    expect(
+      within(panel).getByRole('button', { name: 'Copy Capture reference' }),
+    ).toBeInTheDocument();
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('a payout-failed row opens a recovery action that retries with the approved hours', async () => {
+    let retried = false;
+    stub((r) => {
+      if (r.method === 'POST') {
+        retried = true;
+        return {
+          body: {
+            slot_status: 'settled',
+            payment_status: 'paid',
+            capture_cents: 20328,
+            worker_pay_cents: 19360,
+            platform_fee_cents: 968,
+          },
+        };
+      }
+      return { body: ledger([retried ? row({ payment_id: failedRow.payment_id }) : failedRow]) };
+    });
+    render(<LedgerScreen />);
+    await userEvent.click(
+      await screen.findByRole('button', { name: /Open breakdown for Line cook/ }),
+    );
+    const panel = screen.getByRole('dialog', { name: 'Shift breakdown' });
+    expect(within(panel).getByRole('alert')).toHaveTextContent(
+      'The PayPal email was not recognised.',
+    );
+    await userEvent.click(within(panel).getByRole('button', { name: 'Retry payout' }));
+    await waitFor(() =>
+      expect(calls.find((c) => c.method === 'POST')).toMatchObject({
+        path: `/api/manager/shifts/${failedRow.slot_id}/approve-and-pay`,
+        body: { approved_hours: 8 },
+      }),
+    );
+    expect(await screen.findByText('Payout retried. The status updates here.')).toBeInTheDocument();
+  });
+
+  it('a retry that fails shows the reason and keeps the panel open', async () => {
+    stub((r) =>
+      r.method === 'POST'
+        ? err(409, 'invalid_state', 'this shift was approved for different hours')
+        : { body: ledger([failedRow]) },
+    );
+    render(<LedgerScreen />);
+    await userEvent.click(
+      await screen.findByRole('button', { name: /Open breakdown for Line cook/ }),
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Retry payout' }));
+    expect(
+      await screen.findByText('this shift was approved for different hours'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Shift breakdown' })).toBeInTheDocument();
+  });
+
+  it('empty, filtered-empty, loading and error states', async () => {
+    stub(() => ({
+      body: ledger([], {
+        totals: {
+          authorized_cents: 0,
+          captured_cents: 0,
+          worker_pay_cents: 0,
+          platform_fee_cents: 0,
+        },
+      }),
+    }));
+    const a = render(<LedgerScreen />);
+    expect(screen.getByRole('table', { name: 'Money ledger' })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
+    expect(await screen.findByText('Nothing matches these filters')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
+    expect(await screen.findByText('No money has moved yet')).toBeInTheDocument();
+    a.unmount();
+
+    let n = 0;
+    stub(() => (n++ === 0 ? { status: 500, body: {} } : { body: ledger([row({})]) }));
+    render(<LedgerScreen />);
+    expect(await screen.findByText("We couldn't load the ledger")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /Try again/ }));
+    await screen.findByText('Jordan Reyes');
   });
 });

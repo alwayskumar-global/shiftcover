@@ -98,6 +98,7 @@ export type WorkerEarningsDto = import('zod').infer<
 >;
 export type WorkerProfileDto = import('zod').infer<typeof import('@/api/dto').WorkerProfileResponse>;
 export type UpdateProfileDto = import('zod').infer<typeof import('@/api/dto').UpdateProfileRequest>;
+export type LedgerDto = import('zod').infer<typeof import('@/api/dto').LedgerResponse>;
 export type ApprovalsDto = import('zod').infer<typeof import('@/api/dto').ApprovalsResponse>;
 export type ApproveAndPayDto = import('zod').infer<
   typeof import('@/api/dto').ApproveAndPayResponse
@@ -129,6 +130,12 @@ export const finishShift = async (id: string) =>
   ok(await post(`/api/w/shifts/${id}/finish`)) as ShiftDayDto;
 
 // ---- G2 manager approvals
+export const fetchLedger = async (q: { group?: string; range?: string } = {}) =>
+  ok(
+    await call<LedgerDto>(
+      `/api/manager/ledger${Object.keys(q).length ? `?${new URLSearchParams(q as Record<string, string>)}` : ''}`,
+    ),
+  );
 export const fetchApprovals = async () => ok(await call<ApprovalsDto>('/api/manager/approvals'));
 export const approveAndPay = async (id: string, approvedHours: number) =>
   ok(

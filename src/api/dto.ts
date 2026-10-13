@@ -582,3 +582,81 @@ export const StartEmailChangeResponse = z
   .strict();
 export const VerifyEmailChangeRequest = z.object({ code: z.string().min(1).max(12) }).strict();
 export const VerifyEmailChangeResponse = z.object({ paypal_email: z.string() }).strict();
+
+// ---------------------------------------------------------------- manager ledger (G2-M6; additive)
+export const LEDGER_ENTRY_TYPES = [
+  'AUTHORIZED',
+  'CAPTURED',
+  'VOIDED',
+  'PAYOUT_SENT',
+  'PAID',
+  'PAYOUT_FAILED',
+  'RETURNED',
+  'PLATFORM_FEE',
+  'PAYPAL_CAPTURE_FEE',
+  'PAYPAL_PAYOUT_FEE',
+  'CAPTURE_DECLINED',
+  'PAYOUT_UNCLAIMED',
+  'REFUNDED',
+  'REVERSED',
+] as const;
+
+export const LedgerResponse = z
+  .object({
+    server_time: iso,
+    /** True when more rows matched than are listed (the newest are shown). */
+    truncated: z.boolean(),
+    totals: z
+      .object({
+        authorized_cents: cents,
+        captured_cents: cents,
+        worker_pay_cents: cents,
+        platform_fee_cents: cents,
+      })
+      .strict(),
+    items: z.array(
+      z
+        .object({
+          payment_id: z.uuid(),
+          slot_id: z.uuid(),
+          attempt: z.number().int().positive(),
+          role,
+          worker_name: z.string().nullable(),
+          venue_tz: z.string(),
+          start_at: iso,
+          end_at: iso,
+          approved_hours: z.number().nonnegative().nullable(),
+          status: z.enum(PAYMENT_STATUS_PUBLIC),
+          group: z.enum(['held', 'in_progress', 'paid', 'failed', 'voided']),
+          last_error: z.string().nullable(),
+          authorized_cents: cents,
+          captured_cents: cents,
+          worker_pay_cents: cents,
+          platform_fee_cents: cents,
+          paypal_capture_fee_cents: cents,
+          paypal_payout_fee_cents: cents,
+          released_cents: cents.nullable(),
+          references: z
+            .object({
+              order: z.string().nullable(),
+              authorization: z.string().nullable(),
+              capture: z.string().nullable(),
+              payout: z.string().nullable(),
+            })
+            .strict(),
+          entries: z.array(
+            z
+              .object({
+                id: z.uuid(),
+                type: z.enum(LEDGER_ENTRY_TYPES),
+                amount_cents: cents,
+                ref: z.string().nullable(),
+                created_at: iso,
+              })
+              .strict(),
+          ),
+        })
+        .strict(),
+    ),
+  })
+  .strict();

@@ -26,6 +26,7 @@ import { cancelGap, createGap, startOffering, widenRadius } from '../services/ga
 import { resendOfferLink } from '../services/offer-link';
 import { stubAuthorize } from '../services/payments-stub';
 import { listApprovals } from '../services/approvals';
+import { LEDGER_GROUPS, listLedger, type LedgerGroup, type LedgerRange } from '../services/ledger';
 import { listOutbox } from '../services/outbox';
 import { approveAndPay, authorizePayment, ensureOrder } from '../services/payments';
 import { arrive, finish, managerConfirmTimes, markNoShow } from '../services/shift-day';
@@ -54,6 +55,7 @@ import {
   CreateGapRequest,
   CreateGapResponse,
   GapDetailResponse,
+  LedgerResponse,
   MeResponse,
   ParseGapRequest,
   ParseResultDto,
@@ -684,6 +686,66 @@ export async function getOutbox(d: ApiDeps, req: Request) {
         status: i.status,
         link: i.link,
         code: i.code,
+      })),
+    }),
+  );
+}
+
+// ---------------------------------------------------------------- G2-M6 money ledger
+const LedgerQuery = z
+  .object({
+    group: z.enum(LEDGER_GROUPS as [LedgerGroup, ...LedgerGroup[]]).optional(),
+    range: z.enum(['7d', '30d', 'all']).optional(),
+  })
+  .strict();
+
+export async function getLedger(d: ApiDeps, req: Request) {
+  const ctx = await mgr(d, req);
+  const url = new URL(req.url);
+  const q = LedgerQuery.safeParse(Object.fromEntries(url.searchParams));
+  if (!q.success) throw new HttpError(400, 'invalid_request', 'Unknown filter');
+  const r = await listLedger(d.svc, ctx.orgId, {
+    group: q.data.group,
+    range: q.data.range as LedgerRange | undefined,
+  });
+  return json(
+    LedgerResponse.parse({
+      server_time: r.serverTime.toISOString(),
+      truncated: r.truncated,
+      totals: {
+        authorized_cents: r.totals.authorizedCents,
+        captured_cents: r.totals.capturedCents,
+        worker_pay_cents: r.totals.workerPayCents,
+        platform_fee_cents: r.totals.platformFeeCents,
+      },
+      items: r.items.map((i) => ({
+        payment_id: i.paymentId,
+        slot_id: i.slotId,
+        attempt: i.attempt,
+        role: i.role,
+        worker_name: i.workerName,
+        venue_tz: i.venueTz,
+        start_at: i.startAt.toISOString(),
+        end_at: i.endAt.toISOString(),
+        approved_hours: i.approvedHours,
+        status: publicPaymentStatus(i.status),
+        group: i.group,
+        last_error: i.lastError,
+        authorized_cents: i.authorizedCents,
+        captured_cents: i.capturedCents,
+        worker_pay_cents: i.workerPayCents,
+        platform_fee_cents: i.platformFeeCents,
+        paypal_capture_fee_cents: i.paypalCaptureFeeCents,
+        paypal_payout_fee_cents: i.paypalPayoutFeeCents,
+        released_cents: i.releasedCents,
+        references: i.references,
+        entries: i.entries.map((e) => ({
+          id: e.id,
+          type: e.type,
+          amount_cents: e.amountCents,
+          ref: e.ref,
+          created_at: e.createdAt.toISOString(),
+        })),
       })),
     }),
   );
