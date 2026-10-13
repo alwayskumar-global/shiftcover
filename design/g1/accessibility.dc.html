@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="review.css">
+<style>body{margin:0}</style>
+</helmet>
+<div class="rv-page">
+  <section class="rv-bar" aria-label="Page header">
+    <div class="rv-bar__top"><h1 class="rv-bar__title">Accessibility checklist</h1><span class="rv-bar__tag">handoff · WCAG 2.1 AA</span><a class="rv-bar__home" href="index.dc.html">All pages</a></div>
+  </section>
+  <main class="rv-doc">
+    <h2 class="rv-doc__title">Accessibility decisions per screen</h2>
+    <p class="rv-doc__lead">Focus order, touch targets and reduced-motion behavior per screen, then the contrast pairs actually used. Ratios are computed live from <span class="rv-mono">tokens.css</span> when this page loads, so they cannot drift from the tokens. Items marked <span class="rv-tag rv-tag--med">Not built</span> are gaps in the prototype that the implementation must add.</p>
+
+    <section class="rv-card" aria-labelledby="g-title">
+      <h3 class="rv-card__title" id="g-title">Global rules</h3>
+      <ul class="rv-check">
+        <li>Status is never colour alone: every badge, block, node and alert has an icon and a word. Unfilled and Cancelled also use dashed outlines; Open gap is the only hatched block.</li>
+        <li>One focus style everywhere: 2px surface gap plus 2px blue ring (<span class="rv-mono">--sc-ring-focus</span>), on <span class="rv-mono">:focus-visible</span>.</li>
+        <li>Worker app: every tap target at least 48px; primary actions 56px. Body text at least 16px.</li>
+        <li>Console: controls 40px; body prose at least 14px; captions 12px.</li>
+        <li>Errors have an icon, text, <span class="rv-mono">role="alert"</span>, and are tied to the field with <span class="rv-mono">aria-describedby</span>. They are never only a red border.</li>
+        <li>Buttons that are busy use <span class="rv-mono">aria-disabled</span> (not <span class="rv-mono">disabled</span>) so focus stays put, and the label changes ("Claiming…").</li>
+        <li>Reduced motion: <span class="rv-mono">prefers-reduced-motion: reduce</span> stops all keyframe animation and zeroes durations. State is carried by words, never by motion.</li>
+        <li>Times are announced with relative text plus a title or visible clock time.</li>
+        <li><span class="rv-tag rv-tag--med">Not built</span> A skip link ("Skip to main content") before the console nav.</li>
+      </ul>
+    </section>
+
+    <sc-for list="{{ screens }}" as="s" hint-placeholder-count="6">
+      <section class="rv-card" aria-label="{{ s.name }}">
+        <h3 class="rv-card__title">{{ s.name }}</h3>
+        <div class="rv-screen"><span class="rv-screen__k">Focus order</span><ul><sc-for list="{{ s.focus }}" as="x" hint-placeholder-count="3"><li>{{ x }}</li></sc-for></ul></div>
+        <div class="rv-screen"><span class="rv-screen__k">Touch targets</span><ul><sc-for list="{{ s.targets }}" as="x" hint-placeholder-count="3"><li>{{ x }}</li></sc-for></ul></div>
+        <div class="rv-screen"><span class="rv-screen__k">Reduced motion</span><ul><sc-for list="{{ s.motion }}" as="x" hint-placeholder-count="2"><li>{{ x }}</li></sc-for></ul></div>
+        <div class="rv-screen"><span class="rv-screen__k">Semantics</span><ul><sc-for list="{{ s.sem }}" as="x" hint-placeholder-count="3"><li>{{ x }}</li></sc-for></ul></div>
+      </section>
+    </sc-for>
+
+    <section class="rv-card" aria-labelledby="c-title">
+      <h3 class="rv-card__title" id="c-title">Contrast pairs actually used</h3>
+      <p class="rv-card__val">{{ summary }}</p>
+      <div class="rv-table-wrap"><div class="rv-table rv-table--wide rv-cols-ac" role="table">
+        <div class="rv-thead" role="rowgroup"><div class="rv-tr" role="row"><div class="rv-th" role="columnheader">Pair</div><div class="rv-th" role="columnheader">Used for</div><div class="rv-th" role="columnheader">Foreground</div><div class="rv-th" role="columnheader">Background</div><div class="rv-th" role="columnheader">Sample</div><div class="rv-th" role="columnheader">Ratio</div><div class="rv-th" role="columnheader">Needs</div><div class="rv-th" role="columnheader">Result</div></div></div>
+        <div role="rowgroup">
+          <sc-for list="{{ pairs }}" as="p" hint-placeholder-count="40">
+            <div class="rv-tr" role="row"><div class="rv-td rv-str" role="cell">{{ p.name }}</div><div class="rv-td" role="cell">{{ p.use }}</div><div class="rv-td" role="cell"><span class="rv-mono">{{ p.fg }}</span></div><div class="rv-td" role="cell"><span class="rv-mono">{{ p.bg }}</span></div><div class="rv-td" role="cell"><span class="rv-sample" style="color:{{ p.fgVar }};background:{{ p.bgVar }}">Aa</span></div><div class="rv-td rv-n" role="cell">{{ p.ratio }}</div><div class="rv-td rv-n" role="cell">{{ p.need }}</div><div class="rv-td" role="cell"><span class="rv-tag rv-tag--{{ p.cls }}">{{ p.result }}</span></div></div>
+          </sc-for>
+        </div>
+      </div></div>
+    </section>
+  </main>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { vars: null, err: false };
+  componentDidMount() {
+    fetch('tokens.css').then(r => r.text()).then(t => {
+      const clean = t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/@media[^{]+\{(?:[^{}]*\{[^{}]*\})*[^{}]*\}/g, '').replace(/\[data-theme="dark"\]\s*\{[^}]*\}/g, '');
+      const m = {}; for (const x of clean.matchAll(/(--sc-[\w-]+)\s*:\s*([^;]+);/g)) m[x[1]] = x[2].trim();
+      this.setState({ vars: m });
+    }).catch(() => this.setState({ err: true }));
+  }
+  lum(name) {
+    const v = this.state.vars; let val = v['--sc-' + name], n = 0;
+    while (val && val.startsWith('var(') && n++ < 8) val = v[val.slice(4, -1).trim()];
+    const m = val && val.match(/oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)/);
+    if (!m) return null;
+    const L = +m[1], C = +m[2], h = +m[3] * Math.PI / 180, a = C * Math.cos(h), b = C * Math.sin(h);
+    const l_ = L + 0.3963377774 * a + 0.2158037573 * b, m_ = L - 0.1055613458 * a - 0.0638541728 * b, s_ = L - 0.0894841775 * a - 1.2914855480 * b;
+    const l = l_ ** 3, mm = m_ ** 3, s = s_ ** 3;
+    const c = x => Math.min(1, Math.max(0, x));
+    return 0.2126 * c(4.0767416621 * l - 3.3077115913 * mm + 0.2309699292 * s) + 0.7152 * c(-1.2684380046 * l + 2.6097574011 * mm - 0.3413193965 * s) + 0.0722 * c(-0.0041960863 * l - 0.7034186147 * mm + 1.7076147010 * s);
+  }
+  PAIRS() {
+    const P = [];
+    const add = (name, use, fg, bg, need) => P.push({ name, use, fg, bg, need: need || 4.5 });
+    add('Primary text on surface', 'body, card text', 'text', 'bg-surface');
+    add('Primary text on page', 'headings on page', 'text', 'bg-page');
+    add('Muted text on surface', 'helper lines, meta rows', 'text-muted', 'bg-surface');
+    add('Muted text on page', 'subtitles, notice text', 'text-muted', 'bg-page');
+    add('Muted text on sunken', 'stat labels, table head', 'text-muted', 'bg-sunken');
+    add('Subtle text on surface', 'captions, timestamps', 'text-subtle', 'bg-surface');
+    add('Subtle text on sunken', 'captions on stat tiles', 'text-subtle', 'bg-sunken');
+    add('Subtle text on page', 'captions on page', 'text-subtle', 'bg-page');
+    add('Link on surface', 'inline links', 'text-link', 'bg-surface');
+    add('Link on page', 'inline links, nav sign-in', 'text-link', 'bg-page');
+    add('On-action on action', 'primary button label', 'on-action', 'action');
+    add('On-action on action hover', 'primary button hover', 'on-action', 'action-hover');
+    add('On-action on action active', 'primary button pressed', 'on-action', 'action-active');
+    add('Basil-700 on action-soft', 'active nav item, "Next" step tag', 'green-700', 'action-soft');
+    add('On-danger on danger', 'cancel gap dialog button', 'on-danger', 'danger');
+    add('On-danger on ember-700', 'danger button hover', 'on-danger', 'ember-700');
+    add('Inverse text on inverse', 'toast, "Now" flag', 'text-inverse', 'bg-inverse');
+    add('Paper-0 on basil-800', 'login brand panel text', 'paper-0', 'green-800');
+    add('Paper-2 on basil-800', 'login point descriptions', 'paper-2', 'green-800');
+    ['open', 'offering', 'confirmed', 'progress', 'pending', 'settled', 'unfilled', 'planned', 'cancelled', 'noshow'].forEach(k => add('Status ' + k + ': fg on tint', 'badge ' + k, 'st-' + k + '-fg', 'st-' + k + '-bg'));
+    ['open', 'offering', 'confirmed', 'progress', 'pending', 'settled', 'noshow'].forEach(k => add('Status ' + k + ': on solid', 'scheduler block ' + k, 'st-' + k + '-on', 'st-' + k + '-solid'));
+    add('Open gap block text on hatch B', 'hatch darker stripe', 'st-open-on', 'sched-hatch-b');
+    add('Planned block text', 'planned block', 'st-planned-on', 'st-planned-bg');
+    add('Unfilled block text', 'unfilled block (fg on bg above)', 'st-unfilled-fg', 'st-unfilled-bg');
+    ['authorized', 'captured', 'paid', 'failed'].forEach(k => add('Money ' + k + ': fg on tint', 'stage tag and amounts', 'money-' + k + '-fg', 'money-' + k + '-bg'));
+    ['authorized', 'paid', 'failed'].forEach(k => add('Money ' + k + ': icon on node', 'timeline node icon', k === 'failed' ? 'paper-0' : 'paper-0', 'money-' + k + '-solid', 3));
+    add('Money captured: icon on node', 'timeline node icon', 'paper-9', 'money-captured-solid', 3);
+    ['info', 'success', 'warning', 'error'].forEach(k => add('Alert ' + k, 'inline alert text', k + '-fg', k + '-bg'));
+    add('Wave step amount on offering tint', 'ladder / wave amounts', 'text', 'st-offering-bg');
+    add('Disabled text on disabled bg', 'disabled controls (exempt)', 'disabled-text', 'disabled-bg', 0);
+    add('Control border on surface', 'input outline (non-text)', 'border-strong', 'bg-surface', 3);
+    add('Control border on page', 'secondary button outline', 'border-strong', 'bg-page', 3);
+    add('Focus ring on surface', 'focus ring (non-text)', 'focus', 'bg-surface', 3);
+    add('Focus ring on page', 'focus ring on page', 'focus', 'bg-page', 3);
+    add('Open gap row bar on gap row tint', 'resource bar (non-text)', 'sched-gap-row-bar', 'sched-gap-row-bg', 3);
+    return P;
+  }
+  renderVals() {
+    const s = this.state;
+    const SC = [
+      { name: 'W1 · Claim card (all 12 states)',
+        focus: ['Available: Claim this shift, then Not available (the ticket has no focusable content; the footer follows it in DOM order).', 'Skip confirm: Yes, skip it, then Go back.', 'Claiming: focus stays on the Claim button (aria-disabled).', 'Notice states: the single action (See your booking / See other shifts / Try again / email field then Email me a new link).', 'Not built: move focus to the notice heading when the state changes (tabindex="-1" + focus()).'],
+        targets: ['Claim and Email me a new link: 56px, full width.', 'Not available, link buttons, inputs: 48px.', 'Sticky footer pads with safe-area-inset-bottom.'],
+        motion: ['Skeleton shimmer becomes flat blocks.', 'Claim spinner hidden; label "Claiming…" remains.', 'Rate-rising halo becomes a static 2px saffron outline.', 'Notice enter (4px rise, 240ms) becomes instant.'],
+        sem: ['Countdown: role="timer", aria-live="off" with a spoken aria-label; no per-second announcements.', 'Banners and notice titles use role="status"; errors use role="alert".', 'Skeleton container is aria-busy with a hidden "Loading shift details".'] },
+      { name: 'W2 · Claimed confirmation',
+        focus: ['Open in Maps, then Go to My shifts (sticky footer).', 'Not built: focus the "You\u2019re booked." heading on load.'],
+        targets: ['Map link row: 48px. Go to My shifts: 56px.'],
+        motion: ['Content fade and 4px rise becomes instant.'],
+        sem: ['"You\u2019re booked." is role="status". Steps are an ordered list; the next step carries the word "Next".'] },
+      { name: 'M1 · Login',
+        focus: ['Email, Password, Show password, Sign in, Send me a sign-in link.', 'Link mode: Email, Send sign-in link, Back to password sign-in.'],
+        targets: ['Sign in and link buttons: 48px. Inputs: 48px. Show-password button: 40px inside a 48px field.'],
+        motion: ['Button spinner hidden; labels "Signing in…" and "Sending…" remain.'],
+        sem: ['Labels are visible and linked. Errors use aria-invalid, aria-describedby and role="alert". Show-password has aria-label and aria-pressed. Email uses autocomplete="username"; password uses current-password.'] },
+      { name: 'M2 · Roster',
+        focus: ['Nav: Roster, Workers, Money, Settings (aria-disabled), Sign out.', 'Toolbar: Today, Previous, Next, Day, Week, Report a gap.', 'Scheduler: each event block is a button, in row order. Legend is not focusable.', 'Not built: skip link before the nav; arrow-key navigation between blocks (Bryntum provides its own keyboard model).'],
+        targets: ['Toolbar buttons: 40px. Nav items: 40px (44px wide in the icon rail). Event blocks: 44px (week view 36px compact).'],
+        motion: ['Offering pulse dot is static; skeleton shimmer flat.'],
+        sem: ['Scheduler is role="grid" with row and columnheader roles in the mock; Bryntum supplies its own ARIA. Day/Week uses aria-pressed. Date label is aria-live="polite". Each block has a tooltip with status, role, time and worker.'] },
+      { name: 'M3 · Report a gap',
+        focus: ['Breadcrumb, note textarea, Parse, Role, Venue, Date, Start, End, Base rate, Maximum premium.', 'Review card: Details are correct (or Edit details), PayPal slot, Try again, View gap / Back to roster.'],
+        targets: ['Console controls: 40px. PayPal slot: 52px (SDK button 48–55px).', 'Parse button: 40px.'],
+        motion: ['"AI is reading this" icon fade, status bar shimmer, field shimmer, slot shimmer and spinners all stop; text states remain.'],
+        sem: ['Review card is aria-live="polite" so money updates are announced. Parse status is role="status". Field errors use aria-invalid and role="alert". The textarea has a visually hidden label. AI-filled fields carry a text tag, not only a colour.'] },
+      { name: 'M4 · Gap detail',
+        focus: ['Breadcrumb, Widen the cap, Cancel gap, suggestion buttons (unfilled), reference chips, recovery buttons.', 'Dialogs: focus starts on the safe action ("Keep gap" or "Widen cap"). Esc closes.', 'Not built: focus trap inside dialogs and return of focus to the opener.'],
+        targets: ['Console buttons: 40px. Reference chips: 28px (below the 36px floor; enlarge to 36px).', 'Dialog buttons: 40px.'],
+        motion: ['Nothing on this screen animates; the "Now" node ring is static by design.'],
+        sem: ['Dialogs use role="dialog" / role="alertdialog" with aria-modal and aria-labelledby. Offers use table roles. Banners use role="status"; the recovery card uses role="alert". Reference chips have aria-label "Copy {label} reference".'] },
+    ];
+    let pairs = [], summary = s.err ? 'Could not load tokens.css to compute ratios.' : 'Computing from tokens.css…';
+    if (s.vars) {
+      pairs = this.PAIRS().map(p => {
+        const a = this.lum(p.fg), b = this.lum(p.bg);
+        const r = a === null || b === null ? 0 : (Math.max(a, b) + .05) / (Math.min(a, b) + .05);
+        const pass = p.need === 0 ? true : r >= p.need;
+        return { name: p.name, use: p.use, fg: '--sc-' + p.fg, bg: '--sc-' + p.bg, fgVar: 'var(--sc-' + p.fg + ')', bgVar: 'var(--sc-' + p.bg + ')', ratio: r.toFixed(2) + ' : 1', need: p.need === 0 ? 'exempt' : p.need + ' : 1', result: p.need === 0 ? 'Exempt' : pass ? 'Pass' : 'Fail', cls: p.need === 0 ? 'ours' : pass ? 'ok' : 'fail' };
+      });
+      const fails = pairs.filter(p => p.result === 'Fail').length;
+      summary = pairs.length + ' pairs checked. ' + (fails ? fails + ' fail; see rows marked Fail.' : 'All pass their required ratio.') + ' Text needs 4.5:1; icons, borders and focus rings need 3:1.';
+    }
+    return { screens: SC, pairs, summary };
+  }
+}
+
+</script>
+</body>
+</html>

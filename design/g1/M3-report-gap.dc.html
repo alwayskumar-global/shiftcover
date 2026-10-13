@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components.css">
+<link rel="stylesheet" href="console.css">
+<link rel="stylesheet" href="review.css">
+<style>body{margin:0}</style>
+</helmet>
+<div class="rv-page">
+  <section class="rv-bar" aria-label="Review controls">
+    <div class="rv-bar__top"><h1 class="rv-bar__title">M3 · Report a gap</h1><span class="rv-bar__tag">review controls, not part of the product</span><a class="rv-bar__home" href="index.dc.html">All pages</a></div>
+    <div class="rv-bar__groups">
+      <div class="rv-group"><span class="rv-group__label">State</span><div class="rv-group__chips" role="group" aria-label="State">
+        <sc-for list="{{ stateChips }}" as="c" hint-placeholder-count="10"><button class="rv-chip" aria-pressed="{{ c.pressed }}" onClick="{{ c.onClick }}">{{ c.label }}</button></sc-for></div></div>
+      <div class="rv-group"><span class="rv-group__label">Viewport width</span><div class="rv-group__chips" role="group" aria-label="Width">
+        <sc-for list="{{ widthChips }}" as="c" hint-placeholder-count="3"><button class="rv-chip" aria-pressed="{{ c.pressed }}" onClick="{{ c.onClick }}">{{ c.label }}</button></sc-for></div></div>
+      <div class="rv-group"><span class="rv-group__label">Next Parse ends in</span><div class="rv-group__chips" role="group" aria-label="Parse outcome">
+        <sc-for list="{{ parseChips }}" as="c" hint-placeholder-count="2"><button class="rv-chip" aria-pressed="{{ c.pressed }}" onClick="{{ c.onClick }}">{{ c.label }}</button></sc-for></div></div>
+      <div class="rv-group"><span class="rv-group__label">PayPal slot click ends in</span><div class="rv-group__chips" role="group" aria-label="PayPal outcome">
+        <sc-for list="{{ ppChips }}" as="c" hint-placeholder-count="3"><button class="rv-chip" aria-pressed="{{ c.pressed }}" onClick="{{ c.onClick }}">{{ c.label }}</button></sc-for></div></div>
+      <div class="rv-group"><span class="rv-group__label">Motion</span><div class="rv-group__chips" role="group" aria-label="Motion">
+        <sc-for list="{{ motionChips }}" as="c" hint-placeholder-count="2"><button class="rv-chip" aria-pressed="{{ c.pressed }}" onClick="{{ c.onClick }}">{{ c.label }}</button></sc-for></div></div>
+    </div>
+  </section>
+
+  <div class="rv-console-wrap">
+    <div class="rv-console-frame" data-width="{{ width }}">
+<!-- ===== PRODUCT: M3 report a gap (full page) ===== -->
+<div class="sc-console" data-motion="{{ motion }}">
+  <div class="sc-console__shell">
+    <nav class="sc-nav" aria-label="Main">
+      <span class="sc-wordmark"><span class="sc-wordmark__mark"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-check"></use></svg></span>ShiftCover Pay</span>
+      <div class="sc-nav__venue"><span class="sc-avatar sc-avatar--sm sc-avatar--brand" aria-hidden="true">M</span><span class="sc-nav__venue-text"><span class="sc-nav__venue-name">Maple &amp; Rye</span><span class="sc-nav__venue-sub">Portland, OR</span></span></div>
+      <div class="sc-nav__list">
+        <a class="sc-nav__item is-active" href="M2-roster.dc.html" aria-current="page" title="Roster"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-calendar"></use></svg><span class="sc-nav__label">Roster</span></a>
+        <button class="sc-nav__item" aria-disabled="true" title="Workers (coming soon)"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-users"></use></svg><span class="sc-nav__label">Workers</span><span class="sc-nav__tag">Soon</span></button>
+        <button class="sc-nav__item" aria-disabled="true" title="Money (coming soon)"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-wallet"></use></svg><span class="sc-nav__label">Money</span><span class="sc-nav__tag">Soon</span></button>
+        <button class="sc-nav__item" aria-disabled="true" title="Settings (coming soon)"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-settings"></use></svg><span class="sc-nav__label">Settings</span><span class="sc-nav__tag">Soon</span></button>
+      </div>
+      <span class="sc-nav__spacer"></span>
+      <div class="sc-nav__user"><span class="sc-avatar sc-avatar--sm sc-avatar--user" aria-hidden="true">DW</span><span class="sc-nav__user-text"><span class="sc-nav__user-name">Dana Whitfield</span><span class="sc-nav__user-sub">Manager</span></span><a class="sc-nav__signout" href="M1-login.dc.html" aria-label="Sign out" title="Sign out"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-log-out"></use></svg></a></div>
+    </nav>
+
+    <main class="sc-console__main">
+      <div class="sc-page">
+        <nav class="sc-crumbs" aria-label="Breadcrumb"><a href="M2-roster.dc.html"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-chev-left"></use></svg>Roster</a><span aria-hidden="true">/</span><span aria-current="page">Report a gap</span></nav>
+        <header class="sc-page__head">
+          <div><h1 class="sc-page__title">Report a gap</h1><p class="sc-page__sub">Tell us what happened. We fill in the details; you check them and approve the money.</p></div>
+          <ol class="sc-stepper" aria-label="Progress">
+            <sc-for list="{{ steps }}" as="st" hint-placeholder-count="3"><li class="sc-stepper__item {{ st.cls }}" aria-current="{{ st.current }}"><span class="sc-stepper__node">{{ st.n }}</span>{{ st.label }}</li></sc-for>
+          </ol>
+        </header>
+
+        <div class="sc-gap">
+          <div class="sc-gap__col">
+            <!-- 1 describe -->
+            <section class="sc-card" aria-labelledby="nl-title">
+              <div class="sc-card__head"><h2 class="sc-card__title" id="nl-title">Tell us what happened</h2></div>
+              <div class="sc-nl">
+                <label class="sc-visually-hidden" for="nl">Describe the gap in your own words</label>
+                <textarea class="sc-nl__input" id="nl" placeholder="e.g. Maria called in sick, need a line cook 7 to 3 today" readOnly="{{ nlLocked }}" value="{{ nl }}" onChange="{{ onNl }}"></textarea>
+                <sc-if value="{{ isParsing }}" hint-placeholder-val="{{ false }}"><div class="sc-nl__status" role="status"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-sparkles"></use></svg>AI is reading this<span class="sc-nl__bar"></span></div></sc-if>
+                <sc-if value="{{ isParseFailed }}" hint-placeholder-val="{{ false }}"><div class="sc-alert sc-alert--warning" role="alert"><svg class="sc-icon sc-icon--lg" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-info"></use></svg><div><span class="sc-alert__title">We couldn't read that note</span><span class="sc-alert__text">Nothing was filled in. Fill in the details below instead, or name the role, the day and the times and try Parse again.</span></div></div></sc-if>
+                <div class="sc-nl__foot">
+                  <span class="sc-nl__hint">We read it, you check it. Nothing goes to workers until you approve the hold.</span>
+                  <button class="sc-btn sc-btn--primary sc-btn--md {{ parseBusy }}" type="button" aria-disabled="{{ parseDisabled }}" onClick="{{ onParse }}"><svg class="sc-icon sc-icon--sm sc-btn__spinner" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-loader"></use></svg><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-sparkles"></use></svg>{{ parseLabel }}</button>
+                </div>
+              </div>
+            </section>
+
+            <!-- 2 details -->
+            <section class="sc-card" aria-labelledby="det-title">
+              <div class="sc-card__head"><h2 class="sc-card__title" id="det-title">Shift details</h2><span class="sc-card__lead">{{ detailsHint }}</span></div>
+              <form class="sc-form" onSubmit="{{ noSubmit }}" novalidate>
+                <div class="sc-field">
+                  <div class="sc-field__label-row"><label class="sc-field__label" for="f-role">Role</label><sc-if value="{{ ai.role }}" hint-placeholder-val="{{ false }}"><span class="sc-tag-ai"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-sparkles"></use></svg>From your note</span></sc-if></div>
+                  <select class="sc-input sc-input--md sc-select {{ rd }}" id="f-role" value="{{ role }}" onChange="{{ onRole }}" disabled="{{ formLocked }}" aria-invalid="{{ err.roleOn }}">
+                    <option value="">Choose a role</option>
+                    <option value="Line cook">Line cook</option>
+                    <option value="Prep cook">Prep cook</option>
+                    <option value="Server">Server</option>
+                    <option value="Bartender">Bartender</option>
+                    <option value="Bar back">Bar back</option>
+                    <option value="Host">Host</option>
+                    <option value="Dishwasher">Dishwasher</option>
+                  </select>
+                  <sc-if value="{{ err.roleOn }}" hint-placeholder-val="{{ false }}"><span class="sc-field__error" role="alert"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-alert"></use></svg>Choose a role.</span></sc-if>
+                </div>
+                <div class="sc-field">
+                  <div class="sc-field__label-row"><label class="sc-field__label" for="f-venue">Venue</label></div>
+                  <select class="sc-input sc-input--md sc-select" id="f-venue" disabled="{{ venueLocked }}"><option>Maple &amp; Rye · Portland, OR</option></select>
+                </div>
+                <div class="sc-field">
+                  <div class="sc-field__label-row"><label class="sc-field__label" for="f-date">Date</label><sc-if value="{{ ai.date }}" hint-placeholder-val="{{ false }}"><span class="sc-tag-ai"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-sparkles"></use></svg>From your note</span></sc-if></div>
+                  <input class="sc-input sc-input--md {{ rd }}" id="f-date" type="date" value="{{ date }}" onChange="{{ onDate }}" disabled="{{ formLocked }}" aria-invalid="{{ err.dateOn }}">
+                  <sc-if value="{{ err.dateOn }}" hint-placeholder-val="{{ false }}"><span class="sc-field__error" role="alert"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-alert"></use></svg>{{ err.dateText }}</span></sc-if>
+                </div>
+                <div class="sc-field">
+                  <div class="sc-field__label-row"><span class="sc-field__label">Length</span></div>
+                  <div class="sc-readout">{{ lengthText }}</div>
+                </div>
+                <div class="sc-field">
+                  <div class="sc-field__label-row"><label class="sc-field__label" for="f-start">Start</label><sc-if value="{{ ai.start }}" hint-placeholder-val="{{ false }}"><span class="sc-tag-ai"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-sparkles"></use></svg>From your note</span></sc-if></div>
+                  <input class="sc-input sc-input--md {{ rd }}" id="f-start" type="time" step="900" value="{{ start }}" onChange="{{ onStart }}" disabled="{{ formLocked }}" aria-invalid="{{ err.startOn }}">
+                  <sc-if value="{{ err.startOn }}" hint-placeholder-val="{{ false }}"><span class="sc-field__error" role="alert"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-alert"></use></svg>Enter a start time.</span></sc-if>
+                </div>
+                <div class="sc-field">
+                  <div class="sc-field__label-row"><label class="sc-field__label" for="f-end">End</label><sc-if value="{{ ai.end }}" hint-placeholder-val="{{ false }}"><span class="sc-tag-ai"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-sparkles"></use></svg>From your note</span></sc-if></div>
+                  <input class="sc-input sc-input--md {{ rd }}" id="f-end" type="time" step="900" value="{{ end }}" onChange="{{ onEnd }}" disabled="{{ formLocked }}" aria-invalid="{{ err.endOn }}">
+                  <sc-if value="{{ err.endOn }}" hint-placeholder-val="{{ false }}"><span class="sc-field__error" role="alert"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-alert"></use></svg>{{ err.endText }}</span></sc-if>
+                </div>
+                <div class="sc-field">
+                  <div class="sc-field__label-row"><label class="sc-field__label" for="f-rate">Base rate</label><sc-if value="{{ ai.rate }}" hint-placeholder-val="{{ false }}"><span class="sc-tag-ai"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-sparkles"></use></svg>Role default</span></sc-if></div>
+                  <div class="sc-affix {{ rateInvalid }} {{ rdAffix }}"><span class="sc-affix__text sc-affix__text--pre">$</span><input class="sc-affix__input" id="f-rate" inputmode="decimal" placeholder="22.00" value="{{ rate }}" onChange="{{ onRate }}" disabled="{{ formLocked }}" aria-invalid="{{ err.rateOn }}"><span class="sc-affix__text">/ hour</span></div>
+                  <sc-if value="{{ err.rateOn }}" hint-placeholder-val="{{ false }}"><span class="sc-field__error" role="alert"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-alert"></use></svg>Enter an hourly rate, like 22.00.</span></sc-if>
+                </div>
+                <div class="sc-field">
+                  <div class="sc-field__label-row"><label class="sc-field__label" for="f-prem">Maximum premium</label></div>
+                  <div class="sc-affix {{ premInvalid }} {{ rdAffix }}"><input class="sc-affix__input" id="f-prem" inputmode="numeric" placeholder="20" value="{{ prem }}" onChange="{{ onPrem }}" disabled="{{ formLocked }}" aria-invalid="{{ err.premOn }}"><span class="sc-affix__text">% above base</span></div>
+                  <sc-if value="{{ err.premOn }}" hint-placeholder-val="{{ false }}"><span class="sc-field__error" role="alert"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-alert"></use></svg>Enter a number from 0 to 50.</span></sc-if>
+                  <sc-if value="{{ err.premOk }}" hint-placeholder-val="{{ false }}"><span class="sc-field__help">Highest rate we'll offer: {{ capRateText }}/hr. The rate only rises if nobody claims.</span></sc-if>
+                </div>
+              </form>
+            </section>
+          </div>
+
+          <!-- review + approve -->
+          <aside class="sc-gap__aside">
+            <section class="sc-card" aria-labelledby="rev-title" aria-live="polite">
+              <div class="sc-card__head"><h2 class="sc-card__title" id="rev-title">Review</h2><span class="sc-badge sc-badge--sm {{ badge.cls }}"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#{{ badge.icon }}"></use></svg>{{ badge.label }}</span></div>
+              <sc-if value="{{ isWaiting }}" hint-placeholder-val="{{ true }}"><p class="sc-card__lead">{{ waitingText }}</p></sc-if>
+              <dl class="sc-kv">
+                <sc-for list="{{ kv }}" as="r" hint-placeholder-count="6"><dt>{{ r.k }}</dt><dd class="{{ r.cls }}">{{ r.v }}</dd></sc-for>
+              </dl>
+              <div class="sc-money" role="table" aria-label="Cost">
+                <sc-for list="{{ money }}" as="m" hint-placeholder-count="4">
+                  <div class="sc-money__row {{ m.cls }}" role="row"><span class="sc-money__label" role="cell"><strong>{{ m.label }}</strong><small>{{ m.sub }}</small></span><span class="sc-money__amt" role="cell">{{ m.amt }}</span></div>
+                </sc-for>
+              </div>
+              <div class="sc-ladder" aria-label="Offer rate by wave">
+                <sc-for list="{{ ladder }}" as="w" hint-placeholder-count="3"><div class="sc-ladder__step sc-ladder__step--{{ w.n }}"><span>{{ w.label }}</span><strong>{{ w.rate }}</strong></div></sc-for>
+              </div>
+
+              <sc-if value="{{ showConfirm }}" hint-placeholder-val="{{ true }}">
+                <button class="sc-btn sc-btn--primary sc-btn--md sc-btn--block" type="button" aria-disabled="{{ confirmDisabled }}" onClick="{{ onConfirm }}"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-check"></use></svg>Details are correct</button>
+              </sc-if>
+              <sc-if value="{{ isConfirmed }}" hint-placeholder-val="{{ false }}">
+                <div class="sc-confirmed"><span>Details confirmed</span><button class="sc-btn sc-btn--quiet sc-btn--md" type="button" onClick="{{ onEdit }}" aria-disabled="{{ approved }}">Edit details</button></div>
+              </sc-if>
+
+              <hr class="sc-divider">
+
+              <!-- PayPal slot -->
+              <sc-if value="{{ showSlotArea }}" hint-placeholder-val="{{ true }}">
+                <div class="sc-paypal">
+                  <p class="sc-paypal__label">{{ payLabel }}</p>
+                  <sc-if value="{{ pp.alertOn }}" hint-placeholder-val="{{ false }}"><div class="sc-alert sc-alert--{{ pp.alertTone }}" role="alert"><svg class="sc-icon sc-icon--lg" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#{{ pp.alertIcon }}"></use></svg><div><span class="sc-alert__title">{{ pp.alertTitle }}</span><span class="sc-alert__text">{{ pp.alertText }}</span></div></div></sc-if>
+                  <sc-if value="{{ pp.slotOn }}" hint-placeholder-val="{{ true }}"><button class="sc-paypal__slot {{ pp.slotCls }}" type="button" aria-disabled="{{ pp.slotDisabled }}" aria-busy="{{ pp.slotBusy }}" onClick="{{ onSlot }}"><svg class="sc-icon sc-icon--sm sc-spinner {{ pp.spinCls }}" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-loader"></use></svg>{{ pp.slotText }}</button></sc-if>
+                  <sc-if value="{{ pp.retryOn }}" hint-placeholder-val="{{ false }}"><button class="sc-btn sc-btn--secondary sc-btn--md" type="button" onClick="{{ onRetry }}"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-retry"></use></svg>Try again</button></sc-if>
+                  <p class="sc-paypal__fine">{{ payFine }}</p>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ approved }}" hint-placeholder-val="{{ false }}">
+                <div class="sc-alert sc-alert--success" role="status"><svg class="sc-icon sc-icon--lg" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-shield"></use></svg><div><span class="sc-alert__title">{{ holdText }} on hold</span><span class="sc-alert__text">Nothing has been charged yet. We're offering the shift to qualified workers now.</span></div></div>
+                <div class="sc-rail" aria-label="Money timeline">
+                  <div class="sc-rail__item sc-rail__item--now"><div class="sc-rail__top"><span class="sc-rail__node"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-shield"></use></svg></span><span class="sc-rail__line"></span></div><span class="sc-rail__label">Authorized</span><span class="sc-rail__amt">{{ holdText }}</span><span class="sc-rail__note">Now</span></div>
+                  <div class="sc-rail__item"><div class="sc-rail__top"><span class="sc-rail__node"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-banknote"></use></svg></span><span class="sc-rail__line"></span></div><span class="sc-rail__label">Captured</span><span class="sc-rail__amt">$–</span><span class="sc-rail__note">After you approve hours</span></div>
+                  <div class="sc-rail__item"><div class="sc-rail__top"><span class="sc-rail__node"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-wallet"></use></svg></span></div><span class="sc-rail__label">Paid</span><span class="sc-rail__amt">$–</span><span class="sc-rail__note">To the worker</span></div>
+                </div>
+                <div class="sc-actions"><a class="sc-btn sc-btn--primary sc-btn--md" href="M4-gap-detail.dc.html">View gap<svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-arrow-right"></use></svg></a><a class="sc-btn sc-btn--secondary sc-btn--md" href="M2-roster.dc.html">Back to roster</a></div>
+              </sc-if>
+            </section>
+          </aside>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+<!-- ===== /PRODUCT ===== -->
+    </div>
+    <span class="rv-device-label">{{ width }} × 900 · one full page, two columns · right column is sticky</span>
+  </div>
+
+  <section class="rv-ref" aria-label="Design notes">
+    <div class="rv-card">
+      <h2 class="rv-card__title">Why a page, not a drawer</h2>
+      <div class="rv-card__row"><span class="rv-card__key">Decision</span><span class="rv-card__val">Single full page. The task is a short sequence (describe, check, approve money), and the manager needs the form and the cost visible together while they edit the rate or premium.</span></div>
+      <div class="rv-card__row"><span class="rv-card__key">Not a drawer</span><span class="rv-card__val">A right drawer would cover the roster, which has nothing to do with this task, and would squeeze the PayPal slot and the money table into about 440px while also holding the form. The page also gives a stable URL to return to after PayPal.</span></div>
+      <div class="rv-card__row"><span class="rv-card__key">Money</span><span class="rv-card__val">Recomputed on every keystroke in base rate and premium. Worker pay at the cap = hours × rate × (1 + premium). Fee = 5% of that (variable platform_fee_pct). Hold = pay + fee. Editing anything after confirming returns to "needs confirmation".</span></div>
+      <div class="rv-card__row"><span class="rv-card__key">PayPal</span><span class="rv-card__val">The dashed rectangle is a placeholder for the SDK button (52px high, full column width, max 420px). Click it to simulate the outcome chosen in the bar. In production the SDK owns the button; remove the dashed outline.</span></div>
+      <div class="rv-card__row"><span class="rv-card__key">Reduced motion</span><span class="rv-card__val">Shimmer, pulse and spinners stop; "AI is reading this", "Reading…" and "Waiting for PayPal…" are text, so state is still clear.</span></div>
+    </div>
+  </section>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { view: 'empty', nl: '', role: '', date: '2026-10-12', start: '', end: '', venue: 'Maple & Rye', rate: '', prem: '20', ai: {}, showErrors: false, slotLoading: false, width: 1440, motion: 'normal', parseOutcome: 'success', ppOutcome: 'approve' };
+  timers = []; locked = false;
+  SAMPLE = 'Maria called in sick, need a line cook 7 to 3 today';
+  ROLES = ['Line cook', 'Prep cook', 'Server', 'Bartender', 'Bar back', 'Host', 'Dishwasher'];
+  RATES = { 'Line cook': '22.00', 'Prep cook': '19.00', 'Server': '16.00', 'Bartender': '18.00', 'Bar back': '15.00', 'Host': '15.00', 'Dishwasher': '16.00' };
+  TODAY = '2026-10-12';
+  FEE_PCT = 5;
+
+  componentDidMount() { const h = (window.location.hash || '').slice(1); if (this.VIEWS.includes(h)) this.go(h); this.syncSelect(); }
+  componentDidUpdate() { this.syncSelect(); }
+  syncSelect() { const el = document.getElementById('f-role'); if (el && el.value !== this.state.role) el.value = this.state.role; }
+  componentWillUnmount() { this.timers.forEach(clearTimeout); }
+  VIEWS = ['empty', 'parsing', 'parseFailed', 'parsed', 'confirmed', 'paypalWaiting', 'paypalApproved', 'paypalCancelled', 'paypalFailed', 'validation'];
+  later(fn, ms) { this.timers.push(setTimeout(fn, ms)); }
+
+  go = (view) => {
+    this.timers.forEach(clearTimeout); this.timers = []; this.locked = false;
+    const filled = { role: 'Line cook', date: this.TODAY, start: '07:00', end: '15:00', rate: '22.00', prem: '20', nl: this.SAMPLE, ai: { role: 1, date: 1, start: 1, end: 1, rate: 1 }, showErrors: false, slotLoading: false };
+    const blank = { role: '', date: this.TODAY, start: '', end: '', rate: '', prem: '20', ai: {}, showErrors: false, slotLoading: false };
+    const P = {
+      empty: Object.assign({}, blank, { nl: '' }),
+      parsing: Object.assign({}, blank, { nl: this.SAMPLE }),
+      parseFailed: Object.assign({}, blank, { nl: 'Someone is out on Friday, can you sort it?' }),
+      validation: { nl: this.SAMPLE, role: 'Line cook', date: this.TODAY, start: '15:00', end: '07:00', rate: '', prem: '120', ai: {}, showErrors: true, slotLoading: false },
+    }[view] || filled;
+    this.setState(Object.assign({ view }, P));
+    try { history.replaceState(null, '', '#' + view); } catch (e) {}
+  };
+
+  // ----- helpers
+  mins(t) { if (!t || !/^\d{2}:\d{2}$/.test(t)) return null; return +t.slice(0, 2) * 60 + +t.slice(3); }
+  t12(t) { const m = this.mins(t); if (m === null) return '–'; const H = Math.floor(m / 60), mm = m % 60; return (((H + 11) % 12) + 1) + ':' + String(mm).padStart(2, '0') + ' ' + (H >= 12 ? 'PM' : 'AM'); }
+  usd(c) { return '$' + (c / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  parseNote(text) {
+    const t = (text || '').toLowerCase();
+    const role = this.ROLES.find(r => t.includes(r.toLowerCase()));
+    const m = t.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\s*(?:to|-|–|until|till)\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/);
+    if (!role || !m) return null;
+    let sh = +m[1], eh = +m[4];
+    if (m[3]) sh = (sh % 12) + (m[3] === 'pm' ? 12 : 0);
+    if (m[6]) eh = (eh % 12) + (m[6] === 'pm' ? 12 : 0); else if (eh <= sh) eh += 12;
+    if (sh > 23 || eh > 24) return null;
+    const p = n => String(n).padStart(2, '0');
+    const date = t.includes('tomorrow') ? '2026-10-13' : this.TODAY;
+    return { role, date, start: p(sh) + ':' + p(+m[2] || 0), end: p(eh % 24) + ':' + p(+m[5] || 0) };
+  }
+  onParse = () => {
+    const s = this.state;
+    if (!s.nl.trim() || s.view === 'parsing' || s.view === 'paypalApproved') return;
+    this.later(() => {}, 0);
+    this.setState({ view: 'parsing', role: '', start: '', end: '', rate: '', ai: {}, showErrors: false });
+    this.later(() => {
+      const r = this.state.parseOutcome === 'fail' ? null : this.parseNote(this.state.nl);
+      if (!r) this.setState({ view: 'parseFailed' });
+      else this.setState({ view: 'parsed', role: r.role, date: r.date, start: r.start, end: r.end, rate: this.RATES[r.role], prem: '20', ai: { role: 1, date: 1, start: 1, end: 1, rate: 1 } });
+    }, 1600);
+  };
+  edit(key, val) {
+    const s = this.state; const ai = Object.assign({}, s.ai); delete ai[key];
+    const back = ['confirmed', 'paypalWaiting', 'paypalCancelled', 'paypalFailed'].includes(s.view) ? 'parsed' : s.view === 'empty' || s.view === 'parseFailed' ? s.view : s.view;
+    this.setState({ [key]: val, ai, view: back });
+  }
+  errors() {
+    const s = this.state, e = {};
+    if (!s.role) e.role = 1;
+    if (!s.date) e.date = 'Choose a date.'; else if (s.date < this.TODAY) e.date = 'Pick today or a later date.';
+    if (!s.start) e.start = 1;
+    const a = this.mins(s.start), b = this.mins(s.end);
+    if (!s.end) e.end = 'Enter an end time.'; else if (a !== null && b !== null && b <= a) e.end = 'End must be after start.';
+    if (!/^\d+(\.\d{1,2})?$/.test(s.rate) || !(parseFloat(s.rate) > 0)) e.rate = 1;
+    if (!/^\d+$/.test(s.prem) || +s.prem > 50) e.prem = 1;
+    return e;
+  }
+  money() {
+    const s = this.state, a = this.mins(s.start), b = this.mins(s.end), e = this.errors();
+    if (Object.keys(e).length) return null;
+    const hours = (b - a) / 60, rate = Math.round(parseFloat(s.rate) * 100), prem = +s.prem;
+    const base = Math.round(hours * rate), capRate = Math.round(rate * (1 + prem / 100)), w2 = Math.round(rate * (1 + prem / 200));
+    const cap = Math.round(hours * rate * (1 + prem / 100)), fee = Math.round(cap * this.FEE_PCT / 100);
+    return { hours, rate, prem, base, capRate, w2, cap, fee, hold: cap + fee };
+  }
+  onConfirm = () => {
+    if (!this.money()) { this.setState({ showErrors: true }); return; }
+    this.setState({ view: 'confirmed', slotLoading: true });
+    this.later(() => this.setState({ slotLoading: false }), 800);
+  };
+  onSlot = () => {
+    const v = this.state.view;
+    if (this.locked || this.state.slotLoading || !['confirmed', 'paypalCancelled'].includes(v)) return;
+    this.locked = true;
+    this.setState({ view: 'paypalWaiting' });
+    this.later(() => { this.locked = false; const o = this.state.ppOutcome; this.setState({ view: o === 'approve' ? 'paypalApproved' : o === 'cancel' ? 'paypalCancelled' : 'paypalFailed' }); }, 1600);
+  };
+
+  renderVals() {
+    const s = this.state, v = s.view;
+    const chip = (label, pressed, fn) => ({ label, pressed, onClick: fn });
+    const L = { empty: 'Empty', parsing: 'Parsing', parseFailed: 'Parse failed', parsed: 'Parsed · confirm', confirmed: 'Confirmed · awaiting PayPal', paypalWaiting: 'PayPal window open', paypalApproved: 'PayPal approved', paypalCancelled: 'PayPal cancelled', paypalFailed: 'PayPal failed', validation: 'Validation errors' };
+    const errs = this.errors(), m = this.money();
+    const reading = v === 'parsing';
+    const confirmed = ['confirmed', 'paypalWaiting', 'paypalApproved', 'paypalCancelled', 'paypalFailed'].includes(v);
+    const approved = v === 'paypalApproved';
+    const show = s.showErrors;
+    const a = this.mins(s.start), b = this.mins(s.end);
+    const hours = a !== null && b !== null && b > a ? (b - a) / 60 : null;
+    const hm = x => x === null ? '–' : (Number.isInteger(x) ? x : x.toFixed(1)) + (x === 1 ? ' hour' : ' hours');
+
+    const kv = [
+      ['Role', s.role], ['Date', s.date ? new Date(s.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + (s.date === this.TODAY ? ' (today)' : '') : ''],
+      ['Time', hours ? this.t12(s.start) + ' – ' + this.t12(s.end) + ' · ' + hm(hours) : ''], ['Venue', 'Maple & Rye'],
+      ['Base rate', /^\d+(\.\d{1,2})?$/.test(s.rate) && s.rate ? '$' + parseFloat(s.rate).toFixed(2) + ' / hour' : ''], ['Max premium', /^\d+$/.test(s.prem) && +s.prem <= 50 ? s.prem + '% above base' : ''],
+    ].map(([k, val]) => ({ k, v: val || '–', cls: val ? '' : 'is-empty' }));
+
+    const dash = '$–';
+    const money = [
+      { cls: 'sc-money__row--muted', label: 'Base pay', sub: m ? hm(m.hours) + ' × ' + this.usd(m.rate) + '/hr · if no premium is needed' : 'Hours × base rate', amt: m ? this.usd(m.base) : dash },
+      { cls: '', label: 'Worker pay at the cap', sub: m ? hm(m.hours) + ' × ' + this.usd(m.capRate) + '/hr (+' + m.prem + '%)' : 'Most the worker can earn', amt: m ? this.usd(m.cap) : dash },
+      { cls: '', label: 'Platform fee (' + this.FEE_PCT + '%)', sub: this.FEE_PCT + '% of worker pay at the cap', amt: m ? this.usd(m.fee) : dash },
+      { cls: 'sc-money__row--total', label: 'Total hold', sub: 'The most this shift can cost. You are charged for hours worked only.', amt: m ? this.usd(m.hold) : dash },
+    ];
+    const ladder = [
+      { n: 1, label: 'Wave 1 · base', rate: m ? this.usd(m.rate) + '/hr' : '–' },
+      { n: 2, label: m ? 'Wave 2 · +' + +(m.prem / 2).toFixed(1) + '%' : 'Wave 2', rate: m ? this.usd(m.w2) + '/hr' : '–' },
+      { n: 3, label: m ? 'Wave 3 · cap +' + m.prem + '%' : 'Wave 3 · cap', rate: m ? this.usd(m.capRate) + '/hr' : '–' },
+    ];
+
+    const stepNow = ['empty', 'parsing'].includes(v) ? 1 : ['parseFailed', 'validation', 'parsed'].includes(v) ? 2 : approved ? 4 : 3;
+    const steps = ['Describe', 'Check details', 'Approve hold'].map((label, i) => ({ n: i + 1, label, cls: stepNow > i + 1 ? 'sc-stepper__item--done' : stepNow === i + 1 ? 'sc-stepper__item--now' : '', current: stepNow === i + 1 ? 'step' : undefined }));
+
+    let badge = { cls: 'sc-badge--neutral', icon: 'i-clock', label: 'Waiting for details' };
+    if (m && ['parsed'].includes(v)) badge = { cls: 'sc-badge--warning', icon: 'i-info', label: 'Needs your confirmation' };
+    if (m && confirmed && !approved) badge = { cls: v === 'paypalFailed' ? 'sc-badge--error' : 'sc-badge--info', icon: v === 'paypalFailed' ? 'i-warn' : 'i-lock', label: v === 'paypalFailed' ? 'Hold not placed' : 'Confirmed · hold needed' };
+    if (approved) badge = { cls: 'sc-badge--success', icon: 'i-shield', label: 'On hold' };
+    if (!m && ['parsed', 'validation'].includes(v)) badge = { cls: 'sc-badge--warning', icon: 'i-warn', label: 'Fix highlighted fields' };
+
+    const holdText = m ? this.usd(m.hold) : '$–';
+    const slotReady = ['confirmed', 'paypalCancelled'].includes(v);
+    const pp = { alertOn: false, slotOn: true, retryOn: false, slotCls: 'sc-paypal__slot--disabled', slotText: 'Available after you confirm the details', slotDisabled: true, slotBusy: false, spinCls: 'sc-visually-hidden' };
+    if (confirmed && !approved) {
+      Object.assign(pp, { slotCls: '', slotDisabled: false, slotText: 'PayPal button renders here · 52px · click to simulate' });
+      if (s.slotLoading) Object.assign(pp, { slotCls: 'sc-paypal__slot--loading', slotDisabled: true, slotBusy: true, slotText: 'Loading secure payment…' });
+      if (v === 'paypalWaiting') Object.assign(pp, { slotCls: 'sc-paypal__slot--waiting', slotDisabled: true, slotBusy: true, slotText: 'Waiting for PayPal…', spinCls: '', alertOn: true, alertTone: 'info', alertIcon: 'i-info', alertTitle: 'Finish in the PayPal window', alertText: 'Don\u2019t close this page. We\u2019ll update it when PayPal replies.' });
+      if (v === 'paypalCancelled') Object.assign(pp, { alertOn: true, alertTone: 'warning', alertIcon: 'i-info', alertTitle: 'You closed PayPal', alertText: 'No hold was placed. Approve it when you\u2019re ready and we\u2019ll start offering the shift.' });
+      if (v === 'paypalFailed') Object.assign(pp, { slotOn: false, retryOn: true, alertOn: true, alertTone: 'error', alertIcon: 'i-warn', alertTitle: 'PayPal couldn\u2019t place the hold', alertText: 'Nothing was charged. Check your PayPal funding source, then try again.' });
+    }
+
+    const noteLocked = approved || reading;
+    return {
+      stateChips: this.VIEWS.map(k => chip(L[k], v === k, () => this.go(k))),
+      widthChips: [1440, 1280, 1024].map(w => chip(String(w), s.width === w, () => this.setState({ width: w }))),
+      motionChips: [['Normal', 'normal'], ['Reduced', 'reduced']].map(([l, k]) => chip(l, s.motion === k, () => this.setState({ motion: k }))),
+      parseChips: [['Success', 'success'], ['Can\u2019t read it', 'fail']].map(([l, k]) => chip(l, s.parseOutcome === k, () => this.setState({ parseOutcome: k }))),
+      ppChips: [['Approve', 'approve'], ['Cancel', 'cancel'], ['Fail', 'fail']].map(([l, k]) => chip(l, s.ppOutcome === k, () => this.setState({ ppOutcome: k }))),
+      width: s.width, motion: s.motion,
+      steps,
+      nl: s.nl, nlLocked: noteLocked, onNl: e => this.setState({ nl: e.target.value }),
+      isParsing: reading, isParseFailed: v === 'parseFailed',
+      parseDisabled: !s.nl.trim() || reading || approved, parseBusy: reading ? 'is-busy' : '', parseLabel: reading ? 'Reading…' : 'Parse', onParse: this.onParse,
+      detailsHint: v === 'empty' ? 'Or skip the note and fill these in.' : v === 'parseFailed' ? 'Fill these in by hand.' : Object.keys(s.ai).length ? 'Filled from your note. Change anything that\u2019s off.' : '',
+      rd: reading ? 'is-reading' : '', rdAffix: reading ? 'is-reading' : '',
+      formLocked: approved || reading, venueLocked: true,
+      roles: this.ROLES.map(r => ({ v: r })),
+      role: s.role, date: s.date, start: s.start, end: s.end, rate: s.rate, prem: s.prem,
+      ai: { role: !!s.ai.role, date: !!s.ai.date, start: !!s.ai.start, end: !!s.ai.end, rate: !!s.ai.rate },
+      onRole: e => this.edit('role', e.target.value), onDate: e => this.edit('date', e.target.value), onStart: e => this.edit('start', e.target.value), onEnd: e => this.edit('end', e.target.value), onRate: e => this.edit('rate', e.target.value), onPrem: e => this.edit('prem', e.target.value),
+      noSubmit: e => { if (e && e.preventDefault) e.preventDefault(); },
+      lengthText: hm(hours),
+      err: { roleOn: show && !!errs.role, dateOn: show && !!errs.date, dateText: errs.date, startOn: show && !!errs.start, endOn: show && !!errs.end, endText: errs.end, rateOn: show && !!errs.rate, premOn: show && !!errs.prem, premOk: !errs.prem && !!m },
+      rateInvalid: show && errs.rate ? 'is-invalid' : '', premInvalid: show && errs.prem ? 'is-invalid' : '',
+      capRateText: m ? this.usd(m.capRate) : '–',
+      badge, kv, money, ladder,
+      isWaiting: !m, waitingText: show && Object.keys(errs).length ? 'Fix the highlighted fields to see what this will cost.' : 'Fill in the details and we\u2019ll show what it will cost.',
+      showConfirm: !confirmed, confirmDisabled: !m || reading, onConfirm: this.onConfirm,
+      isConfirmed: confirmed, approved, onEdit: () => { if (!approved) this.setState({ view: 'parsed' }); },
+      showSlotArea: !approved,
+      payLabel: m ? 'Approve a hold of up to ' + holdText + '. You are only charged for the hours worked.' : 'Approve a hold before we start offering the shift. You are only charged for the hours worked.',
+      payFine: 'PayPal sets this money aside now. Anything not used is released.',
+      pp, onSlot: this.onSlot, onRetry: () => this.setState({ view: 'confirmed' }),
+      holdText,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

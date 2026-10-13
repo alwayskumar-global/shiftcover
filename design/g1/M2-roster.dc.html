@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components.css">
+<link rel="stylesheet" href="console.css">
+<link rel="stylesheet" href="review.css">
+<style>body{margin:0}</style>
+</helmet>
+<div class="rv-page">
+  <section class="rv-bar" aria-label="Review controls">
+    <div class="rv-bar__top"><h1 class="rv-bar__title">M2 · Roster</h1><span class="rv-bar__tag">review controls, not part of the product</span><a class="rv-bar__home" href="index.dc.html">All pages</a></div>
+    <div class="rv-bar__groups">
+      <div class="rv-group"><span class="rv-group__label">State</span><div class="rv-group__chips" role="group" aria-label="State">
+        <sc-for list="{{ stateChips }}" as="c" hint-placeholder-count="4"><button class="rv-chip" aria-pressed="{{ c.pressed }}" onClick="{{ c.onClick }}">{{ c.label }}</button></sc-for></div></div>
+      <div class="rv-group"><span class="rv-group__label">Viewport width</span><div class="rv-group__chips" role="group" aria-label="Width">
+        <sc-for list="{{ widthChips }}" as="c" hint-placeholder-count="3"><button class="rv-chip" aria-pressed="{{ c.pressed }}" onClick="{{ c.onClick }}">{{ c.label }}</button></sc-for></div></div>
+      <div class="rv-group"><span class="rv-group__label">Motion</span><div class="rv-group__chips" role="group" aria-label="Motion">
+        <sc-for list="{{ motionChips }}" as="c" hint-placeholder-count="2"><button class="rv-chip" aria-pressed="{{ c.pressed }}" onClick="{{ c.onClick }}">{{ c.label }}</button></sc-for></div></div>
+    </div>
+  </section>
+
+  <div class="rv-console-wrap">
+    <div class="rv-console-frame" data-width="{{ width }}">
+<!-- ===== PRODUCT: app shell + M2 roster ===== -->
+<div class="sc-console" data-motion="{{ motion }}">
+  <div class="sc-console__shell">
+    <nav class="sc-nav" aria-label="Main">
+      <span class="sc-wordmark"><span class="sc-wordmark__mark"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-check"></use></svg></span>ShiftCover Pay</span>
+      <div class="sc-nav__venue"><span class="sc-avatar sc-avatar--sm sc-avatar--brand" aria-hidden="true">M</span><span class="sc-nav__venue-text"><span class="sc-nav__venue-name">Maple &amp; Rye</span><span class="sc-nav__venue-sub">Portland, OR</span></span></div>
+      <div class="sc-nav__list">
+        <a class="sc-nav__item is-active" href="M2-roster.dc.html" aria-current="page" title="Roster"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-calendar"></use></svg><span class="sc-nav__label">Roster</span></a>
+        <button class="sc-nav__item" aria-disabled="true" title="Workers (coming soon)"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-users"></use></svg><span class="sc-nav__label">Workers</span><span class="sc-nav__tag">Soon</span></button>
+        <button class="sc-nav__item" aria-disabled="true" title="Money (coming soon)"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-wallet"></use></svg><span class="sc-nav__label">Money</span><span class="sc-nav__tag">Soon</span></button>
+        <button class="sc-nav__item" aria-disabled="true" title="Settings (coming soon)"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-settings"></use></svg><span class="sc-nav__label">Settings</span><span class="sc-nav__tag">Soon</span></button>
+      </div>
+      <span class="sc-nav__spacer"></span>
+      <div class="sc-nav__user"><span class="sc-avatar sc-avatar--sm sc-avatar--user" aria-hidden="true">DW</span><span class="sc-nav__user-text"><span class="sc-nav__user-name">Dana Whitfield</span><span class="sc-nav__user-sub">Manager</span></span><a class="sc-nav__signout" href="M1-login.dc.html" aria-label="Sign out" title="Sign out"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-log-out"></use></svg></a></div>
+    </nav>
+
+    <main class="sc-console__main">
+      <div class="sc-page">
+        <header class="sc-page__head">
+          <div><h1 class="sc-page__title">Roster</h1><p class="sc-page__sub">{{ subtitle }}</p></div>
+          <div class="sc-toolbar">
+            <div class="sc-toolbar__group">
+              <button class="sc-btn sc-btn--secondary sc-btn--md" onClick="{{ goToday }}">Today</button>
+              <button class="sc-btn sc-btn--secondary sc-btn--md sc-btn--icon" onClick="{{ goPrev }}" aria-label="{{ prevLabel }}"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-chev-left"></use></svg></button>
+              <span class="sc-toolbar__date" aria-live="polite">{{ dateLabel }}</span>
+              <button class="sc-btn sc-btn--secondary sc-btn--md sc-btn--icon" onClick="{{ goNext }}" aria-label="{{ nextLabel }}"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-chev"></use></svg></button>
+            </div>
+            <div class="sc-segmented" role="group" aria-label="View">
+              <button class="sc-segmented__btn" aria-pressed="{{ isDay }}" onClick="{{ setDay }}">Day</button>
+              <button class="sc-segmented__btn" aria-pressed="{{ isWeek }}" onClick="{{ setWeek }}">Week</button>
+            </div>
+            <a class="sc-btn sc-btn--primary sc-btn--md" href="M3-report-gap.dc.html"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-plus"></use></svg>Report a gap</a>
+          </div>
+        </header>
+
+        <section class="sc-stats" aria-label="Summary">
+          <sc-if value="{{ isLoading }}" hint-placeholder-val="{{ false }}">
+            <sc-for list="{{ statSkeleton }}" as="k" hint-placeholder-count="4"><div class="sc-stat" aria-hidden="true"><span class="sc-skeleton sc-skeleton--stat"></span></div></sc-for>
+          </sc-if>
+          <sc-if value="{{ notLoading }}" hint-placeholder-val="{{ true }}">
+            <sc-for list="{{ stats }}" as="t" hint-placeholder-count="4">
+              <div class="sc-stat {{ t.cls }}"><span class="sc-stat__icon"><svg class="sc-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#{{ t.icon }}"></use></svg></span><span><span class="sc-stat__value">{{ t.value }}</span><span class="sc-stat__label"> {{ t.label }}</span></span></div>
+            </sc-for>
+          </sc-if>
+        </section>
+
+        <sc-if value="{{ showBanner }}" hint-placeholder-val="{{ false }}">
+          <div class="sc-banner" role="status"><svg class="sc-icon sc-icon--xl" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-checks"></use></svg><div><span class="sc-banner__title">{{ bannerTitle }}</span><span class="sc-banner__text">All {{ shiftCount }} shifts have someone on them. If someone calls in, report it and we'll start offering the shift.</span></div></div>
+        </sc-if>
+
+        <div class="sc-legend" role="list" aria-label="Shift status legend">
+          <span class="sc-legend__title">Status</span>
+          <sc-for list="{{ legend }}" as="l" hint-placeholder-count="10"><span role="listitem" class="sc-badge sc-badge--sm sc-badge--st-{{ l.key }} {{ l.dashed }}"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#{{ l.icon }}"></use></svg>{{ l.label }}</span></sc-for>
+        </div>
+
+        <!-- loading -->
+        <sc-if value="{{ isLoading }}" hint-placeholder-val="{{ false }}">
+          <div class="sc-sched" aria-busy="true" aria-label="Loading roster">
+            <div class="sc-sched__head"><div class="sc-sched__corner">Team</div><div class="sc-sched__axis"><div class="sc-sched__hours"><sc-for list="{{ hours }}" as="h" hint-placeholder-count="18"><span class="sc-sched__hour">{{ h }}</span></sc-for></div></div></div>
+            <div class="sc-sched__body">
+              <sc-for list="{{ skeletonRows }}" as="r" hint-placeholder-count="10">
+                <div class="sc-sched__row" aria-hidden="true">
+                  <div class="sc-sched__res"><span class="sc-skeleton sc-skeleton--avatar"></span><span><span class="sc-skeleton sc-skeleton--name"></span><span class="sc-skeleton sc-skeleton--role"></span></span></div>
+                  <div class="sc-sched__lane"><span class="sc-skeleton sc-skeleton--event sc-ev--s{{ r.s }} sc-ev--l{{ r.l }}"></span></div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- error -->
+        <sc-if value="{{ isError }}" hint-placeholder-val="{{ false }}">
+          <div class="sc-panel" role="alert">
+            <span class="sc-panel__icon"><svg class="sc-icon sc-icon--xl" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-wifi-off"></use></svg></span>
+            <h2 class="sc-panel__title">We couldn't load the roster</h2>
+            <p class="sc-panel__text">Check your connection and try again. Your shifts haven't changed; only the display failed.</p>
+            <button class="sc-btn sc-btn--secondary sc-btn--md" onClick="{{ retry }}"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-retry"></use></svg>Try again</button>
+          </div>
+        </sc-if>
+
+        <!-- day view -->
+        <sc-if value="{{ showDay }}" hint-placeholder-val="{{ true }}">
+          <div class="sc-sched" role="grid" aria-label="{{ gridLabel }}">
+            <div class="sc-sched__head" role="row">
+              <div class="sc-sched__corner" role="columnheader">Team <span class="sc-text-muted">10</span></div>
+              <div class="sc-sched__axis">
+                <div class="sc-sched__hours"><sc-for list="{{ hours }}" as="h" hint-placeholder-count="18"><span class="sc-sched__hour" role="columnheader">{{ h }}</span></sc-for></div>
+                <sc-if value="{{ showNow }}" hint-placeholder-val="{{ true }}"><span class="sc-sched__now-flag">Now 6:49 AM</span></sc-if>
+              </div>
+            </div>
+            <div class="sc-sched__body">
+              <sc-for list="{{ dayRows }}" as="r" hint-placeholder-count="10">
+                <div class="{{ r.rowCls }}" role="row">
+                  <div class="sc-sched__res" role="rowheader"><span class="{{ r.avCls }}" aria-hidden="true">{{ r.initials }}</span><span class="sc-sched__res-text"><span class="sc-sched__res-name">{{ r.name }}</span><span class="sc-sched__res-role">{{ r.role }}</span><sc-if value="{{ r.isGap }}" hint-placeholder-val="{{ false }}"><span class="sc-sched__res-flag"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-alert"></use></svg>Shift needs cover</span></sc-if></span></div>
+                  <div class="sc-sched__lane" role="gridcell">
+                    <sc-for list="{{ r.blocks }}" as="b" hint-placeholder-count="1">
+                      <button class="{{ b.cls }}" title="{{ b.tip }}" aria-pressed="{{ b.selected }}" onClick="{{ b.onClick }}"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#{{ b.icon }}"></use></svg><span class="sc-ev__text"><span class="sc-ev__title">{{ b.title }}</span><span class="sc-ev__sub">{{ b.sub }}</span></span></button>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+              <sc-if value="{{ showNow }}" hint-placeholder-val="{{ true }}"><div class="sc-sched__overlay" aria-hidden="true"><span class="sc-sched__now"></span></div></sc-if>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- week view -->
+        <sc-if value="{{ showWeek }}" hint-placeholder-val="{{ false }}">
+          <div class="sc-sched sc-sched--week" role="grid" aria-label="{{ gridLabel }}">
+            <div class="sc-sched__head" role="row">
+              <div class="sc-sched__corner" role="columnheader">Team <span class="sc-text-muted">10</span></div>
+              <sc-for list="{{ weekDays }}" as="d" hint-placeholder-count="7"><div class="{{ d.cls }}" role="columnheader"><span>{{ d.name }}</span><small>{{ d.date }}</small></div></sc-for>
+            </div>
+            <div class="sc-sched__body">
+              <sc-for list="{{ weekRows }}" as="r" hint-placeholder-count="10">
+                <div class="{{ r.rowCls }}" role="row">
+                  <div class="sc-sched__res" role="rowheader"><span class="{{ r.avCls }}" aria-hidden="true">{{ r.initials }}</span><span class="sc-sched__res-text"><span class="sc-sched__res-name">{{ r.name }}</span><span class="sc-sched__res-role">{{ r.role }}</span><sc-if value="{{ r.isGap }}" hint-placeholder-val="{{ false }}"><span class="sc-sched__res-flag"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-alert"></use></svg>Shift needs cover</span></sc-if></span></div>
+                  <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="7">
+                    <div class="{{ c.cls }}" role="gridcell">
+                      <sc-for list="{{ c.blocks }}" as="b" hint-placeholder-count="1">
+                        <button class="{{ b.cls }}" title="{{ b.tip }}" aria-pressed="{{ b.selected }}" onClick="{{ b.onClick }}"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#{{ b.icon }}"></use></svg><span class="sc-ev__text"><span class="sc-ev__title">{{ b.title }}</span><span class="sc-ev__sub">{{ b.sub }}</span></span></button>
+                      </sc-for>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </main>
+  </div>
+</div>
+<!-- ===== /PRODUCT ===== -->
+    </div>
+    <span class="rv-device-label">{{ width }} × 900 · nav collapses to an icon rail below 1180 · scroll inside the frame</span>
+  </div>
+
+  <section class="rv-ref" aria-label="Shift block reference">
+    <div class="rv-card"><h2 class="rv-card__title">Shift block reference · all 10 statuses</h2>
+      <p class="rv-card__val">Each status differs by fill, pattern or outline, icon, and a text label in the block title. No status relies on color alone. Hover raises the block (shadow-2); selection adds a 2px focus-blue ring.</p></div>
+    <div class="rv-ref__grid">
+      <sc-for list="{{ refs }}" as="x" hint-placeholder-count="10">
+        <div class="rv-ref__item">
+          <div class="rv-ref__lane"><div class="sc-ev sc-ev--{{ x.key }}"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#{{ x.icon }}"></use></svg><span class="sc-ev__text"><span class="sc-ev__title">{{ x.title }}</span><span class="sc-ev__sub">{{ x.sub }}</span></span></div></div>
+          <span class="rv-ref__name">{{ x.label }} <span class="rv-mono">{{ x.contract }}</span></span>
+          <span class="rv-ref__use">{{ x.use }}</span>
+          <span class="rv-ref__tokens">{{ x.tokens }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { view: 'loading', mode: 'day', offset: 0, width: 1440, motion: 'normal', sel: null };
+  timers = [];
+  componentDidMount() {
+    const h = (window.location.hash || '').slice(1);
+    if (['loading', 'populated', 'empty', 'error'].includes(h)) this.setState({ view: h });
+    else this.timers.push(setTimeout(() => { if (this.state.view === 'loading') this.setState({ view: 'populated' }); }, 900));
+  }
+  componentWillUnmount() { this.timers.forEach(clearTimeout); }
+  go = (view) => { this.timers.forEach(clearTimeout); this.timers = []; this.setState({ view }); try { history.replaceState(null, '', '#' + view); } catch (e) {} };
+
+  STATUS = {
+    planned: { label: 'Planned', icon: 'i-calendar', dashed: '' },
+    open: { label: 'Open gap', icon: 'i-alert', dashed: '' },
+    offering: { label: 'Offering', icon: 'i-send', dashed: '' },
+    confirmed: { label: 'Confirmed', icon: 'i-check', dashed: '' },
+    progress: { label: 'In progress', icon: 'i-play', dashed: '' },
+    pending: { label: 'Pending approval', icon: 'i-hourglass', dashed: '' },
+    settled: { label: 'Settled', icon: 'i-checks', dashed: '' },
+    unfilled: { label: 'Unfilled', icon: 'i-warn', dashed: 'sc-badge--dashed' },
+    cancelled: { label: 'Cancelled', icon: 'i-ban', dashed: 'sc-badge--dashed' },
+    noshow: { label: 'No-show', icon: 'i-user-x', dashed: '' },
+  };
+  WORKERS = [
+    { name: 'Maria Alvarez', role: 'Line cook', today: [{ role: 'Line cook', s: 7, e: 15, key: 'open' }] },
+    { name: 'Jordan Reyes', role: 'Line cook', today: [{ role: 'Line cook', s: 6, e: 14, key: 'progress' }] },
+    { name: 'Marcus Lee', role: 'Line cook', today: [{ role: 'Line cook', s: 15, e: 23, key: 'planned' }] },
+    { name: 'Chloe Dubois', role: 'Prep cook', today: [{ role: 'Prep cook', s: 5, e: 13, key: 'progress' }, { role: 'Prep cook', s: 15, e: 21, key: 'planned' }] },
+    { name: 'Devon Brooks', role: 'Server', today: [{ role: 'Server', s: 10, e: 18, key: 'confirmed' }] },
+    { name: 'Aisha Khan', role: 'Server', today: [{ role: 'Server', s: 11, e: 15, key: 'cancelled' }, { role: 'Server', s: 16, e: 23, key: 'planned' }] },
+    { name: 'Priya Nair', role: 'Bartender', today: [{ role: 'Bartender', s: 15, e: 23, key: 'planned' }] },
+    { name: 'Sam Whitfield', role: 'Bar back', today: [{ role: 'Bar back', s: 5, e: 6.5, key: 'pending' }, { role: 'Bar back', s: 16, e: 23, key: 'planned' }] },
+    { name: 'Lena Park', role: 'Host', today: [{ role: 'Host', s: 11, e: 15, key: 'planned' }, { role: 'Host', s: 17, e: 22, key: 'offering' }] },
+    { name: 'Tom Okafor', role: 'Dishwasher', today: [{ role: 'Dishwasher', s: 6, e: 14, key: 'progress' }, { role: 'Dishwasher', s: 17, e: 22, key: 'planned' }] },
+  ];
+
+  t12(h) { const H = Math.floor(h), m = Math.round((h - H) * 60); return { n: ((H + 11) % 12) + 1 + (m ? ':' + String(m).padStart(2, '0') : ''), ap: H >= 12 && H < 24 ? 'PM' : 'AM' }; }
+  range(s, e) { const a = this.t12(s), b = this.t12(e); return a.ap === b.ap ? a.n + '–' + b.n + ' ' + b.ap : a.n + ' ' + a.ap + '–' + b.n + ' ' + b.ap; }
+  short(h) { const a = this.t12(h); return a.n + a.ap[0].toLowerCase(); }
+
+  shiftsFor(wi, diff, calm) {
+    const w = this.WORKERS[wi], dow = ((diff % 7) + 7) % 7;
+    let base;
+    if (diff === 0) base = w.today.map(x => Object.assign({}, x));
+    else if (diff < 0) {
+      base = w.today.filter(x => x.key !== 'cancelled').map(x => Object.assign({}, x, { key: 'settled' }));
+      if (wi === 0) base = [{ role: 'Line cook', s: 7, e: 15, key: 'unfilled' }];
+      if (wi === 9) base = [Object.assign({}, w.today[0], { key: 'settled' }), { role: 'Dishwasher', s: 17, e: 22, key: 'noshow' }];
+    } else base = (wi + dow) % 4 === 0 ? [] : w.today.filter(x => x.key !== 'cancelled').map(x => Object.assign({}, x, { key: 'planned' }));
+    if (diff === 0 && calm) base = base.map(x => x.key === 'open' || x.key === 'offering' ? Object.assign({}, x, { key: 'planned' }) : x.key === 'pending' ? Object.assign({}, x, { key: 'settled' }) : x);
+    return base;
+  }
+  dateOf(diff) { return new Date(2026, 9, 12 + diff); }
+
+  renderVals() {
+    const s = this.state, v = s.view, day = s.mode === 'day', calm = v === 'empty';
+    const fmtD = (d, o) => d.toLocaleDateString('en-US', o);
+    const chip = (label, pressed, fn) => ({ label, pressed, onClick: fn });
+    const wkStart = s.offset - (((s.offset % 7) + 7) % 7);
+    const diffs = day ? [s.offset] : [0, 1, 2, 3, 4, 5, 6].map(d => wkStart + d);
+
+    // counts over displayed range
+    const c = { open: 0, offering: 0, pending: 0, shifts: 0 };
+    diffs.forEach(df => this.WORKERS.forEach((_, wi) => this.shiftsFor(wi, df, calm).forEach(x => {
+      if (x.key === 'open') c.open++; if (x.key === 'offering') c.offering++; if (x.key === 'pending') c.pending++; if (x.key !== 'cancelled') c.shifts++;
+    })));
+    const err = v === 'error';
+    const val = n => err ? '–' : n;
+    const noun = day ? (s.offset === 0 ? 'today' : 'this day') : 'this week';
+    const stats = [
+      { cls: 'sc-stat--open' + (c.open > 0 ? ' is-alert' : ''), icon: 'i-alert', value: val(c.open), label: c.open === 1 ? 'open gap' : 'open gaps' },
+      { cls: 'sc-stat--offering' + (c.offering > 0 ? ' is-alert' : ''), icon: 'i-send', value: val(c.offering), label: 'offering' },
+      { cls: 'sc-stat--pending' + (c.pending > 0 ? ' is-alert' : ''), icon: 'i-hourglass', value: val(c.pending), label: 'pending approval' },
+      { cls: 'sc-stat--shifts', icon: 'i-calendar', value: val(c.shifts), label: 'shifts ' + noun },
+    ];
+
+    const mkBlock = (x, name, wi, compact) => {
+      const st = this.STATUS[x.key];
+      const id = wi + '-' + x.key + '-' + x.s;
+      const sel = s.sel === id;
+      const time = this.range(x.s, x.e);
+      const title = x.key === 'planned' ? x.role : (x.key === 'offering' ? 'Offering · Wave 1' : st.label);
+      const sub = compact ? this.short(x.s) + '–' + this.short(x.e) : (x.key === 'planned' ? time : x.role + ' · ' + time);
+      const sIdx = Math.round((x.s - 5) * 2), lIdx = Math.round((x.e - x.s) * 2);
+      return {
+        cls: 'sc-ev sc-ev--' + x.key + (compact ? ' sc-ev--compact' : ' sc-ev--s' + sIdx + ' sc-ev--l' + lIdx) + (sel ? ' is-selected' : ''),
+        icon: st.icon, title, sub, selected: sel,
+        tip: st.label + ' · ' + x.role + ' · ' + time + ' · ' + name,
+        onClick: () => this.setState({ sel: sel ? null : id }),
+      };
+    };
+    const base = (w, wi, gap) => ({ initials: w.name.split(' ').map(p => p[0]).join(''), name: w.name, role: w.role, avCls: 'sc-avatar sc-avatar--' + ((wi % 5) + 1), rowCls: 'sc-sched__row' + (gap ? ' sc-sched__row--gap' : ''), isGap: gap });
+    const dayRows = this.WORKERS.map((w, wi) => {
+      const sh = this.shiftsFor(wi, s.offset, calm);
+      return Object.assign(base(w, wi, sh.some(x => x.key === 'open')), { blocks: sh.map(x => mkBlock(x, w.name, wi, false)) });
+    });
+    const weekRows = this.WORKERS.map((w, wi) => {
+      const cells = diffs.map(df => ({ cls: 'sc-sched__cell' + (df === 0 ? ' is-today' : ''), blocks: this.shiftsFor(wi, df, calm).map(x => mkBlock(Object.assign({}, x), w.name + ' (' + fmtD(this.dateOf(df), { weekday: 'short', month: 'short', day: 'numeric' }) + ')', wi + '@' + df, true)) }));
+      return Object.assign(base(w, wi, this.shiftsFor(wi, 0, calm).some(x => x.key === 'open') && diffs.includes(0)), { cells });
+    });
+    const weekDays = diffs.map(df => { const d = this.dateOf(df); return { cls: 'sc-sched__day' + (df === 0 ? ' is-today' : ''), name: fmtD(d, { weekday: 'short' }) + (df === 0 ? ' · Today' : ''), date: fmtD(d, { month: 'short', day: 'numeric' }) }; });
+
+    const d0 = this.dateOf(s.offset);
+    const wkA = this.dateOf(diffs[0]), wkB = this.dateOf(diffs[6] === undefined ? diffs[0] : diffs[diffs.length - 1]);
+    const dateLabel = day ? fmtD(d0, { weekday: 'short', month: 'short', day: 'numeric' }) : (wkA.getMonth() === wkB.getMonth() ? fmtD(wkA, { month: 'short', day: 'numeric' }) + ' – ' + wkB.getDate() : fmtD(wkA, { month: 'short', day: 'numeric' }) + ' – ' + fmtD(wkB, { month: 'short', day: 'numeric' }));
+    const subtitle = (day ? fmtD(d0, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) + (s.offset === 0 ? ' · Today' : '') : 'Week of ' + fmtD(wkA, { month: 'long', day: 'numeric', year: 'numeric' })) + ' · Maple & Rye';
+    const step = day ? 1 : 7;
+
+    const ready = v === 'populated' || v === 'empty';
+    const noGaps = ready && c.open + c.offering === 0 && (day ? s.offset >= 0 : diffs[diffs.length - 1] >= 0);
+    const hours = []; for (let h = 5; h <= 22; h++) { const a = this.t12(h); hours.push(h === 5 || h === 12 ? a.n + ' ' + a.ap : a.n); }
+    const skPos = [[4, 14], [0, 12], [10, 16], [2, 8], [6, 14], [12, 12], [8, 18], [0, 6], [14, 14], [3, 10]];
+
+    const REFS = [
+      ['planned', 'planned', 'Assigned, nothing to do yet', 'Outlined surface, 4px ink bar on the left.', 'st-planned-bg · -border · paper-7 bar', 'Line cook', '3–11 PM'],
+      ['open', 'open', 'Reported gap, nobody asked yet', 'The only hatched block. Ember hatch, 2px dark ember border, bold title. The row behind it is tinted and the resource cell gets a 4px ember bar.', 'sched-hatch-a/b · st-open-fg · sched-gap-row-bg', 'Open gap', 'Line cook · 7 AM–3 PM'],
+      ['offering', 'offering', 'Waves going out', 'Saffron fill, ink text, pulsing dot (static when reduced motion).', 'st-offering-solid · -on · saffron-700 border', 'Offering · Wave 1', 'Host · 5–10 PM'],
+      ['confirmed', 'confirmed', 'Worker claimed it', 'Basil fill, white text, check icon.', 'st-confirmed-solid · -on', 'Confirmed', 'Server · 10 AM–6 PM'],
+      ['progress', 'in_progress', 'Shift under way', 'Steel-blue fill, white text, play icon.', 'st-progress-solid · -on', 'In progress', 'Line cook · 6 AM–2 PM'],
+      ['pending', 'pending_approval · settling', 'Hours need your approval', 'Plum fill, white text, hourglass icon.', 'st-pending-solid · -on', 'Pending approval', 'Bar back · 5–6:30 AM'],
+      ['settled', 'settled', 'Charged and paid', 'Quiet dark-grey fill; nothing left to do.', 'st-settled-solid · -on', 'Settled', 'Line cook · 6 AM–2 PM'],
+      ['unfilled', 'unfilled', 'Deadline passed, nobody took it', 'Surface fill, 2px dashed ember outline, warning icon.', 'st-unfilled-bg · -fg · -border (dashed)', 'Unfilled', 'Line cook · 7 AM–3 PM'],
+      ['cancelled', 'cancelled', 'Cancelled by the manager', 'Muted fill, 1px dashed outline, title struck through.', 'st-cancelled-bg · -fg · -border (dashed)', 'Cancelled', 'Server · 11 AM–3 PM'],
+      ['noshow', 'no_show', 'Worker never arrived', 'Flat dark-ember fill, user-x icon. Differs from Open gap by no hatch.', 'st-noshow-solid · -on', 'No-show', 'Dishwasher · 5–10 PM'],
+    ].map(([key, contract, label, use, tokens, title, sub]) => ({ key, contract, label, use, tokens, title, sub, icon: this.STATUS[key].icon }));
+
+    return {
+      stateChips: [['populated', 'Populated'], ['loading', 'Loading'], ['empty', 'Empty · no gaps'], ['error', 'Error']].map(([k, l]) => chip(l, v === k, () => this.go(k))),
+      widthChips: [1440, 1280, 1024].map(w => chip(String(w), s.width === w, () => this.setState({ width: w }))),
+      motionChips: [['Normal', 'normal'], ['Reduced', 'reduced']].map(([l, k]) => chip(l, s.motion === k, () => this.setState({ motion: k }))),
+      width: s.width, motion: s.motion,
+      subtitle, dateLabel, isDay: day, isWeek: !day,
+      prevLabel: day ? 'Previous day' : 'Previous week', nextLabel: day ? 'Next day' : 'Next week',
+      goToday: () => this.setState({ offset: 0 }),
+      goPrev: () => this.setState({ offset: s.offset - step }),
+      goNext: () => this.setState({ offset: s.offset + step }),
+      setDay: () => this.setState({ mode: 'day' }), setWeek: () => this.setState({ mode: 'week' }),
+      isLoading: v === 'loading', notLoading: v !== 'loading', isError: err,
+      statSkeleton: [1, 2, 3, 4], stats,
+      showBanner: noGaps, bannerTitle: day ? (s.offset === 0 ? 'No gaps today' : 'No gaps on this day') : 'No gaps this week', shiftCount: c.shifts,
+      legend: Object.keys(this.STATUS).map(k => ({ key: k, label: this.STATUS[k].label, icon: this.STATUS[k].icon, dashed: this.STATUS[k].dashed })),
+      hours, skeletonRows: skPos.map(([a, b]) => ({ s: a, l: b })),
+      showDay: ready && day, showWeek: ready && !day,
+      showNow: s.offset === 0 && day,
+      gridLabel: day ? 'Roster for ' + fmtD(d0, { weekday: 'long', month: 'long', day: 'numeric' }) : 'Roster for the week of ' + fmtD(wkA, { month: 'long', day: 'numeric' }),
+      dayRows, weekRows, weekDays,
+      retry: () => { this.go('loading'); this.timers.push(setTimeout(() => this.go('populated'), 1200)); },
+      refs: REFS,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

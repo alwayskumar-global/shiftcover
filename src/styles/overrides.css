@@ -1,0 +1,4 @@
+/* Additions the design uses but does not define. Kept apart so the design CSS stays byte-identical to design/g1.
+   Listed in docs/ui-g1-fidelity.md. */
+.sc-alert--pending { background: var(--sc-st-pending-bg); color: var(--sc-st-pending-fg); border-color: var(--sc-st-pending-border); }
+.sc-login { min-height: 100vh; min-height: 100dvh; } /* the design draws the login inside a 900px frame; in a real page it must fill the window */

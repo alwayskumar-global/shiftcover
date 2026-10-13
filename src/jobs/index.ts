@@ -45,6 +45,7 @@ export const handlers: Record<JobName, JobHandler> = {
   process_webhook: processWebhookStub,
   notify: stub('notify'),
   db_heartbeat: makeDbHeartbeat((sql) => getPool().query(sql)),
+  recover_dispatch: stub('recover_dispatch'),
 };
 
 /** Worker-side pg-boss: same Supabase session-pooler URL, small pool (see src/db/connection.ts budget). */
@@ -56,12 +57,16 @@ export function createBoss(databaseUrl: string): PgBoss {
 }
 
 /** Starts pg-boss, creates queues, schedules recurring jobs, registers handlers. */
-export async function startJobs(boss: PgBoss): Promise<void> {
+export async function startJobs(
+  boss: PgBoss,
+  overrides: Partial<Record<JobName, JobHandler>> = {},
+): Promise<void> {
   await boss.start();
+  const active = { ...handlers, ...overrides };
   for (const name of JOB_NAMES) {
     await boss.createQueue(name);
     await boss.work(name, async (jobs) => {
-      for (const job of jobs) await handlers[name]({ id: job.id, data: job.data });
+      for (const job of jobs) await active[name]({ id: job.id, data: job.data });
     });
   }
   for (const [name, cron] of Object.entries(SCHEDULES)) {

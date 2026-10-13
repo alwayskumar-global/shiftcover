@@ -1,0 +1,317 @@
+/* =====================================================================
+   ShiftCover Pay — tokens.css  ·  FINAL (handoff v1.0)
+   Every token below carries:  purpose · e.g. example usage.
+   Values are unchanged from the approved gates; only documentation and grouping were added.
+
+   HOW TO USE
+   - Components consume LAYER 2 (semantic) tokens only: --sc-bg-*, --sc-text-*, --sc-st-*, --sc-money-*, etc.
+   - LAYER 1 primitives (--sc-paper-*, --sc-green-* …) exist only to feed layer 2. Never use them in components.
+   - Dark theme: re-map layer 2 under [data-theme="dark"] (stub at the bottom, NOT designed or contrast-checked).
+
+   GROUPS
+   1 Color primitives · 2 Color semantic · 3 Status (slot) · 4 Money · 5 Feedback
+   6 Type · 7 Space and sizes · 8 Radius · 9 Elevation · 10 Motion
+   11 Worker-app additions · 12 Console and scheduler additions · 13 Base rules
+
+   FONTS (OFL 1.1, load from Google Fonts or self-host): Bricolage Grotesque, Public Sans, IBM Plex Mono
+   ICONS (ISC): Lucide, 24px grid, 2px stroke, currentColor
+   ===================================================================== */
+
+:root {
+
+  /* ===================================================================
+     1 · COLOR PRIMITIVES (oklch). Do not use directly in components.
+     =================================================================== */
+
+  /* PAPER — warm neutrals, chroma ≤ .016. Surfaces, lines, text. */
+  --sc-paper-0: oklch(.985 .006 85);  /* lightest; card surface, text on dark fills · feeds --sc-bg-surface */
+  --sc-paper-1: oklch(.966 .009 85);  /* app background · feeds --sc-bg-page */
+  --sc-paper-2: oklch(.94 .012 85);   /* sunken areas, stripes, skeleton base · feeds --sc-bg-sunken */
+  --sc-paper-3: oklch(.90 .014 82);   /* hairlines on cards, skeleton highlight · feeds --sc-border */
+  --sc-paper-4: oklch(.84 .015 80);   /* dashed rails, quiet dividers (decorative) */
+  --sc-paper-5: oklch(.62 .016 75);   /* ≥3:1 on paper-0; input borders, dashed node outlines · feeds --sc-border-strong */
+  --sc-paper-6: oklch(.52 .016 70);   /* 5.3:1 on paper-0; subtle text, placeholders · feeds --sc-text-subtle */
+  --sc-paper-7: oklch(.42 .015 65);   /* 8.1:1; muted text · feeds --sc-text-muted */
+  --sc-paper-8: oklch(.32 .014 62);   /* settled / planned text */
+  --sc-paper-9: oklch(.22 .012 60);   /* ink; primary text, toasts · feeds --sc-text, --sc-bg-inverse */
+
+  /* BASIL — brand, confirmed, paid, success */
+  --sc-green-50:  oklch(.96 .03 155);  /* soft tint · selected nav item, confirmed block bg */
+  --sc-green-100: oklch(.92 .06 155);  /* avatar tint */
+  --sc-green-300: oklch(.78 .12 155);  /* confirmed border, icon on dark green */
+  --sc-green-600: oklch(.48 .105 155); /* primary action fill · feeds --sc-action (5.95:1 with paper-0) */
+  --sc-green-700: oklch(.40 .09 155);  /* hover, links, text on green-50 */
+  --sc-green-800: oklch(.32 .07 155);  /* pressed, login brand panel */
+
+  /* EMBER — open gap, failed, destructive */
+  --sc-ember-50:  oklch(.965 .02 40);  /* open/failed/error tint */
+  --sc-ember-100: oklch(.93 .05 38);   /* no-show tint */
+  --sc-ember-300: oklch(.78 .13 36);   /* soft borders for alerts */
+  --sc-ember-600: oklch(.53 .185 33);  /* danger fill, open-gap hatch A */
+  --sc-ember-700: oklch(.45 .15 32);   /* text on ember tints, hatch B, no-show fill */
+
+  /* SAFFRON — offering, captured, warning */
+  --sc-saffron-100: oklch(.94 .07 90); /* offering/captured/warning tint */
+  --sc-saffron-300: oklch(.86 .14 85); /* soft borders */
+  --sc-saffron-400: oklch(.80 .15 82); /* offering block fill (ink text on it) */
+  --sc-saffron-700: oklch(.47 .09 75); /* text on saffron tints; offering block border */
+
+  /* STEEL BLUE — in progress, authorized, info, focus */
+  --sc-blue-50:  oklch(.965 .02 245);  /* info/authorized tint */
+  --sc-blue-100: oklch(.93 .04 245);   /* avatar tint, AI-status bar */
+  --sc-blue-300: oklch(.78 .08 245);   /* soft borders */
+  --sc-blue-600: oklch(.50 .12 245);   /* in-progress fill, focus ring */
+  --sc-blue-700: oklch(.42 .10 245);   /* text on blue tints */
+
+  /* PLUM — pending approval */
+  --sc-plum-50:  oklch(.965 .02 320);  /* pending tint */
+  --sc-plum-100: oklch(.93 .04 320);   /* avatar tint */
+  --sc-plum-300: oklch(.78 .08 320);   /* soft border */
+  --sc-plum-600: oklch(.48 .14 320);   /* pending fill */
+  --sc-plum-700: oklch(.40 .12 320);   /* text on plum tint */
+
+  /* ===================================================================
+     2 · COLOR SEMANTIC — use these in components
+     =================================================================== */
+
+  /* Surfaces */
+  --sc-bg-page:    var(--sc-paper-1);  /* page background · .sc-app, .sc-console */
+  --sc-bg-surface: var(--sc-paper-0);  /* cards, inputs, popovers, scheduler cells · .sc-card */
+  --sc-bg-sunken:  var(--sc-paper-2);  /* stat tiles, segmented track, table head, row stripes · .sc-stat__icon */
+  --sc-bg-inverse: var(--sc-paper-9);  /* toasts, tooltips, dark callouts · .sc-toast */
+  --sc-bg-scrim:   oklch(.22 .012 60 / .48); /* dialog backdrop · .sc-scrim */
+
+  /* Text */
+  --sc-text:         var(--sc-paper-9); /* primary text (16.6:1 on surface) · body */
+  --sc-text-muted:   var(--sc-paper-7); /* secondary text (8.1:1) · helper lines, meta rows */
+  --sc-text-subtle:  var(--sc-paper-6); /* captions, placeholders (5.3:1 on surface) · .sc-pass__when */
+  --sc-text-inverse: var(--sc-paper-0); /* text on --sc-bg-inverse · .sc-toast */
+  --sc-text-link:    var(--sc-green-700); /* links · a { color: var(--sc-text-link) } */
+
+  /* Lines */
+  --sc-border:        var(--sc-paper-3); /* card/table borders, decorative · .sc-card */
+  --sc-border-strong: var(--sc-paper-5); /* control boundaries, 3:1 non-text · .sc-input */
+  --sc-divider:       var(--sc-paper-2); /* row dividers inside cards · .sc-money__row */
+
+  /* Actions */
+  --sc-action:        var(--sc-green-600); /* primary button, selected state · .sc-btn--primary */
+  --sc-action-hover:  var(--sc-green-700); /* hover · .sc-btn--primary:hover */
+  --sc-action-active: var(--sc-green-800); /* pressed · .sc-btn--primary:active */
+  --sc-on-action:     var(--sc-paper-0);   /* text/icon on --sc-action · always white-ish, never --sc-text-link */
+  --sc-action-soft:   var(--sc-green-50);  /* selected nav, soft highlight · .sc-nav__item.is-active */
+  --sc-danger:        var(--sc-ember-600); /* destructive button, error border · .sc-btn--danger */
+  --sc-on-danger:     var(--sc-paper-0);   /* text on --sc-danger */
+  --sc-focus:         var(--sc-blue-600);  /* focus ring colour, 5.7:1 · see --sc-ring-focus */
+  --sc-disabled-bg:   var(--sc-paper-2);   /* disabled control fill */
+  --sc-disabled-text: var(--sc-paper-6);   /* disabled control text (WCAG-exempt) */
+
+  /* ===================================================================
+     3 · STATUS (slot). Five tokens per status:
+         -bg tint · -fg text/icon on the tint · -solid scheduler block fill · -on text on solid · -border
+         Status is ALWAYS icon + label, never colour alone.
+         e.g. .sc-badge--st-offering { background: var(--sc-st-offering-bg); color: var(--sc-st-offering-fg); }
+     =================================================================== */
+
+  /* OPEN GAP (slot.status open) — the only hatched block; demands action */
+  --sc-st-open-bg: var(--sc-ember-50);  --sc-st-open-fg: var(--sc-ember-700);  --sc-st-open-solid: var(--sc-ember-600);
+  --sc-st-open-on: var(--sc-paper-0);   --sc-st-open-border: var(--sc-ember-300);
+
+  /* OFFERING (offering) — waves going out; pulsing dot in scheduler */
+  --sc-st-offering-bg: var(--sc-saffron-100);  --sc-st-offering-fg: var(--sc-saffron-700);  --sc-st-offering-solid: var(--sc-saffron-400);
+  --sc-st-offering-on: var(--sc-paper-9);      --sc-st-offering-border: var(--sc-saffron-300);
+
+  /* CONFIRMED (confirmed) — a worker claimed it */
+  --sc-st-confirmed-bg: var(--sc-green-50);  --sc-st-confirmed-fg: var(--sc-green-700);  --sc-st-confirmed-solid: var(--sc-green-600);
+  --sc-st-confirmed-on: var(--sc-paper-0);   --sc-st-confirmed-border: var(--sc-green-300);
+
+  /* IN PROGRESS (in_progress) — shift under way */
+  --sc-st-progress-bg: var(--sc-blue-50);  --sc-st-progress-fg: var(--sc-blue-700);  --sc-st-progress-solid: var(--sc-blue-600);
+  --sc-st-progress-on: var(--sc-paper-0);  --sc-st-progress-border: var(--sc-blue-300);
+
+  /* PENDING APPROVAL (pending_approval, settling) — manager must approve hours */
+  --sc-st-pending-bg: var(--sc-plum-50);  --sc-st-pending-fg: var(--sc-plum-700);  --sc-st-pending-solid: var(--sc-plum-600);
+  --sc-st-pending-on: var(--sc-paper-0);  --sc-st-pending-border: var(--sc-plum-300);
+
+  /* SETTLED (settled) — charged and paid; deliberately quiet */
+  --sc-st-settled-bg: var(--sc-paper-2);  --sc-st-settled-fg: var(--sc-paper-8);  --sc-st-settled-solid: var(--sc-paper-7);
+  --sc-st-settled-on: var(--sc-paper-0);  --sc-st-settled-border: var(--sc-paper-4);
+
+  /* UNFILLED (unfilled) — deadline passed; DASHED border always */
+  --sc-st-unfilled-bg: var(--sc-paper-1);  --sc-st-unfilled-fg: var(--sc-ember-700);  --sc-st-unfilled-solid: var(--sc-ember-700);
+  --sc-st-unfilled-on: var(--sc-paper-0);  --sc-st-unfilled-border: var(--sc-ember-600);
+
+  /* PLANNED (planned) — normal assigned shift; outlined, no fill */
+  --sc-st-planned-bg: var(--sc-paper-0);  --sc-st-planned-fg: var(--sc-paper-8);  --sc-st-planned-solid: var(--sc-paper-3);
+  --sc-st-planned-on: var(--sc-paper-9);  --sc-st-planned-border: var(--sc-paper-5);
+
+  /* CANCELLED (cancelled) — DASHED border plus struck-through title */
+  --sc-st-cancelled-bg: var(--sc-paper-2);  --sc-st-cancelled-fg: var(--sc-paper-7);  --sc-st-cancelled-solid: var(--sc-paper-4);
+  --sc-st-cancelled-on: var(--sc-paper-7);  --sc-st-cancelled-border: var(--sc-paper-5);
+
+  /* NO-SHOW (no_show) — flat dark ember fill + user-x icon; differs from open gap by having no hatch */
+  --sc-st-noshow-bg: var(--sc-ember-100);  --sc-st-noshow-fg: var(--sc-ember-700);  --sc-st-noshow-solid: var(--sc-ember-700);
+  --sc-st-noshow-on: var(--sc-paper-0);    --sc-st-noshow-border: var(--sc-ember-700);
+
+  /* ===================================================================
+     4 · MONEY states. -bg tint · -fg text/icon · -solid node fill. Always pair with the stage word.
+         e.g. .sc-pass__item--captured { --tone-solid: var(--sc-money-captured-solid); }
+     =================================================================== */
+  --sc-money-authorized-bg: var(--sc-blue-50);    --sc-money-authorized-fg: var(--sc-blue-700);    --sc-money-authorized-solid: var(--sc-blue-600);   /* hold placed, nothing charged */
+  --sc-money-captured-bg: var(--sc-saffron-100);  --sc-money-captured-fg: var(--sc-saffron-700);  --sc-money-captured-solid: var(--sc-saffron-400); /* employer charged */
+  --sc-money-paid-bg: var(--sc-green-50);         --sc-money-paid-fg: var(--sc-green-700);         --sc-money-paid-solid: var(--sc-green-600);        /* worker paid out */
+  --sc-money-failed-bg: var(--sc-ember-50);       --sc-money-failed-fg: var(--sc-ember-700);       --sc-money-failed-solid: var(--sc-ember-600);      /* capture_declined, payout_failed, voided; needs a human */
+
+  /* ===================================================================
+     5 · FEEDBACK (alerts, toasts). Reuse status families.
+         e.g. .sc-alert--error { background: var(--sc-error-bg); color: var(--sc-error-fg); border-color: var(--sc-error-border); }
+     =================================================================== */
+  --sc-info-bg: var(--sc-blue-50);        --sc-info-fg: var(--sc-blue-700);        --sc-info-border: var(--sc-blue-300);       /* neutral information */
+  --sc-success-bg: var(--sc-green-50);    --sc-success-fg: var(--sc-green-700);    --sc-success-border: var(--sc-green-300);   /* completed action */
+  --sc-warning-bg: var(--sc-saffron-100); --sc-warning-fg: var(--sc-saffron-700);  --sc-warning-border: var(--sc-saffron-300); /* needs attention, not broken */
+  --sc-error-bg: var(--sc-ember-50);      --sc-error-fg: var(--sc-ember-700);      --sc-error-border: var(--sc-ember-300);     /* something failed */
+
+  /* ===================================================================
+     6 · TYPE
+         Fonts are OFL. Display = headlines and money; body = everything functional; mono = times, ids, PayPal refs.
+         Size tokens are CSS font shorthands: weight size/line-height family.
+         e.g. .sc-page__title { font: var(--sc-text-h1); }
+     =================================================================== */
+  --sc-font-display: "Bricolage Grotesque", "Public Sans", system-ui, sans-serif; /* headlines, money · .sc-ticket__title */
+  --sc-font-body:    "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif; /* UI text · body */
+  --sc-font-mono:    "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace; /* ids, times · .sc-ref */
+
+  --sc-text-money-xl: 700 56px/56px var(--sc-font-display); /* worker pay hero · .sc-ticket__amount */
+  --sc-text-display:  700 36px/40px var(--sc-font-display); /* "You're booked.", gap title · .sc-booked__title */
+  --sc-text-h1:       700 28px/32px var(--sc-font-display); /* console page title · .sc-page__title */
+  --sc-text-h2:       600 22px/28px var(--sc-font-display); /* venue name, panel title · .sc-panel__title */
+  --sc-text-h3:       600 18px/24px var(--sc-font-display); /* card title · .sc-card__title */
+  --sc-text-body-lg:  400 18px/28px var(--sc-font-body);    /* lead copy · .sc-notice__text */
+  --sc-text-body:     400 16px/24px var(--sc-font-body);    /* worker-app minimum · body */
+  --sc-text-body-sm:  400 14px/20px var(--sc-font-body);    /* console prose minimum · .sc-card__lead */
+  --sc-text-label:    600 14px/20px var(--sc-font-body);    /* field labels, nav items · .sc-field__label */
+  --sc-text-caption:  500 12px/16px var(--sc-font-body);    /* console only, never worker · .sc-nav__venue-sub */
+  --sc-text-eyebrow:  700 12px/16px var(--sc-font-body);    /* uppercase eyebrow, pair with --sc-tracking-eyebrow · .sc-eyebrow */
+  --sc-text-mono:     500 13px/20px var(--sc-font-mono);    /* ids, references · .sc-ref */
+  --sc-tracking-eyebrow: .08em;                              /* letter-spacing for eyebrow text · .sc-eyebrow */
+
+  /* ===================================================================
+     7 · SPACE AND SIZES (4px base)
+         e.g. .sc-card { padding: var(--sc-space-6); gap: var(--sc-space-4); }
+     =================================================================== */
+  --sc-space-0: 0;     /* none */
+  --sc-space-1: 2px;   /* hairline gap */
+  --sc-space-2: 4px;   /* tight icon gap */
+  --sc-space-3: 8px;   /* default small gap, badge icon gap */
+  --sc-space-4: 12px;  /* compact padding, meta rows */
+  --sc-space-5: 16px;  /* default padding/gap */
+  --sc-space-6: 20px;  /* card padding, page gutter on mobile */
+  --sc-space-7: 24px;  /* section padding */
+  --sc-space-8: 32px;  /* large gap */
+  --sc-space-9: 40px;  /* page-level gap */
+  --sc-space-10: 48px; /* hero spacing */
+  --sc-space-11: 64px; /* page bottom margin */
+
+  --sc-hit-worker: 48px;            /* minimum touch target, worker app · .sc-btn */
+  --sc-hit-console: 36px;           /* minimum pointer target, console · design floor (see handoff notes for exceptions) */
+  --sc-paypal-slot-h: 52px;         /* PayPal SDK button area, 48–55 · .sc-paypal__slot */
+  --sc-paypal-slot-max-w: 420px;    /* PayPal slot max width on desktop · .sc-paypal__slot */
+  --sc-page-gutter-mobile: 20px;    /* worker page side padding · .sc-app__body */
+  --sc-console-nav-w: 232px;        /* console left nav width · .sc-console__shell */
+
+  /* ===================================================================
+     8 · RADIUS
+         e.g. .sc-input { border-radius: var(--sc-radius-md); }
+     =================================================================== */
+  --sc-radius-xs: 4px;     /* scheduler blocks, inline code · .sc-ev */
+  --sc-radius-sm: 8px;     /* console inputs and buttons, rectangular chips · .sc-btn--md */
+  --sc-radius-md: 12px;    /* worker buttons, alerts, list rows · .sc-btn */
+  --sc-radius-lg: 20px;    /* cards, ticket · .sc-card */
+  --sc-radius-xl: 28px;    /* sheets, dialogs · .sc-dialog */
+  --sc-radius-pill: 999px; /* status badges · .sc-badge */
+
+  /* ===================================================================
+     9 · ELEVATION (warm, low-alpha)
+         e.g. .sc-ticket { box-shadow: var(--sc-shadow-2); }
+     =================================================================== */
+  --sc-shadow-0: none;                                                                       /* flat, default */
+  --sc-shadow-1: 0 1px 0 oklch(.22 .012 60 / .06), 0 1px 2px oklch(.22 .012 60 / .08);       /* hover on clickable card, segmented thumb */
+  --sc-shadow-2: 0 2px 4px oklch(.22 .012 60 / .06), 0 6px 16px oklch(.22 .012 60 / .08);    /* claim ticket, hovered event block */
+  --sc-shadow-3: 0 8px 12px oklch(.22 .012 60 / .08), 0 20px 40px oklch(.22 .012 60 / .14);  /* dialog, toast */
+  --sc-ring-focus: 0 0 0 2px var(--sc-bg-surface), 0 0 0 4px var(--sc-focus);                /* focus ring: 2px surface gap + 2px focus colour · :focus-visible */
+
+  /* ===================================================================
+     10 · MOTION. All durations go to 0 under prefers-reduced-motion (rule below).
+          e.g. .sc-btn { transition: background var(--sc-dur-fast) var(--sc-ease-out); }
+     =================================================================== */
+  --sc-dur-instant: 80ms;   /* press feedback */
+  --sc-dur-fast: 160ms;     /* hover, focus, tooltips */
+  --sc-dur-base: 240ms;     /* panels, state swaps */
+  --sc-dur-slow: 400ms;     /* drawers (reserved) */
+  --sc-ease-out: cubic-bezier(.2, .7, .2, 1);     /* entering */
+  --sc-ease-in-out: cubic-bezier(.6, 0, .2, 1);   /* moving between positions */
+  --sc-pulse-dur: 1.6s;     /* offering heartbeat; 0s when reduced · .sc-ev--offering::after */
+
+  /* ===================================================================
+     11 · WORKER-APP ADDITIONS (gate 2)
+     =================================================================== */
+  --sc-safe-top: env(safe-area-inset-top, 0px);        /* notch / status bar inset · .sc-app__header */
+  --sc-safe-bottom: env(safe-area-inset-bottom, 0px);  /* home-indicator inset · .sc-app__footer padding */
+  --sc-app-max-w: 480px;          /* worker content column on large phones/tablets · .sc-app__body */
+  --sc-hit-primary: 56px;         /* primary action height, worker app · .sc-btn--lg */
+  --sc-ticket-notch: 24px;        /* perforation notch diameter · .sc-ticket__perf */
+  --sc-ticket-notch-bg: var(--sc-bg-page); /* colour that "punches" the notch; must equal the page behind the ticket */
+  --sc-icon-sm: 16px;             /* icon in badges and rows · .sc-icon--sm */
+  --sc-icon-md: 20px;             /* icon in buttons, nodes · .sc-icon */
+  --sc-icon-lg: 24px;             /* icon in nav, alerts · .sc-icon--lg */
+  --sc-icon-xl: 32px;             /* icon in empty states at 1.75 stroke · .sc-icon--xl */
+  --sc-dur-rise: 240ms;           /* "You're booked" entrance duration · .sc-rise */
+  --sc-rise-distance: 4px;        /* entrance rise distance · @keyframes sc-rise */
+
+  /* ===================================================================
+     12 · CONSOLE AND SCHEDULER ADDITIONS (gate 3)
+     =================================================================== */
+  --sc-console-nav-w-collapsed: 72px; /* nav icon rail below 1180px · .sc-console__shell */
+  --sc-hit-console-md: 40px;          /* default console control height · .sc-btn--md, .sc-input--md */
+  --sc-page-gutter-console: 32px;     /* console page side padding · .sc-page */
+
+  /* scheduler sizes; Bryntum config must match: rowHeight 64, barMargin 10 */
+  --sc-sched-row-h: 64px;             /* resource row height */
+  --sc-sched-event-h: 44px;           /* event block height (row 64 − barMargin 10×2) */
+  --sc-sched-header-h: 40px;          /* time-axis header height */
+  --sc-sched-resource-w: 232px;       /* resource (Team) column width */
+
+  /* scheduler colours */
+  --sc-sched-header-bg: var(--sc-bg-sunken);     /* header row fill */
+  --sc-sched-header-text: var(--sc-text-muted);  /* header text */
+  --sc-sched-line: var(--sc-paper-2);            /* hour / day column lines */
+  --sc-sched-row-line: var(--sc-divider);        /* row separators */
+  --sc-sched-stripe: var(--sc-paper-1);          /* even-row stripe; odd rows = --sc-bg-surface */
+  --sc-sched-today-bg: oklch(.975 .025 90);      /* today column tint, week view */
+  --sc-sched-now-line: var(--sc-paper-9);        /* current-time line and flag */
+  --sc-sched-gap-row-bg: var(--sc-ember-50);     /* whole row behind an open gap */
+  --sc-sched-gap-row-bar: var(--sc-ember-600);   /* 4px bar on the resource cell of a gap row */
+  --sc-sched-hatch-a: var(--sc-ember-600);       /* open-gap hatch stripe A */
+  --sc-sched-hatch-b: var(--sc-ember-700);       /* open-gap hatch stripe B */
+  --sc-sched-select-ring: var(--sc-focus);       /* selected event ring */
+  --sc-sched-hover-shadow: var(--sc-shadow-2);   /* hovered event lift */
+}
+
+/* ===================================================================
+   13 · BASE RULES
+   =================================================================== */
+
+/* Reduced motion: collapse durations; components also stop keyframe animations (see components.css). */
+@media (prefers-reduced-motion: reduce) {
+  :root { --sc-dur-instant: 0ms; --sc-dur-fast: 0ms; --sc-dur-base: 0ms; --sc-dur-slow: 0ms; --sc-pulse-dur: 0s; }
+  [data-sc-anim] { animation: none !important; transition: none !important; }
+}
+
+/* Dark-theme stub — NOT designed or contrast-checked. Shows the re-map surface only. */
+[data-theme="dark"] {
+  --sc-bg-page: oklch(.19 .01 60);  --sc-bg-surface: oklch(.24 .012 60);  --sc-bg-sunken: oklch(.16 .01 60);
+  --sc-text: oklch(.95 .008 85);    --sc-text-muted: oklch(.78 .012 80);
+  --sc-border: oklch(.34 .012 60);  --sc-border-strong: oklch(.58 .014 70);
+}
+
+/* Focus: every interactive element gets the same ring. */
+:where(:focus-visible) { outline: none; box-shadow: var(--sc-ring-focus); }

@@ -15,6 +15,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { SHIFT_ROLES } from '../domain/roles';
 import { OFFER_STATES, PAYMENT_STATES, SLOT_STATES } from '../domain/states';
 
 /**
@@ -86,9 +87,21 @@ export const venues = pgTable(
     lat: doublePrecision('lat').notNull(),
     lng: doublePrecision('lng').notNull(),
     radiusM: integer('radius_m').notNull().default(150),
+    /** IANA zone; availability windows and "today" are evaluated in venue local time. */
+    timezone: text('timezone').notNull().default('America/Los_Angeles'),
+    /** Neighbourhood shown next to the venue name (PLAN.md 10.6 venue_area), e.g. "Pearl District". */
+    area: text('area').notNull().default(''),
+    /** Street address shown to the worker after claiming (design data-gap venue_address). */
+    address: text('address').notNull().default(''),
+    /** Default worker search radius in miles; a hard matching filter (widening raises it per gap). */
+    searchRadiusMi: integer('search_radius_mi').notNull().default(10),
     createdAt: createdAt(),
   },
-  (t) => [index('venues_org_idx').on(t.orgId), check('venues_radius_ck', sql`${t.radiusM} > 0`)],
+  (t) => [
+    index('venues_org_idx').on(t.orgId),
+    check('venues_radius_ck', sql`${t.radiusM} > 0`),
+    check('venues_search_radius_ck', sql`${t.searchRadiusMi} between 1 and 100`),
+  ],
 );
 
 export const workers = pgTable(
@@ -113,6 +126,10 @@ export const workers = pgTable(
     homeLng: doublePrecision('home_lng'),
     /** 0..1 */
     reliabilityScore: doublePrecision('reliability_score').notNull().default(0.5),
+    /** 0..1, share of offers claimed. Feeds ranking. */
+    acceptanceRate: doublePrecision('acceptance_rate').notNull().default(0.5),
+    /** Mean seconds from offer sent to opened. Feeds ranking. */
+    avgResponseSeconds: integer('avg_response_seconds').notNull().default(300),
     status: workerStatus('status').notNull().default('invited'),
     createdAt: createdAt(),
   },
@@ -120,6 +137,7 @@ export const workers = pgTable(
     uniqueIndex('workers_org_email_uq').on(t.orgId, t.email),
     index('workers_org_status_idx').on(t.orgId, t.status),
     check('workers_reliability_ck', sql`${t.reliabilityScore} between 0 and 1`),
+    check('workers_acceptance_ck', sql`${t.acceptanceRate} between 0 and 1`),
   ],
 );
 
@@ -139,6 +157,15 @@ export const shiftSlots = pgTable(
     /** Whole percent, 0..100. */
     maxPremiumPct: integer('max_premium_pct').notNull().default(0),
     offeredRateCents: integer('offered_rate_cents'),
+    /** The shift this gap replaces (a worker called in sick); that worker is never offered the cover. */
+    replacesSlotId: uuid('replaces_slot_id'),
+    /** Why the gap exists, e.g. called_in_sick (M2/M4 header). Free text key, nullable. */
+    gapReason: text('gap_reason'),
+    /** Per-gap override of the venue search radius (miles); null = venue default. */
+    searchRadiusMi: integer('search_radius_mi'),
+    cancelledAt: ts('cancelled_at'),
+    /** 'user:<id>' or 'system:<job>'. */
+    cancelledBy: text('cancelled_by'),
     /** Defaults to start_at minus 30 min when the gap is posted. */
     fillBy: ts('fill_by'),
     /** Optimistic-lock counter; incremented on every state change. */
@@ -151,8 +178,13 @@ export const shiftSlots = pgTable(
     index('slots_status_idx').on(t.status),
     index('slots_worker_start_idx').on(t.workerId, t.startAt),
     check('slots_time_ck', sql`${t.endAt} > ${t.startAt}`),
+    check('slots_role_ck', sql.raw(`role in (${SHIFT_ROLES.map((r) => `'${r}'`).join(', ')})`)),
     check('slots_rate_ck', sql`${t.baseRateCents} >= 0`),
     check('slots_premium_ck', sql`${t.maxPremiumPct} between 0 and 100`),
+    check(
+      'slots_radius_ck',
+      sql`${t.searchRadiusMi} is null or ${t.searchRadiusMi} between 1 and 100`,
+    ),
     check(
       'slots_offered_rate_ck',
       sql`${t.offeredRateCents} is null or ${t.offeredRateCents} >= 0`,
@@ -178,6 +210,9 @@ export const offers = pgTable(
     status: offerStatus('status').notNull().default('SENT'),
     openedAt: ts('opened_at'),
     claimedAt: ts('claimed_at'),
+    declinedAt: ts('declined_at'),
+    expiredAt: ts('expired_at'),
+    withdrawnAt: ts('withdrawn_at'),
     createdAt: createdAt(),
   },
   (t) => [
@@ -354,4 +389,110 @@ export const auditLog = pgTable(
     at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index('audit_entity_idx').on(t.entity, t.entityId, t.at)],
+);
+
+/** Weekly availability windows in venue-local time. weekday 0 = Sunday. Minutes since local midnight. */
+export const workerAvailability = pgTable(
+  'worker_availability',
+  {
+    id: id(),
+    workerId: uuid('worker_id')
+      .notNull()
+      .references(() => workers.id),
+    weekday: smallint('weekday').notNull(),
+    startMinute: integer('start_minute').notNull(),
+    endMinute: integer('end_minute').notNull(),
+  },
+  (t) => [
+    uniqueIndex('worker_availability_uq').on(t.workerId, t.weekday, t.startMinute),
+    index('worker_availability_worker_idx').on(t.workerId),
+    check('worker_availability_weekday_ck', sql`${t.weekday} between 0 and 6`),
+    check(
+      'worker_availability_minutes_ck',
+      sql`${t.startMinute} >= 0 and ${t.endMinute} <= 1440 and ${t.endMinute} > ${t.startMinute}`,
+    ),
+  ],
+);
+
+/** Certifications with validity. validUntil null = does not expire. */
+export const workerCertifications = pgTable(
+  'worker_certifications',
+  {
+    id: id(),
+    workerId: uuid('worker_id')
+      .notNull()
+      .references(() => workers.id),
+    cert: text('cert').notNull(),
+    validUntil: date('valid_until', { mode: 'string' }),
+  },
+  (t) => [
+    uniqueIndex('worker_certifications_uq').on(t.workerId, t.cert),
+    index('worker_certifications_worker_idx').on(t.workerId),
+  ],
+);
+
+/**
+ * Better Auth tables (manager sign-in only). Field names follow Better Auth's core schema for
+ * email+password and the magic-link plugin. Linked to our `users` row via users.auth_subject = auth_user.id.
+ */
+export const authUser = pgTable('auth_user', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  email: text('email').notNull().unique(),
+  emailVerified: boolean('emailVerified').notNull().default(false),
+  image: text('image'),
+  createdAt: timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const authSession = pgTable(
+  'auth_session',
+  {
+    id: text('id').primaryKey(),
+    expiresAt: timestamp('expiresAt', { withTimezone: true }).notNull(),
+    token: text('token').notNull().unique(),
+    createdAt: timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull().defaultNow(),
+    ipAddress: text('ipAddress'),
+    userAgent: text('userAgent'),
+    userId: text('userId')
+      .notNull()
+      .references(() => authUser.id, { onDelete: 'cascade' }),
+  },
+  (t) => [index('auth_session_user_idx').on(t.userId)],
+);
+
+export const authAccount = pgTable(
+  'auth_account',
+  {
+    id: text('id').primaryKey(),
+    accountId: text('accountId').notNull(),
+    providerId: text('providerId').notNull(),
+    userId: text('userId')
+      .notNull()
+      .references(() => authUser.id, { onDelete: 'cascade' }),
+    accessToken: text('accessToken'),
+    refreshToken: text('refreshToken'),
+    idToken: text('idToken'),
+    accessTokenExpiresAt: timestamp('accessTokenExpiresAt', { withTimezone: true }),
+    refreshTokenExpiresAt: timestamp('refreshTokenExpiresAt', { withTimezone: true }),
+    scope: text('scope'),
+    password: text('password'),
+    createdAt: timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('auth_account_user_idx').on(t.userId)],
+);
+
+export const authVerification = pgTable(
+  'auth_verification',
+  {
+    id: text('id').primaryKey(),
+    identifier: text('identifier').notNull(),
+    value: text('value').notNull(),
+    expiresAt: timestamp('expiresAt', { withTimezone: true }).notNull(),
+    createdAt: timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('auth_verification_identifier_idx').on(t.identifier)],
 );

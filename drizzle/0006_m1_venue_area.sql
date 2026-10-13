@@ -1,0 +1,1 @@
+ALTER TABLE "venues" ADD COLUMN "area" text DEFAULT '' NOT NULL;

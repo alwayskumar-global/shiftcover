@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components.css">
+<link rel="stylesheet" href="console.css">
+<link rel="stylesheet" href="review.css">
+<style>body{margin:0}</style>
+</helmet>
+<div class="rv-page">
+  <section class="rv-bar" aria-label="Page header">
+    <div class="rv-bar__top"><h1 class="rv-bar__title">Bryntum theming</h1><span class="rv-bar__tag">deliverable 3 · token → Scheduler mapping</span><a class="rv-bar__home" href="index.dc.html">All pages</a></div>
+  </section>
+
+  <main class="rv-doc sc-console">
+    <h2 class="rv-doc__title">Theming the Scheduler with our tokens</h2>
+    <p class="rv-doc__lead">The roster stays a real Bryntum Scheduler. We change how it looks with CSS only: one paste-in stylesheet, status classes attached through <span class="rv-mono">eventRenderer</span>, and a handful of config values. Nothing renders inside a block except an icon, a title and a subtitle.</p>
+
+    <!-- recommendation -->
+    <section class="rv-card" aria-labelledby="rec-title">
+      <h3 class="rv-card__title" id="rec-title">Recommended base theme: Svalbard</h3>
+      <div class="rv-doc__cols">
+        <div>
+          <p class="rv-card__val"><b>Why Svalbard.</b></p>
+          <ul class="rv-doc__list">
+            <li>Flat and modern with few borders. Our meaning lives in fills, hatching, dashed outlines and icons; a border-heavy base (Visby) would compete with those.</li>
+            <li>It is the default theme in Bryntum 7, where all products moved to CSS-variable theming, so our overrides are plain CSS with no SASS build step.</li>
+            <li>Neutral surfaces let our warm paper tokens show through instead of fighting a tinted base.</li>
+          </ul>
+        </div>
+        <div>
+          <p class="rv-card__val"><b>Alternatives.</b></p>
+          <ul class="rv-doc__list">
+            <li><b>Visby:</b> second choice if you want hairline structure around every cell. Expect to remove borders in Part 3.</li>
+            <li><b>High contrast:</b> keep in mind as a future accessibility mode; our status tokens would need a re-map.</li>
+            <li><b>Stockholm / Material3:</b> not recommended. Stockholm is a refreshed classic look and Material3 adds tonal elevation, both further from the kitchen-pass feel.</li>
+            <li><b>If the project is on Bryntum 6 or earlier</b> (SASS themes), use Stockholm and skip Part 2; Parts 3 to 5 still apply.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="rv-card__row"><span class="rv-card__key">Confidence</span><span class="rv-card__val">I could confirm the theme list and the move to CSS variables from Bryntum's public changelog. I could not read Bryntum's variable names offline, so rows marked <span class="rv-tag rv-tag--verify">Verify</span> need one check in devtools or in <span class="rv-mono">svalbard-light.css</span>. An unknown custom property is ignored, so a wrong name fails quietly rather than breaking the page.</span></div>
+    </section>
+
+    <!-- map -->
+    <section class="rv-card" aria-labelledby="map-title">
+      <h3 class="rv-card__title" id="map-title">Where each token lands</h3>
+      <div class="rv-map">
+        <div class="sc-sched">
+          <div class="sc-sched__head"><div class="sc-sched__corner">Team <span class="sc-text-muted">10</span></div><div class="sc-sched__axis"><div class="sc-sched__hours"><sc-for list="{{ hours }}" as="h" hint-placeholder-count="18"><span class="sc-sched__hour">{{ h }}</span></sc-for></div><span class="sc-sched__now-flag">Now 6:49 AM</span></div></div>
+          <div class="sc-sched__body">
+            <sc-for list="{{ mapRows }}" as="r" hint-placeholder-count="4">
+              <div class="{{ r.rowCls }}">
+                <div class="sc-sched__res"><span class="{{ r.avCls }}" aria-hidden="true">{{ r.initials }}</span><span class="sc-sched__res-text"><span class="sc-sched__res-name">{{ r.name }}</span><span class="sc-sched__res-role">{{ r.role }}</span></span></div>
+                <div class="sc-sched__lane"><div class="{{ r.cls }}"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#{{ r.icon }}"></use></svg><span class="sc-ev__text"><span class="sc-ev__title">{{ r.title }}</span><span class="sc-ev__sub">{{ r.sub }}</span></span></div></div>
+              </div>
+            </sc-for>
+            <div class="sc-sched__overlay"><span class="sc-sched__now"></span></div>
+          </div>
+        </div>
+        <span class="rv-pin rv-pin--1">1</span><span class="rv-pin rv-pin--2">2</span><span class="rv-pin rv-pin--3">3</span><span class="rv-pin rv-pin--4">4</span><span class="rv-pin rv-pin--5">5</span><span class="rv-pin rv-pin--6">6</span><span class="rv-pin rv-pin--7">7</span><span class="rv-pin rv-pin--8">8</span>
+      </div>
+      <div class="rv-legend">
+        <span class="rv-legend__item"><span class="rv-legend__n">1</span>Time axis header</span>
+        <span class="rv-legend__item"><span class="rv-legend__n">2</span>Resource column</span>
+        <span class="rv-legend__item"><span class="rv-legend__n">3</span>Gap row highlight</span>
+        <span class="rv-legend__item"><span class="rv-legend__n">4</span>Event bar (status class)</span>
+        <span class="rv-legend__item"><span class="rv-legend__n">5</span>Current-time line</span>
+        <span class="rv-legend__item"><span class="rv-legend__n">6</span>Even-row stripe</span>
+        <span class="rv-legend__item"><span class="rv-legend__n">7</span>Selected event</span>
+        <span class="rv-legend__item"><span class="rv-legend__n">8</span>Current-time flag</span>
+      </div>
+    </section>
+
+    <!-- table -->
+    <section class="rv-card" aria-labelledby="tbl-title">
+      <h3 class="rv-card__title" id="tbl-title">Token mapping table</h3>
+      <div class="rv-row"><span class="rv-tag rv-tag--ok">Confirmed</span><span class="rv-card__val">seen in Bryntum docs, changelog or forum</span><span class="rv-tag rv-tag--ours">Ours</span><span class="rv-card__val">our own class or token, nothing to verify</span><span class="rv-tag rv-tag--verify">Verify</span><span class="rv-card__val">check name or option in your installed version</span></div>
+      <div class="rv-table-wrap">
+        <div class="rv-table rv-cols-bt" role="table">
+          <div class="rv-thead" role="rowgroup"><div class="rv-tr" role="row"><div class="rv-th" role="columnheader">Scheduler part</div><div class="rv-th" role="columnheader">Bryntum target / how</div><div class="rv-th" role="columnheader">Our tokens</div><div class="rv-th" role="columnheader">Status</div></div></div>
+          <div role="rowgroup">
+            <sc-for list="{{ rows }}" as="r" hint-placeholder-count="30">
+              <div class="rv-tr {{ r.cls }}" role="row"><div class="rv-td" role="cell">{{ r.part }}</div><div class="rv-td" role="cell">{{ r.how }}</div><div class="rv-td" role="cell"><span class="rv-mono">{{ r.tokens }}</span></div><div class="rv-td" role="cell"><span class="rv-tag rv-tag--{{ r.tag }}">{{ r.tagLabel }}</span></div></div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- config -->
+    <section class="rv-card" aria-labelledby="cfg-title">
+      <h3 class="rv-card__title" id="cfg-title">Config and eventRenderer (illustrative)</h3>
+      <p class="rv-card__val">Turn off Bryntum's palette so our classes are the only source of color, then attach one status class per event. Option names marked in the table need a quick check against your version.</p>
+      <pre class="rv-code"><code>{{ configText }}</code></pre>
+    </section>
+
+    <!-- css -->
+    <section class="rv-card" aria-labelledby="css-title">
+      <h3 class="rv-card__title" id="css-title">bryntum-theme.css</h3>
+      <div class="rv-row">
+        <a class="sc-btn sc-btn--secondary sc-btn--md" href="bryntum-theme.css" download="bryntum-theme.css"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-arrow-up-right"></use></svg>Open file</a>
+        <button class="sc-btn sc-btn--secondary sc-btn--md" onClick="{{ copyCss }}"><svg class="sc-icon sc-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#i-checks"></use></svg>{{ copyLabel }}</button>
+        <span class="rv-card__val">Load order: <span class="rv-mono">tokens.css</span>, Bryntum's <span class="rv-mono">svalbard-light.css</span>, then this file. It also needs <span class="rv-mono">console.css</span> for the avatar and event text classes.</span>
+      </div>
+      <pre class="rv-code"><code>{{ cssText }}</code></pre>
+    </section>
+
+    <section class="rv-card" aria-labelledby="scope-title">
+      <h3 class="rv-card__title" id="scope-title">Deliberately not used</h3>
+      <ul class="rv-doc__list">
+        <li>No charts, progress bars or avatars inside event blocks. Only icon, title, subtitle, fill.</li>
+        <li>No Bryntum color palette (<span class="rv-mono">eventColor</span>) or built-in event styles for status. They cannot express hatch or dashed outlines the way our classes do.</li>
+        <li>No custom drawing for the gap highlight: it is a row class plus a CSS bar.</li>
+        <li>No dark theme yet. Our scheduler tokens all point at semantic tokens, so dark is a re-map later.</li>
+      </ul>
+    </section>
+  </main>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { css: 'Loading bryntum-theme.css…', copied: false };
+  componentDidMount() {
+    fetch('bryntum-theme.css').then(r => r.text()).then(t => this.setState({ css: t })).catch(() => this.setState({ css: 'Could not load bryntum-theme.css' }));
+  }
+  copy = () => { try { navigator.clipboard.writeText(this.state.css); this.setState({ copied: true }); setTimeout(() => this.setState({ copied: false }), 1800); } catch (e) {} };
+  renderVals() {
+    const T = (n, ap) => ({ n: ((n + 11) % 12) + 1 });
+    const hours = []; for (let h = 5; h <= 22; h++) hours.push(h === 5 ? '5 AM' : h === 12 ? '12 PM' : String(((h + 11) % 12) + 1));
+    const mk = (name, role, i, rowCls, key, icon, title, sub, s, l) => ({ name, role, initials: name.split(' ').map(p => p[0]).join(''), avCls: 'sc-avatar sc-avatar--' + i, rowCls: 'sc-sched__row' + rowCls, cls: 'sc-ev sc-ev--' + key + ' sc-ev--s' + s + ' sc-ev--l' + l + (key === 'planned' ? ' is-selected' : ''), icon, title, sub });
+    const mapRows = [
+      mk('Maria Alvarez', 'Line cook', 1, ' sc-sched__row--gap', 'open', 'i-alert', 'Open gap', 'Line cook · 7 AM–3 PM', 4, 16),
+      mk('Jordan Reyes', 'Line cook', 2, '', 'progress', 'i-play', 'In progress', 'Line cook · 6 AM–2 PM', 2, 16),
+      mk('Lena Park', 'Host', 3, '', 'offering', 'i-send', 'Offering · Wave 1', 'Host · 5–10 PM', 24, 10),
+      mk('Marcus Lee', 'Line cook', 4, '', 'planned', 'i-calendar', 'Line cook', '3–11 PM', 20, 16),
+    ];
+    const G = (part) => ({ cls: 'is-group', part, how: '', tokens: '', tag: 'ours', tagLabel: '' });
+    const R = (part, how, tokens, tag) => ({ cls: '', part, how, tokens, tag, tagLabel: { ok: 'Confirmed', ours: 'Ours', verify: 'Verify' }[tag] });
+    const rows = [
+      G('Base and surfaces'),
+      R('Base theme', 'Import Bryntum\u2019s Svalbard (light) stylesheet before ours', '—', 'ok'),
+      R('Page around the scheduler', 'Our page wrapper', 'bg-page', 'ours'),
+      R('Scheduler frame and grid cells', '.sc-roster wrapper; cell background via theme variable --b-background (Part 2)', 'bg-surface, border, radius-lg', 'verify'),
+      G('Header, resource column, rows'),
+      R('Time-axis header', '.b-grid-header and .b-sch-header-timeaxis-cell (selectors seen in Bryntum forum)', 'sched-header-bg, sched-header-text, border', 'ok'),
+      R('Resource column', 'columns: [{ text: \u2018Team\u2019, width: 232, htmlEncode: false, renderer }] returning our sc-sched__res markup', 'sched-resource-w, text, text-muted', 'ok'),
+      R('Resource avatar (initials)', 'Rendered by that column renderer, not images. Classes sc-avatar--1 to --5', 'saffron, blue, green, plum, paper tints', 'ours'),
+      R('Row height / bar height', 'rowHeight: 64, barMargin: 10 gives a 44px bar', 'sched-row-h, sched-event-h', 'verify'),
+      R('Row stripes', 'features: { stripe: true } (shown in Bryntum\u2019s own demo); theme the stripe variable, or use the nth-child fallback in Part 3', 'sched-stripe (even), bg-surface (odd)', 'ok'),
+      R('Hour / day column lines', 'features.columnLines; line color via .b-sch-timeaxis-cell border', 'sched-line', 'verify'),
+      G('Time marker'),
+      R('Current-time line + flag', 'TimeRanges feature with the current-time line on; class .b-sch-current-time', 'sched-now-line, text-inverse', 'verify'),
+      G('Event blocks · one class per slot.status'),
+      R('All events', 'eventStyle: null, eventColor: null, then tplData.cls[\u2018sc-ev--<status>\u2019] = true in eventRenderer', '—', 'ok'),
+      R('planned', 'sc-ev--planned · outlined surface, 4px ink left bar · icon calendar', 'st-planned-bg, -on, -border, paper-7', 'ours'),
+      R('open', 'sc-ev--open · diagonal hatch, 2px dark border, bold title · icon circle-alert · label \u201cOpen gap\u201d', 'sched-hatch-a/b, st-open-on, st-open-fg', 'ours'),
+      R('offering', 'sc-ev--offering · saffron fill, pulsing dot · icon send · label \u201cOffering · Wave N\u201d', 'st-offering-solid, -on, saffron-700', 'ours'),
+      R('confirmed', 'sc-ev--confirmed · basil fill · icon circle-check', 'st-confirmed-solid, -on', 'ours'),
+      R('in_progress', 'sc-ev--progress · steel-blue fill · icon circle-play', 'st-progress-solid, -on', 'ours'),
+      R('pending_approval / settling', 'sc-ev--pending · plum fill · icon hourglass · label \u201cPending approval\u201d or \u201cSettling\u201d', 'st-pending-solid, -on', 'ours'),
+      R('settled', 'sc-ev--settled · dark grey fill · icon check-check', 'st-settled-solid, -on', 'ours'),
+      R('unfilled', 'sc-ev--unfilled · 2px dashed ember outline on surface · icon triangle-alert', 'st-unfilled-bg, -fg, -border', 'ours'),
+      R('cancelled', 'sc-ev--cancelled · muted fill, 1px dashed outline, struck-through title · icon ban', 'st-cancelled-bg, -fg, -border', 'ours'),
+      R('no_show', 'sc-ev--noshow · flat dark ember fill · icon user-x · label \u201cNo-show\u201d', 'st-noshow-solid, -on', 'ours'),
+      G('Emphasis and interaction'),
+      R('Gap highlight (row)', 'Resource record field cls: \u2018sc-row--gap\u2019 while it owns an open slot (resource cls field is documented); paints the row and a 4px bar on the first cell', 'sched-gap-row-bg, sched-gap-row-bar', 'ok'),
+      R('Selected event', '2px focus-blue ring with 2px surface gap; Bryntum\u2019s active-event class name needs checking', 'sched-select-ring, bg-surface', 'verify'),
+      R('Hover', 'Shadow lift on .b-sch-event', 'sched-hover-shadow (shadow-2)', 'ours'),
+      R('Keyboard focus', 'Same ring as the rest of the product', 'ring-focus', 'ours'),
+      R('Event tooltip', 'features.eventTooltip; restyle .b-tooltip with surface, shadow-3, radius-md', 'bg-surface, shadow-3, radius-md', 'verify'),
+      R('Text', 'Font and sizes: Public Sans 12 to 14px in the grid, Plex Mono for times', 'font-body, font-mono', 'verify'),
+    ];
+    const configText = `const STATUS = {                       // slot.status → class, icon, label
+  planned:          { cls: 'sc-ev--planned',   icon: 'i-calendar',   label: null },
+  open:             { cls: 'sc-ev--open',      icon: 'i-alert',      label: 'Open gap' },
+  offering:         { cls: 'sc-ev--offering',  icon: 'i-send',       label: 'Offering' },
+  confirmed:        { cls: 'sc-ev--confirmed', icon: 'i-check',      label: 'Confirmed' },
+  in_progress:      { cls: 'sc-ev--progress',  icon: 'i-play',       label: 'In progress' },
+  pending_approval: { cls: 'sc-ev--pending',   icon: 'i-hourglass',  label: 'Pending approval' },
+  settling:         { cls: 'sc-ev--pending',   icon: 'i-hourglass',  label: 'Settling' },
+  settled:          { cls: 'sc-ev--settled',   icon: 'i-checks',     label: 'Settled' },
+  unfilled:         { cls: 'sc-ev--unfilled',  icon: 'i-warn',       label: 'Unfilled' },
+  cancelled:        { cls: 'sc-ev--cancelled', icon: 'i-ban',        label: 'Cancelled' },
+  no_show:          { cls: 'sc-ev--noshow',    icon: 'i-user-x',     label: 'No-show' },
+};
+
+const config = {
+  cls: 'sc-roster',
+  eventStyle: null, eventColor: null,         // our classes paint; Bryntum's palette is off
+  rowHeight: 64, barMargin: 10,               // bar = 44px
+  viewPreset: 'hourAndDay',                   // Day: 5:00 AM to 11:00 PM (18 hours)
+  startDate: new Date(2026, 9, 12, 5), endDate: new Date(2026, 9, 12, 23),
+  features: { stripe: true, eventTooltip: true, timeRanges: { /* current time line on: VERIFY option name */ } },
+  columns: [{ text: 'Team', width: 232, htmlEncode: false,
+    renderer: ({ record }) => \`<span class="sc-sched__res"><span class="sc-avatar sc-avatar--\${record.tint}">\${record.initials}</span>
+      <span class="sc-sched__res-text"><span class="sc-sched__res-name">\${record.name}</span><span class="sc-sched__res-role">\${record.role}</span></span></span>\` }],
+  eventRenderer({ eventRecord, tplData }) {
+    const m = STATUS[eventRecord.status];
+    tplData.cls[m.cls] = true;                // VERIFY: tplData.cls shape in your version
+    const title = eventRecord.status === 'planned' ? eventRecord.role : m.label;
+    return \`<svg class="sc-icon sc-icon--sm"><use href="/icons.svg#\${m.icon}"/></svg>
+      <span class="sc-ev__text"><span class="sc-ev__title">\${title}</span><span class="sc-ev__sub">\${eventRecord.subtitle}</span></span>\`;
+  },
+};
+// Week view: switch to a day-level preset (check the preset list in your version) and render the compact two-line block.
+// Resource records: set  cls: 'sc-row--gap'  while the worker has an open slot.
+// React: <BryntumScheduler {...config} resources={resources} events={events} />`;
+    return { hours, mapRows, rows, configText, cssText: this.state.css, copyCss: this.copy, copyLabel: this.state.copied ? 'Copied' : 'Copy CSS' };
+  }
+}
+
+</script>
+</body>
+</html>

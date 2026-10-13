@@ -1,0 +1,1 @@
+ALTER TABLE "shift_slots" ADD COLUMN "replaces_slot_id" uuid;

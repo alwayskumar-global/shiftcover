@@ -8,6 +8,8 @@ export const JOB_NAMES = [
   'notify',
   // Daily trivial query so a free Supabase project is not paused for inactivity (PLAN.md 6A).
   'db_heartbeat',
+  // Re-dispatches offering slots whose send_wave / fill_deadline / expire_offer jobs were never enqueued.
+  'recover_dispatch',
 ] as const;
 export type JobName = (typeof JOB_NAMES)[number];
 
@@ -15,4 +17,5 @@ export type JobName = (typeof JOB_NAMES)[number];
 export const SCHEDULES: Partial<Record<JobName, string>> = {
   reconcile_payments: '*/3 * * * *',
   db_heartbeat: '0 6 * * *', // daily, 06:00 UTC
+  recover_dispatch: '* * * * *', // every minute
 };

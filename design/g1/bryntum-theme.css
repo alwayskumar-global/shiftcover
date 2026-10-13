@@ -1,0 +1,90 @@
+/* =====================================================================
+   bryntum-theme.css — ShiftCover Pay tokens → Bryntum Scheduler (7.x)
+   Load order:  tokens.css  →  @bryntum/scheduler/svalbard-light.css  →  this file
+   Base theme:  Svalbard (flat, modern, v7 default). See bryntum-theme.dc.html for why.
+
+   Reading guide
+   PART 1  wrapper + sizing        ours, safe
+   PART 2  theme-variable adapter  names follow Bryntum 7 conventions but are UNVERIFIED.
+                                   An unknown custom property is simply ignored, so wrong names
+                                   fail silently. Open svalbard-light.css, search for the part
+                                   you want to change, and rename if needed.
+   PART 3  structural selectors    use class names seen in Bryntum docs/forums: .b-grid-header,
+                                   .b-sch-header-timeaxis-cell, .b-grid-row, .b-sch-event,
+                                   .b-sch-event-content. Re-check in devtools once rendered.
+   PART 4  event status classes    ours (sc-ev--<status>) attached via eventRenderer. Safe.
+   PART 5  gap row / now line / selection / hover
+   ===================================================================== */
+
+/* ---------- PART 1 · wrapper + sizing (matches config rowHeight: 64, barMargin: 10) ---------- */
+.sc-roster {
+  --sc-sched-row-h: 64px;
+  --sc-sched-event-h: 44px;
+  --sc-sched-resource-w: 232px;
+  background: var(--sc-bg-surface);
+  border: 1px solid var(--sc-border);
+  border-radius: var(--sc-radius-lg);
+  overflow: hidden;
+  font-family: var(--sc-font-body);
+}
+
+/* ---------- PART 2 · theme-variable adapter (VERIFY names) ---------- */
+.sc-roster .b-scheduler, .sc-roster.b-scheduler {
+  --b-primary: var(--sc-action);                         /* VERIFY: accent used for focus, selection, buttons */
+  --b-text-1: var(--sc-text);                            /* VERIFY: primary text */
+  --b-text-2: var(--sc-text-muted);                      /* VERIFY: secondary text */
+  --b-text-3: var(--sc-text-subtle);                     /* VERIFY: tertiary text */
+  --b-background: var(--sc-bg-surface);                  /* VERIFY: grid/cell background */
+  --b-border-color: var(--sc-border);                    /* VERIFY: generic border */
+  --b-grid-header-background: var(--sc-sched-header-bg); /* VERIFY: header row background */
+  --b-grid-header-color: var(--sc-sched-header-text);    /* VERIFY: header text */
+  --b-font-family: var(--sc-font-body);                  /* VERIFY: component font */
+  --b-sch-event-border-radius: var(--sc-radius-xs);      /* VERIFY: bar radius (4px) */
+}
+
+/* ---------- PART 3 · header, resource column, stripes, lines ---------- */
+.sc-roster .b-grid-header,
+.sc-roster .b-sch-header-timeaxis-cell { background: var(--sc-sched-header-bg); color: var(--sc-sched-header-text); border-color: var(--sc-border); font: 500 12px/16px var(--sc-font-body); }
+.sc-roster .b-grid-header-container .b-sch-timeaxiscolumn { background: var(--sc-sched-header-bg); }
+.sc-roster .b-grid-row { border-bottom: 1px solid var(--sc-sched-row-line); }
+.sc-roster .b-grid-row:nth-child(even) .b-grid-cell, .sc-roster .b-grid-row.b-even .b-grid-cell { background: var(--sc-sched-stripe); }  /* or features.stripe: true, then theme its variable */
+.sc-roster .b-sch-timeaxis-cell, .sc-roster .b-sch-column-line { border-color: var(--sc-sched-line); }
+
+/* resource cell content is rendered by our column renderer (initials avatar + name + role) */
+.sc-roster .sc-sched__res { display: flex; align-items: center; gap: 12px; height: 100%; }
+.sc-roster .sc-avatar { /* classes sc-avatar sc-avatar--1..5 come from console.css */ }
+
+/* ---------- PART 4 · event status classes (applied via eventRenderer → tplData.cls) ---------- */
+/* Bryntum owns position and size. We only paint. */
+.b-sch-event.sc-ev { border-radius: var(--sc-radius-xs); font-family: var(--sc-font-body); }
+.b-sch-event.sc-ev .b-sch-event-content { display: flex; align-items: center; gap: 8px; padding: 0 10px; }
+.b-sch-event.sc-ev .sc-ev__title { font: 600 13px/16px var(--sc-font-body); }
+.b-sch-event.sc-ev .sc-ev__sub { font: 500 12px/14px var(--sc-font-mono); }
+.b-sch-event.sc-ev--planned { background: var(--sc-st-planned-bg); color: var(--sc-st-planned-on); border: 1px solid var(--sc-st-planned-border); border-left: 4px solid var(--sc-paper-7); }
+.b-sch-event.sc-ev--open { background: repeating-linear-gradient(135deg, var(--sc-sched-hatch-a) 0 10px, var(--sc-sched-hatch-b) 10px 20px); color: var(--sc-st-open-on); border: 2px solid var(--sc-st-open-fg); }
+.b-sch-event.sc-ev--offering { background: var(--sc-st-offering-solid); color: var(--sc-st-offering-on); border: 1px solid var(--sc-saffron-700); }
+.b-sch-event.sc-ev--confirmed { background: var(--sc-st-confirmed-solid); color: var(--sc-st-confirmed-on); border: 1px solid transparent; }
+.b-sch-event.sc-ev--progress { background: var(--sc-st-progress-solid); color: var(--sc-st-progress-on); border: 1px solid transparent; }
+.b-sch-event.sc-ev--pending { background: var(--sc-st-pending-solid); color: var(--sc-st-pending-on); border: 1px solid transparent; }
+.b-sch-event.sc-ev--settled { background: var(--sc-st-settled-solid); color: var(--sc-st-settled-on); border: 1px solid transparent; }
+.b-sch-event.sc-ev--unfilled { background: var(--sc-st-unfilled-bg); color: var(--sc-st-unfilled-fg); border: 2px dashed var(--sc-st-unfilled-border); }
+.b-sch-event.sc-ev--cancelled { background: var(--sc-st-cancelled-bg); color: var(--sc-st-cancelled-fg); border: 1px dashed var(--sc-st-cancelled-border); }
+.b-sch-event.sc-ev--noshow { background: var(--sc-st-noshow-solid); color: var(--sc-st-noshow-on); border: 2px solid var(--sc-st-noshow-border); }
+.b-sch-event.sc-ev--open .sc-ev__title { font-weight: 700; }
+.b-sch-event.sc-ev--cancelled .sc-ev__title { text-decoration: line-through; }
+.b-sch-event.sc-ev--offering::after { content: ""; position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--sc-paper-9); animation: sc-pulse 1.6s infinite; }
+@media (prefers-reduced-motion: reduce) { .b-sch-event.sc-ev--offering::after { animation: none; } }
+
+/* ---------- PART 5 · gap row, now line, selection, hover ---------- */
+/* resource record gets  cls: 'sc-row--gap'  while it owns an open slot */
+.sc-roster .b-grid-row.sc-row--gap .b-grid-cell { background: var(--sc-sched-gap-row-bg); }
+.sc-roster .b-grid-row.sc-row--gap .b-grid-cell:first-child { box-shadow: inset 4px 0 0 var(--sc-sched-gap-row-bar); }
+
+/* current-time line (TimeRanges feature, current time line enabled) — VERIFY class name in devtools */
+.sc-roster .b-sch-current-time { background: var(--sc-sched-now-line); width: 2px; }
+.sc-roster .b-sch-current-time::before { background: var(--sc-sched-now-line); color: var(--sc-text-inverse); font: 700 11px/16px var(--sc-font-body); border-radius: 4px; padding: 1px 8px; }
+
+.b-sch-event.sc-ev:hover { box-shadow: var(--sc-sched-hover-shadow); }
+.b-sch-event.sc-ev.b-active,                     /* VERIFY: Bryntum's selected/active event class */
+.b-sch-event.sc-ev.b-sch-event-selected { box-shadow: 0 0 0 2px var(--sc-bg-surface), 0 0 0 4px var(--sc-sched-select-ring); }
+.b-sch-event.sc-ev:focus-visible { outline: none; box-shadow: var(--sc-ring-focus); }
