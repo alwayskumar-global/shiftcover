@@ -35,6 +35,7 @@ export const ME: MeResponse = {
   },
   config: {
     platform_fee_pct: 5,
+    platform_fixed_fee_cents: 0,
     premium_min_pct: 0,
     premium_max_pct: 50,
     max_days_ahead: 14,

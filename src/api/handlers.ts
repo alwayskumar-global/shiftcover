@@ -25,6 +25,8 @@ import { claimOffer, declineOffer, viewOffer } from '../services/claim';
 import { cancelGap, createGap, startOffering, widenRadius } from '../services/gaps';
 import { resendOfferLink } from '../services/offer-link';
 import { stubAuthorize } from '../services/payments-stub';
+import { approveAndPay, authorizePayment, ensureOrder } from '../services/payments';
+import { arrive, finish, managerConfirmTimes, markNoShow } from '../services/shift-day';
 import {
   findRecognisedSlot,
   gapDetail,
@@ -52,6 +54,15 @@ import {
   RosterResponse,
   StartOfferingResponse,
   StubAuthorizeResponse,
+  ApproveAndPayRequest,
+  ApproveAndPayResponse,
+  AuthorizeRequest,
+  AuthorizeResponse,
+  ConfirmTimesRequest,
+  ConfirmTimesResponse,
+  NoShowResponse,
+  OrderResponse,
+  ShiftDayResponse,
   WidenRadiusRequest,
   WidenRadiusResponse,
   WorkerOfferDto,
@@ -104,6 +115,7 @@ export async function buildMe(d: ApiDeps, ctx: { orgId: string; email: string; n
     },
     config: {
       platform_fee_pct: d.svc.config.platformFeeBps / 100,
+      platform_fixed_fee_cents: d.svc.config.platformFixedFeeCents ?? 0,
       premium_min_pct: PREMIUM_RANGE.minPct,
       premium_max_pct: PREMIUM_RANGE.maxPct,
       max_days_ahead: GAP_DATE_LIMITS.maxDaysAhead,
@@ -399,4 +411,112 @@ export async function getWorkerShifts(d: ApiDeps, req: Request) {
     }),
     { headers: WORKER_HEADERS },
   );
+}
+
+// ---------------------------------------------------------------- M2: money
+const sid = slotId;
+
+/** The PayPal order for the hold (created with the gap; created here when that attempt failed). Idempotent. */
+export async function postOrder(d: ApiDeps, req: Request, id: string) {
+  const ctx = await mgr(d, req);
+  managerPost(d, req);
+  await parseBody(req, z.object({}).strict());
+  const r = await ensureOrder(d.svc, { orgId: ctx.orgId, userId: ctx.userId }, sid(id));
+  return json(OrderResponse.parse({ order_id: r.orderId }));
+}
+
+/** onApprove lands here. The server authorizes, verifies status and amount, then records the authorization. */
+export async function postAuthorize(d: ApiDeps, req: Request, id: string) {
+  const ctx = await mgr(d, req);
+  managerPost(d, req);
+  const body = await parseBody(req, AuthorizeRequest);
+  const gapId = sid(id);
+  await authorizePayment(d.svc, { orgId: ctx.orgId, userId: ctx.userId }, gapId, body.order_id);
+  return json(
+    AuthorizeResponse.parse({
+      payment: await paymentDto(d.svc.db, gapId),
+      slot: await slotDto(d.svc.db, ctx.orgId, gapId),
+    }),
+  );
+}
+
+export async function postApproveAndPay(d: ApiDeps, req: Request, id: string) {
+  const ctx = await mgr(d, req);
+  managerPost(d, req);
+  const body = await parseBody(req, ApproveAndPayRequest);
+  const shiftId = sid(id);
+  const r = await approveAndPay(
+    d.svc,
+    { orgId: ctx.orgId, userId: ctx.userId },
+    shiftId,
+    body.approved_hours,
+  );
+  return json(
+    ApproveAndPayResponse.parse({
+      slot: await slotDto(d.svc.db, ctx.orgId, shiftId),
+      payment: await paymentDto(d.svc.db, shiftId),
+      capture_cents: r.captureCents,
+      worker_pay_cents: r.workerPayCents,
+      platform_fee_cents: r.platformFeeCents,
+    }),
+  );
+}
+
+export async function postNoShow(d: ApiDeps, req: Request, id: string) {
+  const ctx = await mgr(d, req);
+  managerPost(d, req);
+  await parseBody(req, z.object({}).strict());
+  const shiftId = sid(id);
+  const r = await markNoShow(d.svc, { orgId: ctx.orgId, userId: ctx.userId }, shiftId);
+  return json(
+    NoShowResponse.parse({
+      slot: await slotDto(d.svc.db, ctx.orgId, shiftId),
+      reoffered: r.reoffered,
+    }),
+  );
+}
+
+export async function postConfirmTimes(d: ApiDeps, req: Request, id: string) {
+  const ctx = await mgr(d, req);
+  managerPost(d, req);
+  const body = await parseBody(req, ConfirmTimesRequest);
+  const shiftId = sid(id);
+  await managerConfirmTimes(d.svc, { orgId: ctx.orgId, userId: ctx.userId }, shiftId, {
+    checkInAt: new Date(body.check_in_at),
+    checkOutAt: body.check_out_at ? new Date(body.check_out_at) : undefined,
+  });
+  return json(ConfirmTimesResponse.parse({ slot: await slotDto(d.svc.db, ctx.orgId, shiftId) }));
+}
+
+// ---------------------------------------------------------------- M2: worker shift day (worker session only)
+function shiftDay(slot: {
+  id: string;
+  status: string;
+  checkInAt: Date | null;
+  checkOutAt: Date | null;
+  actualHours: string | null;
+}) {
+  return ShiftDayResponse.parse({
+    slot_id: slot.id,
+    status: slot.status.toLowerCase(),
+    check_in_at: slot.checkInAt?.toISOString() ?? null,
+    check_out_at: slot.checkOutAt?.toISOString() ?? null,
+    actual_hours: slot.actualHours === null ? null : Number(slot.actualHours),
+  });
+}
+
+export async function postArrive(d: ApiDeps, req: Request, id: string) {
+  assertSameOrigin(req, d.svc.config.appBaseUrl);
+  const workerId = requireWorker(req.headers, d.sessionSecret, d.svc.now());
+  if (!d.limiter.hit(`shiftday:${workerId}`, 30, 60_000)) throw new HttpError(429, 'rate_limited');
+  await parseBody(req, z.object({}).strict());
+  return json(shiftDay(await arrive(d.svc, workerId, sid(id))), { headers: WORKER_HEADERS });
+}
+
+export async function postFinish(d: ApiDeps, req: Request, id: string) {
+  assertSameOrigin(req, d.svc.config.appBaseUrl);
+  const workerId = requireWorker(req.headers, d.sessionSecret, d.svc.now());
+  if (!d.limiter.hit(`shiftday:${workerId}`, 30, 60_000)) throw new HttpError(429, 'rate_limited');
+  await parseBody(req, z.object({}).strict());
+  return json(shiftDay(await finish(d.svc, workerId, sid(id))), { headers: WORKER_HEADERS });
 }

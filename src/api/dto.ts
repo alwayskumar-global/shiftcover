@@ -369,6 +369,8 @@ export const MeResponse = z
     config: z
       .object({
         platform_fee_pct: z.number(),
+        /** Additive: optional flat fee per shift (cents), on top of the percentage; 0 when none. */
+        platform_fixed_fee_cents: z.number().int().nonnegative(),
         premium_min_pct: z.number().int(),
         premium_max_pct: z.number().int(),
         max_days_ahead: z.number().int(),
@@ -394,3 +396,38 @@ export const CancelGapResponse = z.object({ slot: SlotDto }).strict();
 export const ResendLinkRequest = z.object({ email: z.email().max(254) }).strict();
 /** Identical for known and unknown addresses. */
 export const ResendLinkResponse = z.object({ ok: z.literal(true) }).strict();
+
+// ---------------------------------------------------------------- M2 money endpoints (additive; not itemised in 10.6)
+export const OrderResponse = z.object({ order_id: z.string().min(1) }).strict();
+export const AuthorizeRequest = z.object({ order_id: z.string().min(1).max(64) }).strict();
+export const AuthorizeResponse = z.object({ payment: PaymentDto, slot: SlotDto }).strict();
+
+export const ApproveAndPayRequest = z
+  .object({ approved_hours: z.number().positive().max(24) })
+  .strict();
+export const ApproveAndPayResponse = z
+  .object({
+    slot: SlotDto,
+    payment: PaymentDto,
+    capture_cents: cents,
+    worker_pay_cents: cents,
+    platform_fee_cents: cents,
+  })
+  .strict();
+
+export const NoShowResponse = z.object({ slot: SlotDto, reoffered: z.boolean() }).strict();
+export const ConfirmTimesRequest = z
+  .object({ check_in_at: iso, check_out_at: iso.optional() })
+  .strict();
+export const ConfirmTimesResponse = z.object({ slot: SlotDto }).strict();
+
+/** Worker shift-day result: only what the worker needs; no location data exists to return. */
+export const ShiftDayResponse = z
+  .object({
+    slot_id: z.uuid(),
+    status: z.enum(SLOT_STATUS_PUBLIC),
+    check_in_at: iso.nullable(),
+    check_out_at: iso.nullable(),
+    actual_hours: z.number().nonnegative().nullable(),
+  })
+  .strict();

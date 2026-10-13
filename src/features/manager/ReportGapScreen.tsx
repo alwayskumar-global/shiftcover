@@ -130,6 +130,7 @@ export function ReportGapScreen() {
       maxPremiumPct: prem,
       minutes,
       feeBps: Math.round(config.platform_fee_pct * 100),
+      fixedFeeCents: config.platform_fixed_fee_cents,
     });
     return {
       hours: minutes / 60,
@@ -287,6 +288,7 @@ export function ReportGapScreen() {
   const usd = formatUsd;
   const dash = '$–';
   const feePct = config.platform_fee_pct;
+  const fixedFee = config.platform_fixed_fee_cents;
   const money = [
     {
       cls: 'sc-money__row--muted',
@@ -302,8 +304,8 @@ export function ReportGapScreen() {
     },
     {
       cls: '',
-      label: `Platform fee (${feePct}%)`,
-      sub: `${feePct}% of worker pay at the cap`,
+      label: `Platform fee (${feePct}%${fixedFee > 0 ? ` + ${usd(fixedFee)}` : ''})`,
+      sub: `${feePct}%${fixedFee > 0 ? ` + ${usd(fixedFee)}` : ''} of worker pay at the cap`,
       amt: m ? usd(m.fee) : dash,
     },
     {

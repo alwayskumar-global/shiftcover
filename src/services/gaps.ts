@@ -6,7 +6,7 @@ import { offers, payments, shiftSlots, venues } from '../db/schema';
 import { ServiceError } from './types';
 import { maxAuthorization, type MaxAuthorization } from '../domain/money';
 import { isShiftRole, type ShiftRole } from '../domain/roles';
-import { stubVoid } from './payments-stub';
+import { ensureOrder, releaseHold } from './payments';
 import { moveOffer, movePayment, moveSlot, writeAudit } from './transitions';
 import type { ServiceDeps } from './types';
 
@@ -58,11 +58,12 @@ export async function createGap(deps: ServiceDeps, ctx: ManagerCtx, input: Creat
     maxPremiumPct: input.maxPremiumPct,
     minutes,
     feeBps: config.platformFeeBps,
+    fixedFeeCents: config.platformFixedFeeCents,
   });
   const actor = `user:${ctx.userId}`;
   const now = deps.now();
 
-  return db.transaction(async (tx) => {
+  const created = await db.transaction(async (tx) => {
     const [venue] = await tx
       .select()
       .from(venues)
@@ -103,6 +104,17 @@ export async function createGap(deps: ServiceDeps, ctx: ManagerCtx, input: Creat
     const payment = await movePayment(tx, pay!.id, 'AUTH_PENDING_APPROVAL', { actor });
     return { slot, payment, hold, role: input.role as ShiftRole, minutes };
   });
+
+  // Real money: create the PayPal order now (intent AUTHORIZE, the max hold) and keep its id. Best effort: the gap
+  // exists either way, and the approval button asks the server for the order again (ensureOrder is idempotent).
+  if (deps.payments) {
+    try {
+      await ensureOrder(deps, ctx, created.slot.id);
+    } catch {
+      console.error('[createGap] PayPal order not created yet; the approval step will retry it');
+    }
+  }
+  return created;
 }
 
 /**
@@ -268,7 +280,7 @@ export async function cancelGap(
   reason?: string,
 ) {
   const actor = `user:${ctx.userId}`;
-  return deps.db.transaction(async (tx) => {
+  const cancelled = await deps.db.transaction(async (tx) => {
     const [row] = await tx
       .select({ slot: shiftSlots })
       .from(shiftSlots)
@@ -296,7 +308,6 @@ export async function cancelGap(
         cancelledBy: actor,
       },
     );
-    await stubVoid(tx, slotId, actor); // M1: state + ledger only; the PayPal void arrives with M2
     if (slot.status === 'CONFIRMED' && slot.workerId) {
       await deps.notifier(tx).send({
         recipient: `worker:${slot.workerId}`,
@@ -307,4 +318,7 @@ export async function cancelGap(
     }
     return cancelled;
   });
+  // Release the hold after the commit (a PayPal call never runs inside a transaction); reconcile retries a failure.
+  await releaseHold(deps, slotId, actor);
+  return cancelled;
 }

@@ -1,4 +1,5 @@
 import { formatUsd } from '../domain/money';
+import { senderBatchIdFor } from './ids';
 import type { PaypalClient } from './client';
 
 /** Thin typed wrappers over the endpoints in Section 7. Amounts are cents in, strings out. */
@@ -14,7 +15,14 @@ export interface OrderResponse {
   status: string;
   links?: Link[];
   purchase_units?: Array<{
-    payments?: { authorizations?: Array<{ id: string; status: string }> };
+    payments?: {
+      authorizations?: Array<{
+        id: string;
+        status: string;
+        amount?: { currency_code: string; value: string };
+        expiration_time?: string;
+      }>;
+    };
   }>;
 }
 
@@ -23,6 +31,7 @@ export interface CaptureResponse {
   status: string;
   amount?: { currency_code: string; value: string };
   final_capture?: boolean;
+  status_details?: { reason?: string };
   /** Present when the response is a full representation. */
   seller_receivable_breakdown?: {
     paypal_fee?: { currency_code: string; value: string };
@@ -62,6 +71,7 @@ export interface PayoutBatchResponse {
   items?: Array<{
     payout_item_id: string;
     transaction_status: string;
+    payout_item_fee?: { currency: string; value: string };
     payout_item?: { sender_item_id?: string; receiver?: string };
     errors?: { name?: string; message?: string };
   }>;
@@ -75,8 +85,8 @@ export class SelfPayError extends Error {
 }
 
 /** 7.5: deterministic so a retry reuses the same batch id. */
-export function senderBatchId(paymentId: string): string {
-  return `sc-${paymentId}`;
+export function senderBatchId(paymentId: string, attempt = 1): string {
+  return senderBatchIdFor(paymentId, attempt);
 }
 
 export function createAuthorizeOrder(
@@ -135,7 +145,32 @@ export function authorizeOrder(client: PaypalClient, orderId: string, requestId:
     method: 'POST',
     path: `/v2/checkout/orders/${encodeURIComponent(orderId)}/authorize`,
     requestId,
+    // Without return=representation the response is only id, status and links: no authorization id or amount.
+    headers: { Prefer: 'return=representation' },
     body: {},
+  });
+}
+
+export interface AuthorizationResponse {
+  id: string;
+  status: string; // CREATED, CAPTURED, DENIED, PARTIALLY_CAPTURED, VOIDED, PENDING
+  amount?: { currency_code: string; value: string };
+  expiration_time?: string;
+}
+
+/** GET /v2/payments/authorizations/{authorization_id} (reconciliation). */
+export function getAuthorization(client: PaypalClient, authorizationId: string) {
+  return client.request<AuthorizationResponse>({
+    method: 'GET',
+    path: `/v2/payments/authorizations/${encodeURIComponent(authorizationId)}`,
+  });
+}
+
+/** GET /v2/payments/captures/{capture_id} (reconciliation). */
+export function getCapture(client: PaypalClient, captureId: string) {
+  return client.request<CaptureResponse>({
+    method: 'GET',
+    path: `/v2/payments/captures/${encodeURIComponent(captureId)}`,
   });
 }
 
