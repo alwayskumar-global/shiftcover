@@ -37,7 +37,7 @@ describe.skipIf(!hasTestDb)(
       const { deps, jobs } = testDeps(db(), { now: () => now });
       deps.payments = gw;
       const ctx = { orgId: o.org.id, userId: o.manager.id };
-      return { o, worker, gw, deps, jobs, ctx };
+      return { o, worker, gw, deps, jobs, ctx, slots: [] as string[] };
     }
 
     async function gap(w: Awaited<ReturnType<typeof world>>) {
@@ -49,6 +49,7 @@ describe.skipIf(!hasTestDb)(
         baseRateCents: 2200,
         maxPremiumPct: 20,
       });
+      w.slots.push(r.slot.id);
       return r;
     }
 
@@ -215,10 +216,10 @@ describe.skipIf(!hasTestDb)(
         expect(r.captureCents).toBeLessThan(22176);
       });
 
-      it('rejects approved hours above the scheduled hours (the cap) before any PayPal call', async () => {
+      it('rejects approved hours above what the hold covers before any PayPal call', async () => {
         const w = await world();
         const { slotId } = await worked(w);
-        await expect(approveAndPay(w.deps, w.ctx, slotId, 8.5)).rejects.toMatchObject({
+        await expect(approveAndPay(w.deps, w.ctx, slotId, 9)).rejects.toMatchObject({
           code: 'invalid_input',
         });
         await expect(approveAndPay(w.deps, w.ctx, slotId, 0)).rejects.toMatchObject({
@@ -274,7 +275,7 @@ describe.skipIf(!hasTestDb)(
         const pay = (await latestPayment(db(), slotId))!;
         expect(pay.lastError).toBe('capture_pending');
         for (const c of w.gw.captures.values()) c.status = 'COMPLETED'; // PayPal completes it later
-        await reconcilePayments(w.deps);
+        await reconcilePayments(w.deps, { slotIds: w.slots });
         expect((await latestPayment(db(), slotId))!.status).toBe('PAID');
       });
 
@@ -380,7 +381,7 @@ describe.skipIf(!hasTestDb)(
         expect(pay.lastError).toBeNull();
         expect(w.gw.batches.size).toBe(1);
         expect((await ledgerOf(pay.id)).some((l) => l.startsWith('PAYOUT_FAILED'))).toBe(false);
-        await reconcilePayments(w.deps); // still unresolved, still not a failure and still no second batch
+        await reconcilePayments(w.deps, { slotIds: w.slots }); // still unresolved, still not a failure and still no second batch
         expect((await latestPayment(db(), slotId))!.status).toBe('PAYOUT_PENDING');
         expect(w.gw.batches.size).toBe(1);
       });
@@ -394,7 +395,7 @@ describe.skipIf(!hasTestDb)(
         const pay = (await latestPayment(db(), slotId))!;
         expect(pay.lastError).toMatch(/not claimed/);
         w.gw.setPayoutItem(pay.payoutBatchId!, 'SUCCESS');
-        await reconcilePayments(w.deps);
+        await reconcilePayments(w.deps, { slotIds: w.slots });
         expect((await latestPayment(db(), slotId))!.status).toBe('PAID');
       });
 
@@ -409,7 +410,7 @@ describe.skipIf(!hasTestDb)(
           code: 'unavailable',
         });
         expect((await latestPayment(db(), slotId))!.status).toBe('PAYOUT_PENDING');
-        await reconcilePayments(w.deps); // no manager involved
+        await reconcilePayments(w.deps, { slotIds: w.slots }); // no manager involved
         expect((await latestPayment(db(), slotId))!.status).toBe('PAID');
         expect(w.gw.count('capture')).toBe(1);
       });
@@ -494,7 +495,7 @@ describe.skipIf(!hasTestDb)(
         w.gw.failNext('void', new PaypalError('x', 'server', 500, undefined, [], undefined));
         await cancelGap(w.deps, w.ctx, slotId);
         expect((await latestPayment(db(), slotId))!.status).toBe('AUTHORIZED');
-        await reconcilePayments(w.deps);
+        await reconcilePayments(w.deps, { slotIds: w.slots });
         expect((await latestPayment(db(), slotId))!.status).toBe('VOIDED');
       });
     });
@@ -645,10 +646,10 @@ describe.skipIf(!hasTestDb)(
       it('finishes an approved-but-never-authorized order, and is idempotent', async () => {
         const w = await world();
         const r = await gap(w);
-        const first = await reconcilePayments(w.deps);
+        const first = await reconcilePayments(w.deps, { slotIds: w.slots });
         expect(first.advanced).toBeGreaterThanOrEqual(1);
         expect((await latestPayment(db(), r.slot.id))!.status).toBe('AUTHORIZED');
-        const again = await reconcilePayments(w.deps);
+        const again = await reconcilePayments(w.deps, { slotIds: w.slots });
         expect(again.advanced).toBe(0);
         expect(w.gw.count('authorize')).toBe(1);
       });
@@ -657,7 +658,7 @@ describe.skipIf(!hasTestDb)(
         const w = await world();
         const r = await gap(w);
         w.gw.approve = false;
-        await reconcilePayments(w.deps);
+        await reconcilePayments(w.deps, { slotIds: w.slots });
         expect((await latestPayment(db(), r.slot.id))!.status).toBe('AUTH_PENDING_APPROVAL');
       });
 
@@ -666,7 +667,7 @@ describe.skipIf(!hasTestDb)(
         const { slotId } = await authorized(w);
         const pay = (await latestPayment(db(), slotId))!;
         w.gw.auths.get(pay.authorizationId!)!.status = 'VOIDED';
-        await reconcilePayments(w.deps);
+        await reconcilePayments(w.deps, { slotIds: w.slots });
         expect((await latestPayment(db(), slotId))!.status).toBe('VOIDED');
       });
 

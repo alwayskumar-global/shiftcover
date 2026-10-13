@@ -18,6 +18,8 @@ const nextConfig: NextConfig = {
       { source: '/c/:path*', headers: workerPrivacyHeaders },
       { source: '/api/c/:path*', headers: workerPrivacyHeaders },
       { source: '/api/w/:path*', headers: workerPrivacyHeaders },
+      { source: '/w/:path*', headers: workerPrivacyHeaders },
+      { source: '/w', headers: workerPrivacyHeaders },
     ];
   },
 };

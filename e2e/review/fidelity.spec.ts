@@ -1,5 +1,7 @@
 import { test } from '@playwright/test';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { resolve } from 'node:path';
 import { SCENES } from '../../src/review/fixtures';
 import { openScene } from './steps';
@@ -9,6 +11,20 @@ import { openScene } from './steps';
  * Output: e2e/.fidelity/<scene>.png and e2e/.fidelity/heights.json. Reference-only; nothing here ships.
  */
 const OUT = 'e2e/.fidelity';
+
+/** Gate 2 reference pages sit in design/g2 and link the Gate 1 css by relative path: assemble a scratch folder (g1 files, the
+ * patched tokens.css and icons.svg from the product, then the g2 files) so they render as the designer saw them. */
+function referenceDir(file: string): string {
+  if (!file.startsWith('G2-')) return resolve('design/g1');
+  const dir = join(tmpdir(), 'shiftcover-g2-reference');
+  if (!existsSync(join(dir, 'g2.css'))) {
+    cpSync(resolve('design/g1'), dir, { recursive: true });
+    cpSync(resolve('src/styles/tokens.css'), join(dir, 'tokens.css'));
+    cpSync(resolve('public/icons.svg'), join(dir, 'icons.svg'));
+    cpSync(resolve('design/g2'), dir, { recursive: true });
+  }
+  return dir;
+}
 const heights: Record<string, { ours: number; design: number | null }> = {};
 
 for (const scene of SCENES.filter((s) => s.design)) {
@@ -20,7 +36,7 @@ for (const scene of SCENES.filter((s) => s.design)) {
 
     const ref = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
     const { file, hash } = scene.design!;
-    await ref.goto(`file://${resolve('design/g1', file)}${hash ? '#' + hash : ''}`);
+    await ref.goto(`file://${resolve(referenceDir(file), file)}${hash ? '#' + hash : ''}`);
     await ref.waitForTimeout(2500);
     const frame = ref.locator('.rv-console-frame, .rv-device').first();
     for (const step of scene.steps ?? []) {

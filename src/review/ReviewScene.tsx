@@ -6,7 +6,10 @@ import { ConsoleShell } from '@/features/manager/ConsoleShell';
 import { LoginExperience } from '@/features/manager/LoginExperience';
 import { ReportGapScreen } from '@/features/manager/ReportGapScreen';
 import { RosterScreen } from '@/features/manager/RosterScreen';
+import { ApprovalsScreen } from '@/features/manager/ApprovalsScreen';
 import { ClaimExperience } from '@/features/worker/ClaimExperience';
+import { MyShifts } from '@/features/worker/MyShifts';
+import { workerShifts } from './fixtures-g2';
 import { GAP_DETAILS, ME, ME_PAYPAL, type Scene } from './fixtures';
 import { installStubFetch } from './stub-fetch';
 
@@ -18,6 +21,16 @@ export function ReviewScene({ scene }: { scene: Scene }) {
       sessionStorage.clear();
     } catch {
       // storage unavailable: the scene still renders
+    }
+    if (scene.render.kind === 'my-shifts' && scene.render.variant === 'offline') {
+      try {
+        localStorage.setItem(
+          'sc-my-shifts',
+          JSON.stringify({ savedAt: '2026-10-12T13:49:00.000Z', data: workerShifts('notArrived') }),
+        );
+      } catch {
+        // storage unavailable
+      }
     }
     installStubFetch(scene);
     return null;
@@ -39,6 +52,14 @@ export function ReviewScene({ scene }: { scene: Scene }) {
       return (
         <ConsoleShell me={r.payments === 'paypal' ? ME_PAYPAL : ME}>
           <ReportGapScreen />
+        </ConsoleShell>
+      );
+    case 'my-shifts':
+      return <MyShifts />;
+    case 'approvals':
+      return (
+        <ConsoleShell me={ME}>
+          <ApprovalsScreen />
         </ConsoleShell>
       );
     case 'gap-detail':

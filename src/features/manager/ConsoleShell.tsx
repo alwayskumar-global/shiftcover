@@ -2,7 +2,8 @@
 
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import type { MeResponse } from '@/api/dto';
 import { Avatar, Wordmark } from '@/ui/primitives';
 import { Icon } from '@/ui/icon';
@@ -12,6 +13,32 @@ import { MeProvider } from './me-context';
 /** App shell (design/g1: M2 nav). Roster is the only live destination in Gate 1; the rest read "Soon". */
 export function ConsoleShell({ me, children }: { me: MeResponse; children: ReactNode }) {
   const router = useRouter();
+  const path = usePathname();
+  const [waiting, setWaiting] = useState<number | null>(null);
+  // How many shifts wait for approval (the nav tag). Polls lightly; a failure just leaves the tag off.
+  useEffect(() => {
+    let dead = false;
+    const tick = async () => {
+      try {
+        const r = await fetch('/api/manager/approvals', {
+          credentials: 'same-origin',
+          cache: 'no-store',
+        });
+        if (!r.ok) return;
+        const j = (await r.json()) as { items?: Array<{ payment_status: string }> };
+        if (!dead)
+          setWaiting((j.items ?? []).filter((i) => i.payment_status !== 'capture_declined').length);
+      } catch {
+        // leave the tag as it was
+      }
+    };
+    void tick();
+    const id = setInterval(tick, 20_000);
+    return () => {
+      dead = true;
+      clearInterval(id);
+    };
+  }, []);
 
   async function signOut() {
     try {
@@ -48,13 +75,23 @@ export function ConsoleShell({ me, children }: { me: MeResponse; children: React
           </div>
           <div className="sc-nav__list">
             <Link
-              className="sc-nav__item is-active"
+              className={`sc-nav__item ${path.startsWith('/app/roster') || path === '/app' ? 'is-active' : ''}`}
               href="/app/roster"
-              aria-current="page"
+              aria-current={path.startsWith('/app/roster') ? 'page' : undefined}
               title="Roster"
             >
               <Icon name="i-calendar" />
               <span className="sc-nav__label">Roster</span>
+            </Link>
+            <Link
+              className={`sc-nav__item ${path.startsWith('/app/approvals') ? 'is-active' : ''}`}
+              href="/app/approvals"
+              aria-current={path.startsWith('/app/approvals') ? 'page' : undefined}
+              title="Approvals"
+            >
+              <Icon name="i-hourglass" />
+              <span className="sc-nav__label">Approvals</span>
+              {waiting !== null && waiting > 0 && <span className="sc-nav__tag">{waiting}</span>}
             </Link>
             {soon('i-users', 'Workers')}
             {soon('i-wallet', 'Money')}

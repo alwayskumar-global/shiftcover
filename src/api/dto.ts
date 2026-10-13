@@ -332,6 +332,8 @@ export const ClaimResponse = WorkerOfferDto;
 // ---------------------------------------------------------------- GET /api/w/shifts (not a Gate 1 screen)
 export const WorkerShiftsResponse = z
   .object({
+    /** Additive: the server clock, so "today" and the 14-day window never use the device clock. */
+    server_time: iso,
     shifts: z.array(
       z
         .object({
@@ -346,6 +348,16 @@ export const WorkerShiftsResponse = z
           end_at: iso,
           venue_name: z.string(),
           is_mine: z.boolean(),
+          // ---- additive (My shifts): what the worker sees about their own booked shift ----
+          venue_area: z.string(),
+          venue_tz: z.string(),
+          hours: z.number().positive(),
+          offered_rate_cents: cents.nullable(),
+          check_in_at: iso.nullable(),
+          check_out_at: iso.nullable(),
+          approved_hours: z.number().nonnegative().nullable(),
+          payment_status: z.enum(PAYMENT_STATUS_PUBLIC).nullable(),
+          worker_pay_cents: cents,
         })
         .strict(),
     ),
@@ -448,6 +460,48 @@ export const OutboxResponse = z
           created_at: iso,
           status: z.enum(['pending', 'sent', 'failed']),
           link: z.string().nullable(),
+        })
+        .strict(),
+    ),
+  })
+  .strict();
+
+// ---------------------------------------------------------------- manager approvals (G2-M5; additive)
+export const ApprovalsResponse = z
+  .object({
+    server_time: iso,
+    /** The fee config the charge preview uses: percentage in basis points plus an optional flat fee. */
+    fee_bps: z.number().int().nonnegative(),
+    fixed_fee_cents: z.number().int().nonnegative(),
+    items: z.array(
+      z
+        .object({
+          slot_id: z.uuid(),
+          slot_status: z.enum(SLOT_STATUS_PUBLIC),
+          worker: z
+            .object({
+              name: z.string(),
+              initials: z.string(),
+              avatar_tint: z.number().int().min(1).max(5),
+            })
+            .strict(),
+          role,
+          venue_tz: z.string(),
+          start_at: iso,
+          end_at: iso,
+          scheduled_hours: z.number().positive(),
+          check_in_at: iso.nullable(),
+          check_out_at: iso.nullable(),
+          actual_hours: z.number().nonnegative().nullable(),
+          /** Set once an approval started (a declined charge being retried): that retry must use the same hours. */
+          approved_hours: z.number().nonnegative().nullable(),
+          rate_cents: cents,
+          authorized_cents: cents,
+          /** The most hours the hold covers at this rate, fee included. */
+          max_hours: z.number().nonnegative(),
+          payment_status: z.enum(PAYMENT_STATUS_PUBLIC),
+          last_error: z.string().nullable(),
+          capture_reference: z.string().nullable(),
         })
         .strict(),
     ),

@@ -7,6 +7,7 @@ import {
   ME,
   type Scene,
 } from './fixtures';
+import { WORKER_SHIFTS_EMPTY, approvals, workerShifts, type ShiftStep } from './fixtures-g2';
 import { localDateString } from '@/lib/time';
 
 /**
@@ -24,6 +25,10 @@ export function installStubFetch(scene: Scene): () => void {
     );
   const fail = (status: number, code: string) => json({ error: { code, message: code } }, status);
   const r = scene.render;
+  let step: ShiftStep =
+    r.kind === 'my-shifts' && (r.variant === 'onShift' || r.variant === 'finished')
+      ? r.variant
+      : 'notArrived';
   let workerState =
     r.kind === 'worker' && r.offer !== 'network-error' ? WORKER_OFFERS[r.offer] : null;
 
@@ -36,6 +41,55 @@ export function installStubFetch(scene: Scene): () => void {
     const method = (init?.method ?? 'GET').toUpperCase();
     if (!path.startsWith('/api/')) return real(input, init);
 
+    if (r.kind === 'my-shifts') {
+      const v = r.variant;
+      if (path === '/api/w/shifts' && method === 'GET') {
+        if (v === 'pending') return new Promise<Response>(() => {});
+        if (v === 'error') return fail(500, 'error');
+        if (v === 'signed-out') return fail(401, 'unauthenticated');
+        if (v === 'offline') return Promise.reject(new TypeError('network'));
+        return json(v === 'empty' ? WORKER_SHIFTS_EMPTY : workerShifts(step));
+      }
+      const day = (status: string) =>
+        json({ slot_id: 'x', status, check_in_at: null, check_out_at: null, actual_hours: null });
+      if (path.endsWith('/arrive')) {
+        step = 'onShift';
+        return day('in_progress');
+      }
+      if (path.endsWith('/finish')) {
+        step = 'finished';
+        return day('pending_approval');
+      }
+    }
+    if (r.kind === 'approvals') {
+      const v = r.variant;
+      if (path === '/api/manager/approvals') {
+        if (v === 'pending') return new Promise<Response>(() => {});
+        if (v === 'error') return fail(500, 'error');
+        if (v === 'empty') return json({ ...approvals(), items: [] });
+        return json(
+          approvals({ fixedFeeCents: v === 'fixed-fee' ? 100 : 0, declined: v === 'declined' }),
+        );
+      }
+      if (path.endsWith('/approve-and-pay')) {
+        const declined = v === 'decline-on-approve' || v === 'declined';
+        const item =
+          approvals().items.find((i) => path.includes(i.slot_id)) ?? approvals().items[0]!;
+        const body = JSON.parse(String(init?.body ?? '{}')) as { approved_hours: number };
+        const pay = Math.round(body.approved_hours * item.rate_cents);
+        return json({
+          slot: GAP_DETAILS.filled.slot,
+          payment: {
+            ...GAP_DETAILS.filled.payment!,
+            status: declined ? 'capture_declined' : 'paid',
+            worker_pay_cents: pay,
+          },
+          capture_cents: pay + Math.round(pay * 0.05),
+          worker_pay_cents: pay,
+          platform_fee_cents: Math.round(pay * 0.05),
+        });
+      }
+    }
     if (r.kind === 'worker') {
       if (r.offer === 'network-error') return Promise.reject(new TypeError('network'));
       if (path.endsWith('/claim') && workerState) {

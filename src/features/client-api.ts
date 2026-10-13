@@ -90,3 +90,24 @@ export const orderForGap = async (id: string) =>
   ok(await post(`/api/manager/gaps/${id}/order`)) as { order_id: string };
 export const authorizeGap = async (id: string, orderId: string) =>
   ok(await post(`/api/manager/gaps/${id}/authorize`, { order_id: orderId }));
+
+// ---- G2 worker My shifts (worker session cookie; no token in the URL)
+export type WorkerShiftsDto = import('zod').infer<typeof import('@/api/dto').WorkerShiftsResponse>;
+export type ApprovalsDto = import('zod').infer<typeof import('@/api/dto').ApprovalsResponse>;
+export type ApproveAndPayDto = import('zod').infer<
+  typeof import('@/api/dto').ApproveAndPayResponse
+>;
+export type ShiftDayDto = import('zod').infer<typeof import('@/api/dto').ShiftDayResponse>;
+
+export const fetchWorkerShifts = async () => ok(await call<WorkerShiftsDto>('/api/w/shifts'));
+export const arriveShift = async (id: string) =>
+  ok(await post(`/api/w/shifts/${id}/arrive`)) as ShiftDayDto;
+export const finishShift = async (id: string) =>
+  ok(await post(`/api/w/shifts/${id}/finish`)) as ShiftDayDto;
+
+// ---- G2 manager approvals
+export const fetchApprovals = async () => ok(await call<ApprovalsDto>('/api/manager/approvals'));
+export const approveAndPay = async (id: string, approvedHours: number) =>
+  ok(
+    await post(`/api/manager/shifts/${id}/approve-and-pay`, { approved_hours: approvedHours }),
+  ) as ApproveAndPayDto;

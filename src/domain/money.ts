@@ -142,3 +142,27 @@ export function assertCaptureWithinAuthorization(
     throw new CaptureExceedsAuthorizationError(requestedCents, authorizedCents);
   }
 }
+
+/**
+ * The most hours that can be approved for a shift: the largest 2-decimal figure whose pay + fee still fits inside
+ * the authorization (the hold). The server enforces the same bound when it captures.
+ */
+export function maxApprovableHours(args: {
+  rateCents: number;
+  authorizedCents: number;
+  feeBps: number;
+  fixedFeeCents?: number;
+}): number {
+  const cost = (hours: number) => {
+    const pay = payForMinutesCents(args.rateCents, Math.round(hours * 60));
+    return pay + platformFee(pay, { feeBps: args.feeBps, fixedFeeCents: args.fixedFeeCents });
+  };
+  let lo = 0;
+  let hi = 24 * 100; // hundredths of an hour
+  while (lo < hi) {
+    const mid = Math.ceil((lo + hi) / 2);
+    if (cost(mid / 100) <= args.authorizedCents) lo = mid;
+    else hi = mid - 1;
+  }
+  return lo / 100;
+}

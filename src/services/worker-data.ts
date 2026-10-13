@@ -1,5 +1,5 @@
-import { desc, eq } from 'drizzle-orm';
-import { offers, shiftSlots, venues } from '../db/schema';
+import { desc, eq, inArray } from 'drizzle-orm';
+import { offers, payments, shiftSlots, venues } from '../db/schema';
 import type { DbLike } from './types';
 
 /**
@@ -20,12 +20,28 @@ export async function workerShifts(h: DbLike, workerId: string) {
       endAt: shiftSlots.endAt,
       assignedToMe: shiftSlots.workerId,
       venueName: venues.name,
+      venueArea: venues.area,
+      venueTz: venues.timezone,
+      offeredRateCents: shiftSlots.offeredRateCents,
+      checkInAt: shiftSlots.checkInAt,
+      checkOutAt: shiftSlots.checkOutAt,
+      approvedHours: shiftSlots.approvedHours,
     })
     .from(offers)
     .innerJoin(shiftSlots, eq(shiftSlots.id, offers.slotId))
     .innerJoin(venues, eq(venues.id, shiftSlots.venueId))
     .where(eq(offers.workerId, workerId))
     .orderBy(desc(shiftSlots.startAt));
+  // Latest payment attempt per slot (worker pay and status only; never the employer's amounts or PayPal references).
+  const slotIds = [...new Set(mine.map((m) => m.slotId))];
+  const pays = slotIds.length
+    ? await h.select().from(payments).where(inArray(payments.slotId, slotIds))
+    : [];
+  const latest = new Map<string, (typeof pays)[number]>();
+  for (const p of pays) {
+    const cur = latest.get(p.slotId);
+    if (!cur || p.attempt > cur.attempt) latest.set(p.slotId, p);
+  }
   return mine.map((m) => ({
     offerId: m.offerId,
     offerStatus: m.offerStatus,
@@ -38,5 +54,14 @@ export async function workerShifts(h: DbLike, workerId: string) {
     endAt: m.endAt.toISOString(),
     venueName: m.venueName,
     isMine: m.assignedToMe === workerId,
+    venueArea: m.venueArea,
+    venueTz: m.venueTz,
+    hours: Math.round(((m.endAt.getTime() - m.startAt.getTime()) / 3_600_000) * 100) / 100,
+    offeredRateCents: m.offeredRateCents,
+    checkInAt: m.checkInAt?.toISOString() ?? null,
+    checkOutAt: m.checkOutAt?.toISOString() ?? null,
+    approvedHours: m.approvedHours === null ? null : Number(m.approvedHours),
+    paymentStatus: m.assignedToMe === workerId ? (latest.get(m.slotId)?.status ?? null) : null,
+    workerPayCents: m.assignedToMe === workerId ? (latest.get(m.slotId)?.workerPayCents ?? 0) : 0,
   }));
 }

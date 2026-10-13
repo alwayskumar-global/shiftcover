@@ -148,6 +148,20 @@ actual_hours }`. No location data exists to return.
 - `GET /api/manager/me` config gains `platform_fixed_fee_cents` and `paypal_client_id` (the public sandbox client id for the
   browser SDK; null in stub mode).
 
+## G2 phase A: My shifts and Approvals
+
+- `GET /api/w/shifts` (worker session) now also returns `server_time` and, per shift, `venue_area, venue_tz, hours,
+offered_rate_cents, check_in_at, check_out_at, approved_hours, payment_status, worker_pay_cents`. Only the worker's own pay and
+  payment status; never the employer's amounts or PayPal references. `/w` (My shifts) reads it and POSTs `/api/w/shifts/[id]/arrive`
+  and `/finish`.
+- `GET /api/manager/approvals` (manager) -> `{ server_time, fee_bps, fixed_fee_cents, items[] }`; each item has the worker, role,
+  scheduled hours and times, check-in/out and `actual_hours`, `rate_cents`, `authorized_cents`, the server-computed `max_hours` (the most
+  the hold covers, fee included), `payment_status`, `last_error`, `capture_reference`, and `approved_hours` for a declined charge being
+  retried. Lists `pending_approval` shifts and `settling` shifts whose capture was declined.
+- `POST /api/manager/shifts/[id]/approve-and-pay`: the cap is now what the hold covers (pay + fee <= authorized), not the scheduled
+  hours, so a worker who worked a little over can be paid up to the hold. Anything above is a 422 before any PayPal call.
+- PAYMENTS_MODE=stub (never in production) settles locally in state and ledger with `STUB-` ids, so the demo flow runs without PayPal.
+
 ## Deviations from Section 10.6 (all additive, none removes or renames a listed field)
 
 | Where                                             | Addition                                                                                                                                                                                                | Why                                                                                                        |

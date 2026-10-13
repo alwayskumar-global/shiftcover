@@ -25,6 +25,7 @@ import { claimOffer, declineOffer, viewOffer } from '../services/claim';
 import { cancelGap, createGap, startOffering, widenRadius } from '../services/gaps';
 import { resendOfferLink } from '../services/offer-link';
 import { stubAuthorize } from '../services/payments-stub';
+import { listApprovals } from '../services/approvals';
 import { listOutbox } from '../services/outbox';
 import { approveAndPay, authorizePayment, ensureOrder } from '../services/payments';
 import { arrive, finish, managerConfirmTimes, markNoShow } from '../services/shift-day';
@@ -38,7 +39,7 @@ import {
 } from '../services/read-models';
 import type { ServiceDeps } from '../services/types';
 import { workerShifts } from '../services/worker-data';
-import { toWorkerOfferDto } from './adapters';
+import { publicPaymentStatus, toWorkerOfferDto } from './adapters';
 import {
   CancelGapRequest,
   CancelGapResponse,
@@ -55,6 +56,7 @@ import {
   RosterResponse,
   StartOfferingResponse,
   StubAuthorizeResponse,
+  ApprovalsResponse,
   ApproveAndPayRequest,
   ApproveAndPayResponse,
   AuthorizeRequest,
@@ -402,6 +404,7 @@ export async function getWorkerShifts(d: ApiDeps, req: Request) {
   const shifts = await workerShifts(d.svc.db, workerId);
   return json(
     WorkerShiftsResponse.parse({
+      server_time: d.svc.now().toISOString(),
       shifts: shifts.map((s) => ({
         offer_id: s.offerId,
         offer_status: s.offerStatus.toLowerCase(),
@@ -414,6 +417,15 @@ export async function getWorkerShifts(d: ApiDeps, req: Request) {
         end_at: s.endAt,
         venue_name: s.venueName,
         is_mine: s.isMine,
+        venue_area: s.venueArea,
+        venue_tz: s.venueTz,
+        hours: s.hours,
+        offered_rate_cents: s.offeredRateCents,
+        check_in_at: s.checkInAt,
+        check_out_at: s.checkOutAt,
+        approved_hours: s.approvedHours,
+        payment_status: s.paymentStatus ? publicPaymentStatus(s.paymentStatus) : null,
+        worker_pay_cents: s.workerPayCents,
       })),
     }),
     { headers: WORKER_HEADERS },
@@ -545,6 +557,39 @@ export async function getOutbox(d: ApiDeps, req: Request) {
         created_at: i.createdAt.toISOString(),
         status: i.status,
         link: i.link,
+      })),
+    }),
+  );
+}
+
+// ---------------------------------------------------------------- M2/G2: approvals list
+export async function getApprovals(d: ApiDeps, req: Request) {
+  const ctx = await mgr(d, req);
+  const r = await listApprovals(d.svc, ctx.orgId);
+  return json(
+    ApprovalsResponse.parse({
+      server_time: r.serverTime.toISOString(),
+      fee_bps: r.feeBps,
+      fixed_fee_cents: r.fixedFeeCents,
+      items: r.items.map((i) => ({
+        slot_id: i.slotId,
+        slot_status: i.slotStatus.toLowerCase(),
+        worker: { name: i.workerName, initials: i.workerInitials, avatar_tint: i.workerTint },
+        role: i.role,
+        venue_tz: i.venueTz,
+        start_at: i.startAt.toISOString(),
+        end_at: i.endAt.toISOString(),
+        scheduled_hours: i.scheduledHours,
+        check_in_at: i.checkInAt?.toISOString() ?? null,
+        check_out_at: i.checkOutAt?.toISOString() ?? null,
+        actual_hours: i.actualHours,
+        approved_hours: i.approvedHours,
+        rate_cents: i.rateCents,
+        authorized_cents: i.authorizedCents,
+        max_hours: i.maxHours,
+        payment_status: i.paymentStatus,
+        last_error: i.lastError,
+        capture_reference: i.captureReference,
       })),
     }),
   );
