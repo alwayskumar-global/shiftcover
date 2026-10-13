@@ -112,6 +112,21 @@ with time left re-offers and keeps the hold; a no-show with no time left voids i
 pay > 0). Defaults: 500 bps, 0 fixed. The hold, the settlement and the manager's money table all use the same function
 (`platformFee`). The final model is Kumar's call before the first live run.
 
-## Live sandbox run
+## Live sandbox run (2026-10-13, local, PayPal sandbox)
 
-`scripts/live-sandbox-m2.ts start|finish` runs the shipped gateway against the real sandbox (see its header).
+`scripts/live-sandbox-m2.ts start|finish` runs the shipped gateway against the real sandbox. The buyer approved as a sandbox
+US Personal account; the payout went to a sandbox worker account. PayPal object ids are sandbox ids, not secrets; no token or
+credential is recorded here.
+
+| Step                                        | PayPal id           | Result                                                                                             |
+| ------------------------------------------- | ------------------- | -------------------------------------------------------------------------------------------------- |
+| Order (intent AUTHORIZE, $20.00 hold)       | `4HM97957PE619254R` | PAYER_ACTION_REQUIRED, then APPROVED by the buyer                                                  |
+| Authorize (amount checked against the hold) | `93J41748H4825344V` | CREATED, $20.00                                                                                    |
+| Capture, partial, `final_capture: true`     | `5AE005976E123234W` | COMPLETED, $12.00, PayPal fee $0.91                                                                |
+| Capture repeated with the same request id   | `5AE005976E123234W` | same capture; no second charge                                                                     |
+| Payout batch ($10.00 to the worker)         | `94TJZKTHWRUJN`     | batch SUCCESS, item SUCCESS, item fee $0.25                                                        |
+| Payout repeated, first run                  | (none)              | HTTP 400 "Batch with given sender_batch_id already exists" (bare 400 before the fix)               |
+| Payout repeated after the fix               | `94TJZKTHWRUJN`     | resolved to the ORIGINAL batch through the link in the error (`details[].link[]`); no second batch |
+
+The $2.00 between the capture and the payout stands in for the platform fee. After the capture the authorization reads
+CAPTURED; a re-run of the script accepts that state.
