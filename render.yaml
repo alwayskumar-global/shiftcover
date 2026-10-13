@@ -11,6 +11,8 @@ services:
     runtime: node
     plan: starter
     region: oregon # same region as Supabase us-west-2 (PLAN.md 6A)
+    # `npm run build` = `next build --webpack`: the Turbopack production build peaked at 5.5-6.4 GB here and ran out of
+    # memory on Render; webpack peaks at about 1.8 GB.
     buildCommand: npm ci --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
