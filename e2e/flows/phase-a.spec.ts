@@ -42,7 +42,7 @@ async function firstOfferLink(slotId: string): Promise<string> {
   });
 }
 
-test('claim -> My shifts -> arrive -> finish -> manager approves and pays -> the worker sees Paid', async ({
+test('claim -> My shifts -> arrive -> finish -> approve and pay -> Paid -> Earnings -> Profile email change -> Ledger -> Workers', async ({
   browser,
   page,
 }) => {
@@ -120,5 +120,72 @@ test('claim -> My shifts -> arrive -> finish -> manager approves and pays -> the
   // the worker sees it paid
   await w.reload();
   await expect(w.getByText('Paid', { exact: true }).first()).toBeVisible();
+
+  // G2-W4 earnings: the paid shift, the worker's own pay and a payout reference; no employer amounts
+  await w.getByRole('link', { name: 'Earnings' }).click();
+  await expect(w).toHaveURL(/\/w\/earnings$/);
+  await expect(w.getByRole('heading', { name: 'Earnings' })).toBeVisible();
+  await expect(w.getByText('This week')).toBeVisible();
+  const earn = w.getByRole('article').filter({ hasText: 'Line cook' }).first();
+  await expect(earn.getByText('Paid', { exact: true })).toBeVisible();
+  await expect(earn.getByRole('button', { name: /Copy PayPal payout reference/ })).toContainText(
+    'STUB-PAYOUT',
+  );
+  expect(await w.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(
+    false,
+  );
+
+  // G2-W5 profile: change the payout email with the code from the Outbox
+  await w.getByRole('link', { name: 'Profile' }).click();
+  await expect(w).toHaveURL(/\/w\/profile$/);
+  await expect(w.getByRole('button', { name: 'Line cook' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await w.getByRole('button', { name: 'Change' }).click();
+  await w.fill('#new-email', 'e2e.payout@example.com');
+  await w.getByRole('button', { name: 'Send code' }).click();
+  await expect(w.getByLabel('6-digit code')).toBeVisible();
+  await page.goto('/app/outbox');
+  const codeCell = page.getByRole('row').filter({ hasText: 'payout email code' }).first();
+  await expect(codeCell).toBeVisible();
+  const code = (await codeCell.locator('.sc-ref').innerText()).trim();
+  expect(code).toMatch(/^\d{6}$/);
+  await w.fill('#otp', code === '000000' ? '111111' : '000000'); // a wrong code first
+  await w.getByRole('button', { name: 'Confirm new email' }).click();
+  await expect(w.getByText(/That code isn't right/)).toBeVisible();
+  await w.fill('#otp', code);
+  await w.getByRole('button', { name: 'Confirm new email' }).click();
+  await expect(w.getByText('Payout email updated')).toBeVisible();
+  await expect(w.getByText('e2e.payout@example.com').first()).toBeVisible();
   await phone.close();
+
+  // G2-M6 ledger: the paid shift, then its breakdown
+  await page.goto('/app/ledger');
+  await expect(page.getByRole('heading', { name: 'Money' })).toBeVisible();
+  // the first scenario in this run left a held shift too: pick this run's paid one
+  const row = page
+    .getByRole('row')
+    .filter({ hasText: 'Line cook' })
+    .filter({ has: page.getByText('Paid', { exact: true }) })
+    .first();
+  await expect(row).toBeVisible();
+  await row.getByRole('button', { name: /Open breakdown/ }).click();
+  const panel = page.getByRole('dialog', { name: 'Shift breakdown' });
+  await expect(panel.getByText('Charged to you')).toBeVisible();
+  await expect(panel.getByRole('list', { name: 'Ledger entries' })).toContainText(
+    'Payout delivered',
+  );
+  await page.keyboard.press('Escape');
+
+  // G2-M7 workers: the directory, then an invite
+  await page.goto('/app/workers');
+  await expect(page.getByRole('heading', { name: 'Workers' })).toBeVisible();
+  await page.fill('#inv-email', 'e2e.invite@example.com');
+  await page.getByRole('button', { name: 'Send invite' }).click();
+  await expect(page.getByText('Invite sent to e2e.invite@example.com')).toBeVisible();
+  await expect(page.getByText(/Invited · e2e.invite@example.com/)).toBeVisible();
+  await page.fill('#inv-email', 'e2e.invite@example.com');
+  await page.getByRole('button', { name: 'Send invite' }).click();
+  await expect(page.getByText('You already invited this email')).toBeVisible();
 });
