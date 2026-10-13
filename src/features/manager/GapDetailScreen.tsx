@@ -509,15 +509,11 @@ export function GapDetailScreen({ id }: { id: string }) {
             </Badge>
           </div>
           <div className="sc-toolbar__group">
-            {/* Raising the cap needs the extra PayPal hold (M2); the control stays visible but inert until then. */}
-            <Button
-              variant="secondary"
-              size="md"
-              inert
-              title="Available once PayPal approval is connected"
-            >
+            {/* Decision: widening the cap is deferred. Shown disabled, labelled "Coming soon"; no dialog, no API call. */}
+            <Button variant="secondary" size="md" inert title="Coming soon">
               <Icon name="i-plus" size="sm" />
               Widen the cap
+              <span className="sc-nav__tag">Coming soon</span>
             </Button>
             <Button
               variant="danger-quiet"
@@ -561,13 +557,9 @@ export function GapDetailScreen({ id }: { id: string }) {
                 Offer a higher rate than +{slot.max_premium_pct}% ({formatRate(capRate)}). The extra
                 hold is approved in PayPal; you are still charged for hours worked only.
               </span>
-              <Button
-                variant="primary"
-                size="md"
-                inert
-                title="Available once PayPal approval is connected"
-              >
+              <Button variant="primary" size="md" inert title="Coming soon">
                 Raise cap and re-offer
+                <span className="sc-nav__tag">Coming soon</span>
               </Button>
             </div>
             {radiusSuggest && (

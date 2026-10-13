@@ -109,7 +109,7 @@ export function OutboxScreen() {
               <span className="sc-offers__time" role="cell">
                 {when(i.created_at)}
               </span>
-              <span role="cell">
+              <span role="cell" style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                 {i.link ? (
                   <>
                     <a
@@ -119,6 +119,17 @@ export function OutboxScreen() {
                       rel="noreferrer noopener"
                     >
                       Open
+                    </a>
+                    {/* Per-worker link, shared by the manager's own tap. The link goes only into this URL: it is never
+                        logged, stored or sent to our server. */}
+                    <a
+                      className="sc-btn sc-btn--quiet sc-btn--md"
+                      href={`https://wa.me/?text=${encodeURIComponent(`Shift offer from ShiftCover: ${i.link}`)}`}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      aria-label={`Share ${i.recipient_label}'s link on WhatsApp`}
+                    >
+                      Share on WhatsApp
                     </a>
                     <Button variant="quiet" size="md" onClick={() => copy(i.id, i.link!)}>
                       <Icon name={copied === i.id ? 'i-check' : 'i-copy'} size="sm" />

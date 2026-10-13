@@ -1,5 +1,5 @@
 import { desc, eq, inArray } from 'drizzle-orm';
-import { offers, payments, shiftSlots, venues } from '../db/schema';
+import { authUser, offers, payments, shiftSlots, users, venues } from '../db/schema';
 import type { DbLike } from './types';
 
 /**
@@ -22,6 +22,8 @@ export async function workerShifts(h: DbLike, workerId: string) {
       venueName: venues.name,
       venueArea: venues.area,
       venueTz: venues.timezone,
+      venueAddress: venues.address,
+      orgId: venues.orgId,
       offeredRateCents: shiftSlots.offeredRateCents,
       checkInAt: shiftSlots.checkInAt,
       checkOutAt: shiftSlots.checkOutAt,
@@ -42,6 +44,18 @@ export async function workerShifts(h: DbLike, workerId: string) {
     const cur = latest.get(p.slotId);
     if (!cur || p.attempt > cur.attempt) latest.set(p.slotId, p);
   }
+  // The manager's name for the copy that says who is checking the hours: the organisation's first manager.
+  const orgIds = [...new Set(mine.map((m) => m.orgId))];
+  const managers = orgIds.length
+    ? await h
+        .select({ orgId: users.orgId, name: authUser.name, createdAt: users.createdAt })
+        .from(users)
+        .innerJoin(authUser, eq(authUser.email, users.email))
+        .where(inArray(users.orgId, orgIds))
+    : [];
+  const managerOf = new Map<string, string>();
+  for (const m of [...managers].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()))
+    if (!managerOf.has(m.orgId)) managerOf.set(m.orgId, m.name);
   return mine.map((m) => ({
     offerId: m.offerId,
     offerStatus: m.offerStatus,
@@ -56,6 +70,8 @@ export async function workerShifts(h: DbLike, workerId: string) {
     isMine: m.assignedToMe === workerId,
     venueArea: m.venueArea,
     venueTz: m.venueTz,
+    venueAddress: m.venueAddress,
+    managerName: managerOf.get(m.orgId) ?? null,
     hours: Math.round(((m.endAt.getTime() - m.startAt.getTime()) / 3_600_000) * 100) / 100,
     offeredRateCents: m.offeredRateCents,
     checkInAt: m.checkInAt?.toISOString() ?? null,

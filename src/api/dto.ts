@@ -351,6 +351,10 @@ export const WorkerShiftsResponse = z
           // ---- additive (My shifts): what the worker sees about their own booked shift ----
           venue_area: z.string(),
           venue_tz: z.string(),
+          /** Street address from venues.address (empty when unset): "Open in Maps" uses it. */
+          venue_address: z.string(),
+          /** The organisation's manager, for "<name> is checking your hours". */
+          manager_name: z.string().nullable(),
           hours: z.number().positive(),
           offered_rate_cents: cents.nullable(),
           check_in_at: iso.nullable(),

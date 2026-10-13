@@ -26,6 +26,8 @@ const base = (n: number, over: Partial<S>): S => ({
   is_mine: true,
   venue_area: 'Portland, OR',
   venue_tz: TZ,
+  venue_address: '1021 NW Everett St, Portland, OR 97209',
+  manager_name: 'Dana Whitfield',
   hours: 8,
   offered_rate_cents: 2200,
   check_in_at: null,

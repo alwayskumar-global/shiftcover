@@ -343,7 +343,7 @@ function ShiftCard({
         : v.step === 'arrive'
           ? "I've arrived"
           : 'Finished';
-  const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${s.venue_name} ${s.venue_area}`)}`;
+  const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.venue_address || `${s.venue_name} ${s.venue_area}`)}`;
   return (
     <article
       className={`sc-shift ${active ? 'sc-shift--active' : ''}`}

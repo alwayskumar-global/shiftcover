@@ -419,6 +419,8 @@ export async function getWorkerShifts(d: ApiDeps, req: Request) {
         is_mine: s.isMine,
         venue_area: s.venueArea,
         venue_tz: s.venueTz,
+        venue_address: s.venueAddress,
+        manager_name: s.managerName,
         hours: s.hours,
         offered_rate_cents: s.offeredRateCents,
         check_in_at: s.checkInAt,

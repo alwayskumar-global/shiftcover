@@ -51,12 +51,22 @@ const PAY_LABEL: Record<keyof typeof B, string> = {
   noshow: 'No pay due',
 };
 
-const NOTE: Partial<Record<keyof typeof B, string>> = {
-  pending: "Your manager is checking your hours. You're paid after they approve.",
-  paying: 'Your payout is on its way to your PayPal account.',
-  cancelled: 'Maple & Rye cancelled this shift. Nothing is owed and nothing was charged.',
-  noshow: 'This shift was marked as a no-show. Nothing is owed.',
-};
+/** Notes that name people or places take them from the shift's data (manager and venue), never from literals. */
+function noteFor(k: keyof typeof B, s: WorkerShift): string {
+  const manager = s.manager_name ?? 'Your manager';
+  switch (k) {
+    case 'pending':
+      return `${manager} is checking your hours. You're paid after they approve.`;
+    case 'paying':
+      return 'Your payout is on its way to your PayPal account.';
+    case 'cancelled':
+      return `${s.venue_name} cancelled this shift. Nothing is owed and nothing was charged.`;
+    case 'noshow':
+      return 'This shift was marked as a no-show. Nothing is owed.';
+    default:
+      return '';
+  }
+}
 
 function key(s: WorkerShift): keyof typeof B {
   switch (s.slot_status) {
@@ -126,8 +136,8 @@ export function buildViews(data: { server_time: string; shifts: WorkerShift[] })
         : k === 'in_progress'
           ? 'Tap Finished when you leave.'
           : k === 'captured' && s.approved_hours !== null
-            ? `Your manager approved ${s.approved_hours} of ${s.hours} h. Your payout is being prepared.`
-            : (NOTE[k] ?? '');
+            ? `${s.manager_name ?? 'Your manager'} approved ${s.approved_hours} of ${s.hours} h. Your payout is being prepared.`
+            : noteFor(k, s);
     views.push({
       shift: s,
       section,

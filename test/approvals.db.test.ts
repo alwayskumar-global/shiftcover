@@ -220,3 +220,67 @@ describe.skipIf(!hasTestDb)('stub-mode settlement (local runs only, no PayPal)',
     });
   });
 });
+
+describe.skipIf(!hasTestDb)(
+  'worker shifts: address and manager name come from data (live Postgres)',
+  () => {
+    const t = hasTestDb ? createTestDb() : undefined;
+    afterAll(() => t?.close());
+    const db = () => t!.db;
+
+    it('returns venues.address and the organisation manager’s name', async () => {
+      const { workerShifts } = await import('../src/services/worker-data');
+      const { venues, offers } = await import('../src/db/schema');
+      const o = await makeOrg(db());
+      const auth = createAuth({
+        db: db(),
+        secret: 's'.repeat(40),
+        baseURL: BASE,
+        production: false,
+        rateLimit: false,
+      });
+      await provisionManager(db(), auth, {
+        orgId: o.org.id,
+        email: o.manager.email,
+        name: 'Priya Shah',
+        password: PASSWORD,
+      });
+      await db()
+        .update(venues)
+        .set({ address: '12 Test Lane, Portland, OR' })
+        .where(eq(venues.id, o.venue.id));
+      const worker = await makeWorker(db(), o.org.id, { name: 'Jordan Reyes' });
+      const { deps } = testDeps(db(), { now: () => endAt });
+      const r = await createGap(
+        deps,
+        { orgId: o.org.id, userId: o.manager.id },
+        {
+          venueId: o.venue.id,
+          role: 'line_cook',
+          startAt,
+          endAt,
+          baseRateCents: 2200,
+          maxPremiumPct: 20,
+        },
+      );
+      await db()
+        .update(shiftSlots)
+        .set({ status: 'CONFIRMED', workerId: worker.id, offeredRateCents: 2200 })
+        .where(eq(shiftSlots.id, r.slot.id));
+      await db().insert(offers).values({
+        slotId: r.slot.id,
+        workerId: worker.id,
+        wave: 1,
+        rateCents: 2200,
+        tokenHash: crypto.randomUUID(),
+        expiresAt: endAt,
+        status: 'CLAIMED',
+      });
+      const [s] = await workerShifts(db(), worker.id);
+      expect(s).toMatchObject({
+        venueAddress: '12 Test Lane, Portland, OR',
+        managerName: 'Priya Shah',
+      });
+    });
+  },
+);

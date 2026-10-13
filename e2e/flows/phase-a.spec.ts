@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
-import { Pool } from 'pg';
-import { E2E_DATABASE_URL, MANAGER_EMAIL, MANAGER_PASSWORD } from './../env';
+import type { Pool } from 'pg';
+import { MANAGER_EMAIL, MANAGER_PASSWORD, assertLoopback, localPool } from './../env';
 
 /**
  * G2 demo blockers, stub mode, local throwaway database: claim -> My shifts -> arrive -> finish -> manager approves.
@@ -18,7 +18,7 @@ const DAY = venueHour < 6 ? 'today' : 'tomorrow';
 const NOTE = `Maria called in sick, need a line cook 7 to 3 ${DAY}`;
 
 async function withDb<T>(fn: (pool: Pool) => Promise<T>): Promise<T> {
-  const pool = new Pool({ connectionString: E2E_DATABASE_URL, max: 1 });
+  const pool = localPool();
   try {
     return await fn(pool);
   } finally {
@@ -35,7 +35,7 @@ async function firstOfferLink(slotId: string): Promise<string> {
          order by created_at, id`,
         [slotId],
       );
-      if (rows.length >= 1) return rows[0]!.link;
+      if (rows.length >= 1) return assertLoopback(rows[0]!.link, 'offer link'); // never open a non-local link
       await new Promise((r) => setTimeout(r, 500));
     }
     throw new Error('no wave 1 offer in the outbox');

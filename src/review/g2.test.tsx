@@ -275,3 +275,122 @@ describe('Approvals (G2-M5)', () => {
     await act(async () => undefined);
   });
 });
+
+describe('copy comes from data (G2 review fixes)', () => {
+  it('the waiting-for-approval note names the manager from the data, and the cancelled note names the venue', async () => {
+    stub('w3-finished');
+    const a = render(<MyShifts />);
+    expect(await screen.findByText(/Dana Whitfield is checking your hours/)).toBeInTheDocument();
+    a.unmount();
+    // another manager name and another venue: nothing in the UI is a literal
+    const data = workerShifts('finished');
+    for (const sh of data.shifts) {
+      sh.manager_name = 'Priya Shah';
+      sh.venue_name = 'Harbor Cafe';
+    }
+    restore?.();
+    restore = undefined;
+    const real = window.fetch;
+    window.fetch = (async () =>
+      new Response(JSON.stringify(data), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })) as typeof fetch;
+    render(<MyShifts />);
+    expect(await screen.findByText(/Priya Shah is checking your hours/)).toBeInTheDocument();
+    expect(screen.getByText(/Harbor Cafe cancelled this shift/)).toBeInTheDocument();
+    expect(screen.queryByText(/Dana|Maple & Rye cancelled/)).toBeNull();
+    window.fetch = real;
+  });
+
+  it('Open in Maps uses the venue address from the data', async () => {
+    stub('w3-booked');
+    render(<MyShifts />);
+    const links = await screen.findAllByRole('link', { name: /Open in Maps/ });
+    expect(links[0]!.getAttribute('href')).toContain(
+      encodeURIComponent('1021 NW Everett St, Portland, OR 97209'),
+    );
+  });
+});
+
+describe('Widen the cap (deferred)', () => {
+  it('shows disabled with "Coming soon" and makes no request', async () => {
+    const { GapDetailScreen } = await import('@/features/manager/GapDetailScreen');
+    const { MeProvider } = await import('@/features/manager/me-context');
+    const { ME, GAP_DETAILS } = await import('./fixtures');
+    stub('m4-offering');
+    render(
+      <MeProvider me={ME}>
+        <GapDetailScreen id={GAP_DETAILS.offering.slot.id} />
+      </MeProvider>,
+    );
+    const btn = await screen.findByRole('button', { name: /Widen the cap/ });
+    expect(btn).toHaveAttribute('aria-disabled', 'true');
+    expect(within(btn).getByText('Coming soon')).toBeInTheDocument();
+    const before = calls.length;
+    await userEvent.click(btn);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+    expect(calls.slice(before).filter((c) => c.method === 'POST')).toHaveLength(0);
+  });
+});
+
+describe('Outbox WhatsApp share', () => {
+  it('builds a wa.me link with the message pre-filled, and never logs or sends the link anywhere', async () => {
+    const { OutboxScreen } = await import('@/features/manager/OutboxScreen');
+    const link = 'http://127.0.0.1:3300/c/SECRET-LINK-TOKEN';
+    const body = {
+      items: [
+        {
+          id: '00000000-0000-4000-8000-000000000001',
+          channel: 'email',
+          kind: 'offer',
+          recipient: 'worker:x',
+          recipient_label: 'Jordan',
+          created_at: '2026-10-12T13:00:00.000Z',
+          status: 'pending',
+          link,
+        },
+        {
+          id: '00000000-0000-4000-8000-000000000002',
+          channel: 'in_app',
+          kind: 'claim_manager',
+          recipient: 'manager:x',
+          recipient_label: 'Dana',
+          created_at: '2026-10-12T13:00:00.000Z',
+          status: 'pending',
+          link: null,
+        },
+      ],
+    };
+    const seen: string[] = [];
+    const real = window.fetch;
+    window.fetch = (async (i: RequestInfo | URL, init?: RequestInit) => {
+      seen.push(`${init?.method ?? 'GET'} ${String(i)} ${init?.body ?? ''}`);
+      return new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }) as typeof fetch;
+    const spies = (['log', 'info', 'warn', 'error', 'debug'] as const).map((m) =>
+      vi.spyOn(console, m).mockImplementation(() => undefined),
+    );
+    render(<OutboxScreen />);
+    const share = await screen.findByRole('link', { name: /Share Jordan's link on WhatsApp/ });
+    const href = share.getAttribute('href')!;
+    expect(href.startsWith('https://wa.me/?text=')).toBe(true);
+    expect(decodeURIComponent(href.slice('https://wa.me/?text='.length))).toContain(link);
+    expect(screen.getAllByRole('link', { name: /Share on WhatsApp|WhatsApp/ })).toHaveLength(1); // only rows that have a link
+    await userEvent.click(share);
+    const logged = spies
+      .flatMap((s) => s.mock.calls)
+      .flat()
+      .map(String)
+      .join(' ');
+    spies.forEach((s) => s.mockRestore());
+    expect(logged).not.toContain('SECRET-LINK-TOKEN');
+    expect(seen.every((s) => s.startsWith('GET /api/manager/outbox'))).toBe(true); // the link goes nowhere but the wa.me URL
+    expect(localStorage.length + sessionStorage.length).toBe(0); // not stored either
+    window.fetch = real;
+  });
+});
