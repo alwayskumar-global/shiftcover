@@ -253,6 +253,7 @@ export async function gapDetail(
     waves,
     offers: offerDtos,
     payment: await paymentDto(h, slotId),
+    best_matches: [], // filled by the API layer (src/api/best-matches.ts): it needs the Gemini service
   };
 }
 

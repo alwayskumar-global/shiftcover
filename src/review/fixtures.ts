@@ -238,6 +238,7 @@ export type RosterKey = keyof typeof ROSTERS;
 // ------------------------------------------------------------------------------------------ report a gap (M3)
 export const PARSE_RESULT = (date: string): ParseResultDto => ({
   source: 'rules',
+  fallback_reason: 'disabled',
   role: 'line_cook',
   date,
   start: '07:00',
@@ -363,6 +364,7 @@ const detail = (
   waves,
   offers,
   payment,
+  best_matches: [],
 });
 
 const filledOffers = () => [

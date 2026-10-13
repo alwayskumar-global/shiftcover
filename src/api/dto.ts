@@ -237,6 +237,20 @@ export const ParseGapRequest = z.object({ text: z.string().trim().min(3).max(500
 export const ParseResultDto = z
   .object({
     source: z.enum(['rules', 'llm']),
+    /** Why the rules parser was used instead of Gemini; null when Gemini read the note (M3, additive). */
+    fallback_reason: z
+      .enum([
+        'disabled',
+        'daily_cap',
+        'user_cap',
+        'timeout',
+        'provider_error',
+        'invalid_output',
+        'invalid_values',
+        'low_confidence',
+        'nothing_read',
+      ])
+      .nullable(),
     role: role.nullable(),
     /** Venue-local calendar date YYYY-MM-DD. */
     date: z.iso.date().nullable(),
@@ -319,6 +333,24 @@ export const GapDetailResponse = z
     waves: z.array(WaveSummaryDto),
     offers: z.array(OfferDto),
     payment: PaymentDto.nullable(),
+    /** M3: the top ranked candidates with one plain-language reason each (Gemini, or the template when it is off). */
+    best_matches: z.array(
+      z
+        .object({
+          rank: z.number().int().positive(),
+          worker: z
+            .object({
+              name: z.string(),
+              initials: z.string(),
+              avatar_tint: z.number().int().min(1).max(5),
+              role,
+            })
+            .strict(),
+          reason: z.string(),
+          reason_source: z.enum(['llm', 'template']),
+        })
+        .strict(),
+    ),
   })
   .strict();
 export type GapDetailResponse = z.infer<typeof GapDetailResponse>;

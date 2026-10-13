@@ -108,23 +108,33 @@ export async function loadCandidates(
   }));
 }
 
-export async function matchForSlot(h: DbLike, slot: SlotRow): Promise<MatchResult> {
+/** The ranking plus the facts it was computed from (the "why this worker" text is built from both). */
+export async function matchWithFacts(h: DbLike, slot: SlotRow) {
   const gap = await loadGapFacts(h, slot);
   const cands = await loadCandidates(h, slot, gap);
   const result = rankCandidates(cands, gap, MATCHING);
-  if (!slot.replacesSlotId) return result;
+  const facts = new Map(cands.map((c) => [c.workerId, c]));
+  if (!slot.replacesSlotId) return { result, facts, gap };
   // The worker who called out of the replaced shift is never offered its cover.
   const [orig] = await h
     .select({ workerId: shiftSlots.workerId })
     .from(shiftSlots)
     .where(eq(shiftSlots.id, slot.replacesSlotId));
   const out = orig?.workerId;
-  if (!out) return result;
+  if (!out) return { result, facts, gap };
   const gone = result.ranked.find((r) => r.workerId === out);
   return {
-    ranked: result.ranked.filter((r) => r.workerId !== out),
-    excluded: gone
-      ? [...result.excluded, { workerId: out, name: gone.name, reasons: ['called_out' as const] }]
-      : result.excluded,
+    result: {
+      ranked: result.ranked.filter((r) => r.workerId !== out),
+      excluded: gone
+        ? [...result.excluded, { workerId: out, name: gone.name, reasons: ['called_out' as const] }]
+        : result.excluded,
+    },
+    facts,
+    gap,
   };
+}
+
+export async function matchForSlot(h: DbLike, slot: SlotRow): Promise<MatchResult> {
+  return (await matchWithFacts(h, slot)).result;
 }

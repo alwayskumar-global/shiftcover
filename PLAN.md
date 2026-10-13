@@ -37,7 +37,8 @@ Hackathon: https://paypalaihackathon.devpost.com/
 | A11 | Repo is **private until submission**, then flipped public after the pre-flip checklist (Section 15). | **Confirmed** |
 | A12 | **WhatsApp, option B only:** per-worker offer links that the manager shares by hand from the sandbox Outbox (a `wa.me` deep link with the message pre-filled). No WhatsApp API or server-side sending; links are never logged or stored by the share button. Refines A5 (no automated WhatsApp or SMS). | **Confirmed** |
 | A13 | **Widen the cap is deferred.** The control is shown disabled ("Coming soon"); no dialog and no API call until it is built. | **Confirmed** |
-| A14 | **Gemini intake is planned after the demo.** The running app uses the rules parser only; no Gemini call is made. See `docs/after-demo.md`. | **Confirmed** |
+| A14 | ~~**Gemini intake is planned after the demo.**~~ **Superseded by A15.** | Superseded |
+| A15 | **Gemini for gap intake and "why this worker" (M3).** `POST /api/manager/gaps/parse` reads the note with `gemini-3.5-flash-lite` (structured output) and returns `source` `llm` or `rules` plus a `fallback_reason`; the gap detail shows one short reason per top candidate (Gemini, cached per slot, worker and score version, with a deterministic template when Gemini is unavailable). Gemini only reads and words: code owns eligibility, ranking, rates, holds, captures and payouts, and re-validates every model field against the domain rules and the note itself. Calls go only through `src/llm/gemini.ts` with the 5 second timeout, kill switch and caps of 9.3. The rules parser stays as the fallback. **Offer copy is out of scope** (templates stay). Prompts and outputs are NOT logged (refines 9.3 item 10: only source, reason code, latency and token counts are logged; there is no transparency view). See `docs/m3-gemini.md`. | **Confirmed** |
 
 ---
 

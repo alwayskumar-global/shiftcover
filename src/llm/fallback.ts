@@ -2,7 +2,7 @@ import type { LlmFailureReason } from './gemini';
 
 /**
  * Deterministic fallbacks (Section 9.3 item 8). The demo must never break on an AI outage.
- * M0 ships the interface and stubs only; the rules parser and templates land in M3.
+ * The rules parser is the fallback for Gemini intake; the "why this worker" template lives in why-worker.ts.
  */
 
 import { parseGapText, type GapParse } from '../domain/gap-parser';
@@ -19,7 +19,7 @@ export interface Explainer {
   shiftRecap(args: { role: string; hours: number; payUsd: string }): string;
 }
 
-/** Deterministic rules parser (M1). The Gemini path arrives in M3; this stays as the fallback. */
+/** Deterministic rules parser (M1). Gemini intake (M3) calls this first and falls back to it on any failure. */
 export const rulesGapParser: GapParser = {
   parse: (text, ctx) => parseGapText(text, ctx),
 };

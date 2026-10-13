@@ -64,6 +64,7 @@ const DEVIATIONS = {
     'base_rate_source',
     'called_out_name',
     'end_at',
+    'fallback_reason',
     'gap_reason',
     'missing',
     'replaces_slot_id',

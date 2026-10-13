@@ -14,6 +14,32 @@ function sourceFiles(dir: string, out: string[] = []): string[] {
   return out;
 }
 
+describe('Gemini isolation (PLAN 9.2, M3)', () => {
+  it('only src/llm/gemini.ts imports the SDK; the key and the llm runtime never reach client code', () => {
+    const all = [...sourceFiles('src'), ...sourceFiles('app'), ...sourceFiles('scripts')];
+    const importers = all.filter((f) =>
+      /from ['"]@google\/genai['"]|require\(['"]@google\/genai/.test(readFileSync(f, 'utf8')),
+    );
+    expect(importers).toEqual(['src/llm/gemini.ts']);
+    // 'use client' files must not import the llm layer or read the key
+    for (const f of all) {
+      const text = readFileSync(f, 'utf8');
+      if (!/^['"]use client['"]/m.test(text)) continue;
+      expect(text, f).not.toMatch(/from ['"](@\/|\.\.?\/)[^'"]*\bllm\//);
+      expect(text, f).not.toMatch(/GEMINI_API_KEY/);
+    }
+    // the key is read in exactly one production place besides the config schema
+    const readers = all.filter(
+      (f) => /GEMINI_API_KEY/.test(readFileSync(f, 'utf8')) && !f.startsWith('scripts/'),
+    );
+    expect(readers.sort()).toEqual([
+      'src/config/env.ts',
+      'src/llm/gemini.ts',
+      'src/llm/runtime.ts',
+    ]);
+  });
+});
+
 describe('guards on test-only and local-only code paths', () => {
   it('the reconcile slot filter is never passed by production code, a job payload or an API', () => {
     const calls: string[] = [];

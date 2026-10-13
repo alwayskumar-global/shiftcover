@@ -1,6 +1,8 @@
 import { getAuth } from '../auth';
 import { getServerEnv } from '../config/env';
 import { enqueueFromWeb } from '../jobs/send-only';
+import { getLlm } from '../llm/runtime';
+import { createWhyService } from '../llm/why-worker';
 import { buildServiceDeps } from '../services/runtime';
 import type { ApiDeps } from './handlers';
 import { createRateLimiter } from './rate-limit';
@@ -12,6 +14,7 @@ const limiter = createRateLimiter();
 export function getApiDeps(): ApiDeps {
   if (!cached) {
     const env = getServerEnv();
+    const llm = getLlm();
     cached = {
       svc: buildServiceDeps((name, data, options) => enqueueFromWeb(name, data, options)),
       auth: getAuth(),
@@ -22,6 +25,8 @@ export function getApiDeps(): ApiDeps {
       paypalEnv: env.PAYPAL_ENV,
       paypalClientId: env.PAYMENTS_MODE === 'paypal' ? env.PAYPAL_CLIENT_ID : undefined,
       maxPremiumPctDefault: env.MAX_PREMIUM_PCT_DEFAULT,
+      llm,
+      why: createWhyService({ llm }),
     };
   }
   return cached;
