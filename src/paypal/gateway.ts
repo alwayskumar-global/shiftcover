@@ -11,7 +11,7 @@ import {
   voidAuthorization,
   type OrderResponse,
 } from './api';
-import type { PaypalClient } from './client';
+import { PaypalError, type PaypalClient } from './client';
 import { requestIds, senderBatchIdFor } from './ids';
 
 /**
@@ -65,7 +65,7 @@ export interface PaymentsGateway {
     receiverEmail: string;
     amountCents: number;
     note: string;
-  }): Promise<{ batchId: string; batchStatus: string }>;
+  }): Promise<{ batchId: string; batchStatus: string; existing?: boolean }>;
   getPayoutBatch(batchId: string): Promise<{
     batchStatus: string;
     items: Array<{
@@ -89,6 +89,25 @@ const cents = (a?: { value: string }) => {
 
 const captureStatus = (s: string): CaptureStatus =>
   s === 'COMPLETED' || s === 'PENDING' || s === 'DECLINED' || s === 'FAILED' ? s : 'OTHER';
+
+const PAYOUT_LINK = /\/v1\/payments\/payouts\/([A-Za-z0-9-]+)\/?$/;
+
+/**
+ * For a duplicate sender_batch_id: the original batch id from the issue's HATEOAS link
+ * (`details[].link[].href` ending in /v1/payments/payouts/{id}), 'duplicate-without-link' when PayPal says the batch
+ * exists but gives no usable link, or undefined when this is some other error.
+ */
+export function originalPayoutBatchId(
+  e: PaypalError,
+): string | 'duplicate-without-link' | undefined {
+  const dup = e.issues.find((i) => /sender_batch_id already exists/i.test(i.issue ?? ''));
+  if (!dup) return undefined;
+  for (const l of dup.link ?? []) {
+    const m = l.href ? PAYOUT_LINK.exec(new URL(l.href).pathname) : null;
+    if (m) return m[1];
+  }
+  return 'duplicate-without-link';
+}
 
 function authFromOrder(o: OrderResponse) {
   const a = o.purchase_units?.[0]?.payments?.authorizations?.[0];
@@ -155,18 +174,32 @@ export function createPaypalGateway(
       };
     },
     async createPayout(a) {
-      const r = await createPayout(client, {
-        senderBatchId: senderBatchIdFor(a.paymentId, a.payoutAttempt),
-        senderItemId: `${a.paymentId}-${a.payoutAttempt}`,
-        receiverEmail: a.receiverEmail,
-        platformEmail: opts.platformEmail,
-        amountCents: a.amountCents,
-        subject: 'You have been paid for your shift',
-        message: 'Thanks for covering the shift. Your pay is on its way.',
-        note: a.note,
-        requestId: requestIds.payout(a.slotId, a.payoutAttempt),
-      });
-      return { batchId: r.batch_header.payout_batch_id, batchStatus: r.batch_header.batch_status };
+      try {
+        const r = await createPayout(client, {
+          senderBatchId: senderBatchIdFor(a.paymentId, a.payoutAttempt),
+          senderItemId: `${a.paymentId}-${a.payoutAttempt}`,
+          receiverEmail: a.receiverEmail,
+          platformEmail: opts.platformEmail,
+          amountCents: a.amountCents,
+          subject: 'You have been paid for your shift',
+          message: 'Thanks for covering the shift. Your pay is on its way.',
+          note: a.note,
+          requestId: requestIds.payout(a.slotId, a.payoutAttempt),
+        });
+        return {
+          batchId: r.batch_header.payout_batch_id,
+          batchStatus: r.batch_header.batch_status,
+        };
+      } catch (e) {
+        // "Batch with given sender_batch_id already exists": this payout was already created (our earlier attempt
+        // succeeded at PayPal but we never saw the answer). Not a failure and never a second batch: follow the
+        // link PayPal attaches to the original, read it, and report it.
+        const original = e instanceof PaypalError ? originalPayoutBatchId(e) : undefined;
+        if (original === 'duplicate-without-link') throw e; // classified as retryable: reconcile decides
+        if (!original) throw e;
+        const b = await getPayoutBatch(client, original);
+        return { batchId: original, batchStatus: b.batch_header.batch_status, existing: true };
+      }
     },
     async getPayoutBatch(batchId) {
       const b = await getPayoutBatch(client, batchId);

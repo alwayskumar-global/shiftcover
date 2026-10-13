@@ -60,6 +60,9 @@ export function classifyPayoutError(e: unknown): PaypalOutcome {
           ? 'The platform balance is too low to send this payout.'
           : 'PayPal is not authorised to send this payout.',
     };
+  // Duplicate sender_batch_id with no link to the original: the payout exists. Never failed, never recreated:
+  // stays PAYOUT_PENDING and reconcile resolves it.
+  if (e.issues.some((i) => /sender_batch_id already exists/i.test(i.issue ?? ''))) return retry(c);
   if (e.retryable) return retry(c);
   return { kind: 'payout_failed', code: c, message: 'PayPal could not send the payout.' };
 }

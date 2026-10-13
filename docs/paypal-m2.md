@@ -39,6 +39,10 @@ with `onApprove({orderId})`, `onCancel`, `onError`, and `session.start({presenta
 | void            | `void:<paymentId>`                                                |                                                                                                                        |
 | payout          | `payout:<slotId>:<attempt>`                                       | `sender_batch_id = sc-<paymentId>` (`-<n>` for a retry after a failed batch), `sender_item_id = <paymentId>-<attempt>` |
 
+A duplicate `sender_batch_id` (HTTP 400 "Batch with given sender_batch_id already exists") is not a failure: PayPal attaches a
+link to the original payout in `details[].link[]`; the gateway follows it, reads that batch, and the payment records the
+original batch id and status. Without a link the payment stays `PAYOUT_PENDING` for reconcile. A second batch is never created.
+
 A retry after a timeout or 5xx reuses the key (PayPal returns the first result, no second charge or payout). A retry after
 a real failure (declined capture, failed payout) bumps the counter, because a failed attempt used its ids.
 

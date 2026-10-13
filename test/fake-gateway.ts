@@ -32,7 +32,9 @@ export class FakeGateway implements PaymentsGateway {
       receiver: string;
     }
   >();
-  senderBatchIds = new Set<string>();
+  senderBatchIds = new Map<string, string>(); // sender_batch_id -> payout batch id
+  /** When true a duplicate sender_batch_id has no link to the original (PayPal sometimes gives none). */
+  duplicateWithoutLink = false;
   /** idempotency: request id -> first result */
   seen = new Map<string, unknown>();
   calls: Array<{ op: string; requestId?: string; args: unknown }> = [];
@@ -175,9 +177,19 @@ export class FakeGateway implements PaymentsGateway {
     this.rec('createPayout', a, rid);
     return this.once('createPayout', rid, () => {
       const sbi = senderBatchIdFor(a.paymentId, a.payoutAttempt);
-      if (this.senderBatchIds.has(sbi)) throw pp(400, 'DUPLICATE_SENDER_BATCH_ID', 'validation');
-      this.senderBatchIds.add(sbi);
+      const original = this.senderBatchIds.get(sbi);
+      if (original) {
+        // Same behaviour as the real gateway: resolve to the original batch, or fail retryably when PayPal gave no link.
+        if (this.duplicateWithoutLink)
+          throw pp(400, 'Batch with given sender_batch_id already exists', 'conflict');
+        return {
+          batchId: original,
+          batchStatus: this.batches.get(original)!.status,
+          existing: true,
+        };
+      }
       const batchId = `PAYOUT${randomUUID().replace(/-/g, '').slice(0, 12).toUpperCase()}`;
+      this.senderBatchIds.set(sbi, batchId);
       const itemStatus = this.nextPayoutItemStatus;
       this.batches.set(batchId, {
         status: itemStatus === 'SUCCESS' ? 'SUCCESS' : 'PENDING',
@@ -185,7 +197,7 @@ export class FakeGateway implements PaymentsGateway {
         cents: a.amountCents,
         receiver: a.receiverEmail,
       });
-      return { batchId, batchStatus: 'PENDING' };
+      return { batchId, batchStatus: 'PENDING', existing: undefined as boolean | undefined };
     });
   }
   async getPayoutBatch(batchId: string) {

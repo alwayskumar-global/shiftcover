@@ -301,6 +301,94 @@ describe('PayPal gateway requests', () => {
     ).toBe(`sc-${PAY}-2`);
   });
 
+  const DUP_BODY = (link: boolean) => ({
+    name: 'USER_BUSINESS_ERROR',
+    message: 'User business error.',
+    debug_id: 'dbg1',
+    details: [
+      {
+        field: 'SENDER_BATCH_ID',
+        location: 'body',
+        issue: 'Batch with given sender_batch_id already exists',
+        ...(link
+          ? {
+              link: [
+                {
+                  href: 'https://api.sandbox.paypal.com/v1/payments/payouts/94TJZKTHWRUJN',
+                  rel: 'self',
+                  method: 'GET',
+                  encType: 'application/json',
+                },
+              ],
+            }
+          : {}),
+      },
+    ],
+    links: [],
+  });
+
+  it('createPayout: 400 "sender_batch_id already exists" resolves to the ORIGINAL batch via its link, creating nothing new', async () => {
+    const { gw, calls } = setup({
+      'POST /v1/payments/payouts': () => json(DUP_BODY(true), 400),
+      'GET /v1/payments/payouts/94TJZKTHWRUJN': () =>
+        json({
+          batch_header: { payout_batch_id: '94TJZKTHWRUJN', batch_status: 'SUCCESS' },
+          items: [],
+        }),
+    });
+    const r = await gw.createPayout({
+      paymentId: PAY,
+      slotId: SLOT,
+      payoutAttempt: 1,
+      receiverEmail: 'w@example.com',
+      amountCents: 1000,
+      note: '',
+    });
+    expect(r).toEqual({ batchId: '94TJZKTHWRUJN', batchStatus: 'SUCCESS', existing: true });
+    expect(calls.map((c) => `${c.method} ${c.path}`)).toEqual([
+      'POST /v1/payments/payouts',
+      'GET /v1/payments/payouts/94TJZKTHWRUJN',
+    ]); // exactly one create attempt, then a read of the original: no second batch
+  });
+
+  it('createPayout: the same 400 without a link is rethrown as a retryable conflict (the payment stays pending)', async () => {
+    const { gw, calls } = setup({ 'POST /v1/payments/payouts': () => json(DUP_BODY(false), 400) });
+    const e = await gw
+      .createPayout({
+        paymentId: PAY,
+        slotId: SLOT,
+        payoutAttempt: 1,
+        receiverEmail: 'w@example.com',
+        amountCents: 1000,
+        note: '',
+      })
+      .catch((x: unknown) => x);
+    expect(e).toBeInstanceOf(PaypalError);
+    expect(classifyPayoutError(e).kind).toBe('retryable');
+    expect(calls).toHaveLength(1);
+  });
+
+  it('createPayout: an unrelated 400 is not mistaken for a duplicate', async () => {
+    const { gw, calls } = setup({
+      'POST /v1/payments/payouts': () =>
+        json(
+          { name: 'VALIDATION_ERROR', message: 'bad', details: [{ issue: 'MALFORMED_REQUEST' }] },
+          400,
+        ),
+    });
+    await expect(
+      gw.createPayout({
+        paymentId: PAY,
+        slotId: SLOT,
+        payoutAttempt: 1,
+        receiverEmail: 'w@example.com',
+        amountCents: 1000,
+        note: '',
+      }),
+    ).rejects.toBeInstanceOf(PaypalError);
+    expect(calls).toHaveLength(1);
+  });
+
   it('getPayoutBatch: reads batch status, item status, fee and error name', async () => {
     const { gw } = setup({
       'GET /v1/payments/payouts/PB1': () =>

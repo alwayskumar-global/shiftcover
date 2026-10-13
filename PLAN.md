@@ -452,7 +452,7 @@ Each milestone ends with a deployed build and a short written status (what works
 4. Retrying a payout with the same `sender_batch_id` does not double-pay.
 5. Reusing or tampering with a claim token fails; a GET never consumes a token.
 6. An unfilled slot voids the authorization and notifies the manager.
-7. No-show voids and re-offers.
+7. A no-show with time left (at least an hour) re-offers the shift and keeps the hold; a no-show with less than an hour left voids it. The authorization is voided only when a slot ends `UNFILLED` or `CANCELLED`, or when a no-show leaves too little time to re-offer.
 8. With webhooks disabled, the reconciliation job still converges.
 9. Worker A cannot read worker B's data.
 10. LLM disabled (`LLM_ENABLED=false`) or over cap: intake falls back to the rules parser and the demo flow completes.

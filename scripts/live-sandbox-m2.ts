@@ -76,7 +76,8 @@ async function finish() {
   const rows: Array<Record<string, string>> = [];
   const order = await gw.getOrder(st.orderId);
   console.log(`order ${st.orderId} status=${order.status}`);
-  if (order.status !== 'APPROVED') {
+  // A re-run of an already authorized order is fine: every step below is idempotent.
+  if (order.status !== 'APPROVED' && !(order.status === 'COMPLETED' && order.authorizationId)) {
     console.error(
       `Order is ${order.status}, not APPROVED: the buyer has not approved it. Run start again for a fresh order.`,
     );
@@ -84,15 +85,25 @@ async function finish() {
     return;
   }
 
-  const auth = await gw.authorize({ orderId: st.orderId, slotId: st.slotId, attempt: 1 });
-  if (!auth.authorizationId || auth.authorizationStatus !== 'CREATED')
+  const auth =
+    order.status === 'COMPLETED'
+      ? {
+          authorizationId: order.authorizationId,
+          authorizationStatus: order.authorizationStatus,
+          authorizedCents: order.authorizedCents,
+        }
+      : await gw.authorize({ orderId: st.orderId, slotId: st.slotId, attempt: 1 });
+  if (
+    !auth.authorizationId ||
+    !['CREATED', 'CAPTURED', 'PARTIALLY_CAPTURED'].includes(auth.authorizationStatus ?? '')
+  )
     throw new Error('authorization was not created');
   if (auth.authorizedCents !== HOLD_CENTS)
     throw new Error(`authorized ${auth.authorizedCents}, expected ${HOLD_CENTS}`);
   rows.push({
     step: 'authorize',
-    id: auth.authorizationId,
-    status: auth.authorizationStatus,
+    id: auth.authorizationId ?? '',
+    status: auth.authorizationStatus ?? '',
     amount: usd(HOLD_CENTS),
     fee: '-',
   });
@@ -135,27 +146,20 @@ async function finish() {
   rows.push({
     step: 'payout',
     id: payout.batchId,
-    status: payout.batchStatus,
+    status: `${payout.batchStatus}${payout.existing ? ' (resolved existing batch)' : ''}`,
     amount: usd(PAYOUT_CENTS),
     fee: '-',
   });
-  const payout2 = await gw
-    .createPayout(payArgs)
-    .catch((e: unknown) => ({
-      batchId: `refused: ${e instanceof Error ? e.message : 'error'}`,
-      batchStatus: '-',
-    }));
+  const payout2 = await gw.createPayout(payArgs); // same sender_batch_id: must resolve to the SAME batch
   rows.push({
     step: 'payout again (same ids)',
     id: payout2.batchId,
-    status: payout2.batchStatus,
+    status: `${payout2.batchStatus}${payout2.existing ? ' (resolved existing batch)' : ''}`,
     amount: '-',
     fee: '-',
   });
-  if (payout2.batchId.startsWith('PAYOUT') || /^[A-Z0-9]{8,}$/.test(payout2.batchId)) {
-    if (payout2.batchId !== payout.batchId)
-      throw new Error('a repeated payout created a second batch');
-  }
+  if (payout2.batchId !== payout.batchId)
+    throw new Error('a repeated payout returned a different batch');
 
   let final = await gw.getPayoutBatch(payout.batchId);
   for (let i = 0; i < 24 && !['SUCCESS', 'DENIED', 'CANCELED'].includes(final.batchStatus); i++) {

@@ -321,6 +321,70 @@ describe.skipIf(!hasTestDb)(
         expect(w.gw.count('capture')).toBe(1);
       });
 
+      it('a retry whose payout already exists at PayPal (same sender_batch_id) resolves to that batch and changes no money state', async () => {
+        const w = await world();
+        const { slotId } = await worked(w);
+        // PayPal created the batch, our answer was lost, and PayPal's request-id memory no longer helps
+        w.gw.failNext(
+          'createPayout',
+          new PaypalError('x', 'network', undefined, undefined, [], undefined),
+          1,
+          true,
+        );
+        await expect(approveAndPay(w.deps, w.ctx, slotId, 8)).rejects.toMatchObject({
+          code: 'unavailable',
+        });
+        w.gw.seen.clear();
+        const before = (await latestPayment(db(), slotId))!;
+        expect(before.payoutBatchId).toBeNull();
+        const originalBatch = [...w.gw.batches.keys()][0]!;
+        const r = await approveAndPay(w.deps, w.ctx, slotId, 8);
+        const after = (await latestPayment(db(), slotId))!;
+        expect(after.payoutBatchId).toBe(originalBatch); // recorded the original batch id
+        expect(w.gw.batches.size).toBe(1); // never a second batch
+        expect(r.paymentStatus).toBe('PAID');
+        expect(after).toMatchObject({
+          capturedCents: before.capturedCents,
+          workerPayCents: before.workerPayCents,
+          platformFeeCents: before.platformFeeCents,
+          senderBatchId: before.senderBatchId,
+          payoutAttempt: before.payoutAttempt,
+        });
+        expect(w.gw.count('capture')).toBe(1);
+        expect((await ledgerOf(after.id)).filter((l) => l.startsWith('PAYOUT_SENT'))).toHaveLength(
+          1,
+        );
+        expect((await ledgerOf(after.id)).filter((l) => l.startsWith('PAID'))).toHaveLength(1);
+      });
+
+      it('a duplicate sender_batch_id with no link keeps the payment in PAYOUT_PENDING for reconcile; no second batch, no failure', async () => {
+        const w = await world();
+        const { slotId } = await worked(w);
+        w.gw.failNext(
+          'createPayout',
+          new PaypalError('x', 'network', undefined, undefined, [], undefined),
+          1,
+          true,
+        );
+        await expect(approveAndPay(w.deps, w.ctx, slotId, 8)).rejects.toMatchObject({
+          code: 'unavailable',
+        });
+        w.gw.seen.clear();
+        w.gw.duplicateWithoutLink = true;
+        await expect(approveAndPay(w.deps, w.ctx, slotId, 8)).rejects.toMatchObject({
+          code: 'unavailable',
+        });
+        const pay = (await latestPayment(db(), slotId))!;
+        expect(pay.status).toBe('PAYOUT_PENDING');
+        expect(pay.payoutBatchId).toBeNull();
+        expect(pay.lastError).toBeNull();
+        expect(w.gw.batches.size).toBe(1);
+        expect((await ledgerOf(pay.id)).some((l) => l.startsWith('PAYOUT_FAILED'))).toBe(false);
+        await reconcilePayments(w.deps); // still unresolved, still not a failure and still no second batch
+        expect((await latestPayment(db(), slotId))!.status).toBe('PAYOUT_PENDING');
+        expect(w.gw.batches.size).toBe(1);
+      });
+
       it('a payout item that PayPal leaves pending is picked up by reconcile; UNCLAIMED is visible', async () => {
         const w = await world();
         const { slotId } = await worked(w);
