@@ -56,6 +56,9 @@ test('claim -> My shifts -> arrive -> finish -> approve and pay -> Paid -> Earni
   await page.fill('#login-password', MANAGER_PASSWORD);
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(page).toHaveURL(/\/app\/roster/);
+  // already signed in: the login page sends the manager to the console instead of showing the form
+  await page.goto('/app/login');
+  await expect(page).toHaveURL(/\/app\/roster/);
   await page
     .getByRole('link', { name: /Report a gap/ })
     .first()
