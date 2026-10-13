@@ -86,6 +86,8 @@ const serverSchema = z
 
     WAVE_INTERVAL_SECONDS: int(300, 1),
     PLATFORM_FEE_BPS: int(500).pipe(z.number().max(10_000)),
+    /** Optional flat fee per shift, in cents, on top of PLATFORM_FEE_BPS. Default none; the final model is not decided. */
+    PLATFORM_FIXED_FEE_CENTS: int(0).pipe(z.number().max(10_000)),
     MAX_PREMIUM_PCT_DEFAULT: int(20).pipe(z.number().max(100)),
   })
   .superRefine((env, ctx) => {

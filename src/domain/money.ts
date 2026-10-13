@@ -39,6 +39,19 @@ export function platformFeeCents(workerPayCents: number, feeBps: number): number
   return divRound(workerPayCents * feeBps, 10_000);
 }
 
+export interface FeeConfig {
+  feeBps: number;
+  /** Optional flat fee added once per shift (cents). Config, never hard-coded: the final fee model is Kumar's call. */
+  fixedFeeCents?: number;
+}
+
+/** Platform fee on a worker pay amount: the percentage part plus the optional flat part (0 when there is no pay). */
+export function platformFee(workerPayCents: number, cfg: FeeConfig): number {
+  const fixed = cfg.fixedFeeCents ?? 0;
+  assertCents(fixed, 'fixedFeeCents');
+  return platformFeeCents(workerPayCents, cfg.feeBps) + (workerPayCents > 0 ? fixed : 0);
+}
+
 /** Pay for `minutes` at an hourly rate, rounded to the cent. */
 export function payForMinutesCents(hourlyRateCents: number, minutes: number): number {
   assertCents(hourlyRateCents, 'hourlyRateCents');
@@ -72,10 +85,14 @@ export function maxAuthorization(args: {
   maxPremiumPct: number;
   minutes: number;
   feeBps: number;
+  fixedFeeCents?: number;
 }): MaxAuthorization {
   const cap = maxRateCents(args.baseRateCents, args.maxPremiumPct);
   const maxWorkerPayCents = payForMinutesCents(cap, args.minutes);
-  const maxFeeCents = platformFeeCents(maxWorkerPayCents, args.feeBps);
+  const maxFeeCents = platformFee(maxWorkerPayCents, {
+    feeBps: args.feeBps,
+    fixedFeeCents: args.fixedFeeCents,
+  });
   return {
     maxRateCents: cap,
     maxWorkerPayCents,
@@ -100,12 +117,16 @@ export function computeSettlement(args: {
   maxRateCents: number;
   actualMinutes: number;
   feeBps: number;
+  fixedFeeCents?: number;
   authorizedCents: number;
 }): Settlement {
   assertCents(args.authorizedCents, 'authorizedCents');
   if (args.rateCents > args.maxRateCents) throw new MoneyError('Rate exceeds the authorized cap');
   const workerPayCents = payForMinutesCents(args.rateCents, args.actualMinutes);
-  const fee = platformFeeCents(workerPayCents, args.feeBps);
+  const fee = platformFee(workerPayCents, {
+    feeBps: args.feeBps,
+    fixedFeeCents: args.fixedFeeCents,
+  });
   const captureCents = workerPayCents + fee;
   assertCaptureWithinAuthorization(captureCents, args.authorizedCents);
   return { workerPayCents, platformFeeCents: fee, captureCents };
