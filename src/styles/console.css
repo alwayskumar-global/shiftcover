@@ -360,7 +360,7 @@
 
 /* offers list */
 .sc-offers { display: flex; flex-direction: column; }
-.sc-offers__row { display: grid; grid-template-columns: minmax(0, 2.2fr) 84px 150px minmax(120px, 1fr); gap: 12px; align-items: center; min-height: 56px; padding: 8px 24px; border-top: 1px solid var(--sc-divider); }
+.sc-offers__row { display: grid; grid-template-columns: minmax(0, 2.2fr) 84px 240px minmax(120px, 1fr); gap: 12px; align-items: center; min-height: 56px; padding: 8px 24px; border-top: 1px solid var(--sc-divider); }
 .sc-offers__row--head { min-height: 36px; border-top: 0; border-bottom: 1px solid var(--sc-border); background: var(--sc-bg-sunken); font: var(--sc-text-eyebrow); letter-spacing: var(--sc-tracking-eyebrow); text-transform: uppercase; color: var(--sc-text-muted); }
 .sc-offers__row.is-claimed { background: var(--sc-st-confirmed-bg); }
 .sc-offers__row.is-muted { color: var(--sc-text-muted); }
@@ -384,4 +384,4 @@
 .sc-dialog__actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
 .sc-toast { position: sticky; top: 12px; z-index: 40; align-self: flex-end; display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: var(--sc-radius-md); background: var(--sc-bg-inverse); color: var(--sc-text-inverse); box-shadow: var(--sc-shadow-3); font: var(--sc-text-label); }
 .sc-toast__spacer { height: 0; }
-@container (max-width: 1179px) { .sc-offers__row { padding-inline: 16px; grid-template-columns: minmax(0, 2fr) 70px 130px minmax(100px, 1fr); } .sc-pass { gap: 0 16px; } .sc-pass__amt { font-size: 28px; line-height: 32px; } }
+@container (max-width: 1179px) { .sc-offers__row { padding-inline: 16px; grid-template-columns: minmax(0, 2fr) 70px 220px minmax(100px, 1fr); } .sc-pass { gap: 0 16px; } .sc-pass__amt { font-size: 28px; line-height: 32px; } }
