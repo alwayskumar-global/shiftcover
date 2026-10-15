@@ -216,7 +216,51 @@ const rosterBase = {
   server_time: NOW,
   resources: RESOURCES,
 };
+const dayShift = (iso: string, d: number) =>
+  new Date(Date.parse(iso) + d * 86_400_000).toISOString();
+/** A full week: the day's shifts repeated with different people, one planned shift nobody has yet, and one open gap. */
+const weekEvents = (): SlotDto[] => {
+  const out: SlotDto[] = [];
+  for (let d = 0; d < 7; d++) {
+    rosterEvents(d === 2 ? 'open' : null).forEach((e, i) => {
+      const w = e.worker
+        ? RESOURCES[
+            ((RESOURCES.indexOf(RESOURCES.find((r) => r.id === e.worker!.id)!) + d) %
+              (RESOURCES.length - 1)) +
+              1
+          ]!
+        : null;
+      out.push({
+        ...e,
+        id: U(1000 + d * 10 + i),
+        start_at: dayShift(e.start_at, d),
+        end_at: dayShift(e.end_at, d),
+        worker: w ? ref(w) : null,
+        status: d < 0 ? e.status : e.status === 'in_progress' && d > 0 ? 'confirmed' : e.status,
+      });
+    });
+    out.push(
+      slot(1, {
+        id: U(1900 + d),
+        role: 'prep_cook',
+        worker: null,
+        status: 'planned',
+        start_at: dayShift(at('15:00'), d),
+        end_at: dayShift(at('21:00'), d),
+        hours: 6,
+      }),
+    );
+  }
+  return out;
+};
+
 export const ROSTERS = {
+  week: {
+    ...rosterBase,
+    end_date: '2026-10-18',
+    events: weekEvents(),
+    summary: { open_gaps: 1, offering: 0, shifts_today: 4 },
+  },
   loaded: {
     ...rosterBase,
     events: rosterEvents('offering'),
@@ -623,6 +667,14 @@ export const SCENES: Scene[] = [
     render: { kind: 'roster', roster: 'loaded' },
     viewport: D,
     design: { file: 'M2-roster.dc.html', hash: 'populated' },
+  },
+  {
+    id: 'm2-week',
+    group: 'M2 roster',
+    label: 'Week view',
+    render: { kind: 'roster', roster: 'week' },
+    steps: [{ click: 'button:has-text("Week")' }, { wait: 400 }],
+    viewport: D,
   },
   {
     id: 'm2-open-gap',

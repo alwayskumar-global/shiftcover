@@ -93,6 +93,8 @@ export const LEGEND = [
 ];
 
 export const OPEN_ROW_ID = 'open-shifts';
+/** Planned shifts nobody is assigned to yet: a neutral row, not a gap. */
+export const UNASSIGNED_ROW_ID = 'unassigned-shifts';
 
 export interface SchedulerResource {
   id: string;
@@ -145,7 +147,9 @@ export function toSchedulerData(r: RosterResponse, compact: boolean) {
       gapKeys.has(`${s.worker.id}|${s.start_at}|${s.end_at}`)
     )
       continue;
-    const resourceId = s.worker?.id ?? s.replaces_worker?.id ?? OPEN_ROW_ID;
+    const gapLike = ['open', 'offering', 'unfilled'].includes(s.status);
+    const resourceId =
+      s.worker?.id ?? s.replaces_worker?.id ?? (gapLike ? OPEN_ROW_ID : UNASSIGNED_ROW_ID);
     const full = formatTimeRange(s.start_at, s.end_at, tz);
     const compactRange = formatTimeRangeCompact(s.start_at, s.end_at, tz);
     events.push({
@@ -174,6 +178,16 @@ export function toSchedulerData(r: RosterResponse, compact: boolean) {
     tint: w.avatar_tint,
     cls: gapRows.has(w.id) ? 'sc-row--gap' : '',
   }));
+  if (events.some((e) => e.resourceId === UNASSIGNED_ROW_ID)) {
+    resources.unshift({
+      id: UNASSIGNED_ROW_ID,
+      name: 'Unassigned',
+      role: 'Planned, no one yet',
+      initials: '?',
+      tint: 5,
+      cls: '',
+    });
+  }
   if (events.some((e) => e.resourceId === OPEN_ROW_ID)) {
     resources.unshift({
       id: OPEN_ROW_ID,
@@ -190,10 +204,13 @@ export function toSchedulerData(r: RosterResponse, compact: boolean) {
 /** Header tiles. open/offering come from the API summary; pending and shifts are derived from the displayed range. */
 export function tileCounts(r: RosterResponse) {
   const live = r.events.filter((e) => e.status !== 'cancelled');
+  const unassigned = live.filter((e) => e.status === 'planned' && !e.worker).length;
   return {
     open: r.summary.open_gaps,
     offering: r.summary.offering,
     pending: live.filter((e) => e.status === 'pending_approval').length,
-    shifts: live.length,
+    /** Shifts that have someone on them; planned shifts nobody is assigned to are counted separately. */
+    shifts: live.length - unassigned,
+    unassigned,
   };
 }

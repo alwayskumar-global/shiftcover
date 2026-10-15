@@ -90,8 +90,21 @@ describe.skipIf(!hasTestDb)('GET /api/manager/gaps/[id]: offer_link (live Postgr
 
   it('sandbox: each live offer carries the link the Outbox holds; nothing is minted', async () => {
     const w = await world();
-    const hashesBefore = (await db().select({ h: offers.tokenHash }).from(offers)).length;
-    const notesBefore = (await db().select().from(notifications)).length;
+    // counted for THIS gap only: other test files write to the same tables in parallel
+    const mine = async () => ({
+      hashes: (
+        await db()
+          .select({ h: offers.tokenHash })
+          .from(offers)
+          .where(eq(offers.slotId, w.g.slot.id))
+      )
+        .map((x) => x.h)
+        .sort(),
+      notes: (await db().select().from(notifications)).filter(
+        (n) => (n.payload as { slotId?: string }).slotId === w.g.slot.id,
+      ).length,
+    });
+    const before = await mine();
     const res = await w.get(w.api('sandbox'));
     expect(res.status).toBe(200);
     const body = GapDetailResponse.parse(await res.json());
@@ -102,8 +115,7 @@ describe.skipIf(!hasTestDb)('GET /api/manager/gaps/[id]: offer_link (live Postgr
       expect(o.offer_link).toBe(stored[0]); // the exact stored link
     }
     // reading adds no token and no notification
-    expect((await db().select({ h: offers.tokenHash }).from(offers)).length).toBe(hashesBefore);
-    expect((await db().select().from(notifications)).length).toBe(notesBefore);
+    expect(await mine()).toEqual(before); // same token hashes, same notifications
     expect(res.headers.get('cache-control')).toMatch(/no-store/);
   });
 
