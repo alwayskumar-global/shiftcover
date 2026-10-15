@@ -15,12 +15,11 @@ import {
 } from '../src/api/dto';
 
 /**
- * Locks the public API to PLAN.md Section 10.6. The field lists are READ FROM PLAN.md, so editing the
- * plan without the DTOs (or vice versa) fails this test. Anything extra must be in DEVIATIONS below and in
+ * Locks the public API to docs/api-contract-10-6.md. The field lists are READ FROM docs/api-contract-10-6.md, so editing the
+ * contract without the DTOs (or vice versa) fails this test. Anything extra must be in DEVIATIONS below and in
  * docs/api-m1.md "Deviations".
  */
-const plan = readFileSync('PLAN.md', 'utf8');
-const section = plan.slice(plan.indexOf('### 10.6'), plan.indexOf('## 11.'));
+const section = readFileSync('docs/api-contract-10-6.md', 'utf8');
 const bullet = (name: string) => {
   const line = section.split('\n').find((l) => l.startsWith(`- **${name}:**`));
   if (!line) throw new Error(`10.6 bullet not found: ${name}`);

@@ -2,7 +2,7 @@
   "name": "shiftcover",
   "version": "0.1.0",
   "private": true,
-  "license": "Apache-2.0",
+  "license": "MIT",
   "description": "ShiftCover Pay: fill shift gaps fast, guarantee pay, pay on approval.",
   "engines": {
     "node": ">=20"
