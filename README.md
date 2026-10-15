@@ -2,7 +2,7 @@
 
 When a shift gap appears, ShiftCover Pay fills it fast, guarantees the pay up front, and pays the worker the moment the shift is approved.
 
-PayPal AI Hackathon entry. Sandbox only, USD only. See [PLAN.md](PLAN.md) for the full build plan.
+PayPal AI Hackathon entry. Sandbox only, USD only.
 
 **Status:** Phase M0 (foundations) in progress. Headless only; no UI yet.
 
@@ -17,7 +17,7 @@ cp .env.example .env   # then fill in values locally; .env is gitignored
 
 ### Database: Supabase (Postgres only)
 
-Supabase is used as plain Postgres. Do not add `@supabase/supabase-js`, Supabase Auth, Storage, Realtime, or any anon/publishable/service-role key (PLAN.md 6A).
+Supabase is used as plain Postgres. Do not add `@supabase/supabase-js`, Supabase Auth, Storage, Realtime, or any anon/publishable/service-role key.
 
 1. Create a project named `shiftcover` in the Supabase Dashboard.
 2. Set or reset the database password in the Dashboard. Keep it out of chat, the repo and logs.

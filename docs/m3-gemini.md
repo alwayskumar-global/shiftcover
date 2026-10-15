@@ -1,6 +1,6 @@
 # M3: Gemini for gap intake and "why this worker"
 
-Decision: [PLAN.md](../PLAN.md) A15 (supersedes A14). Spend and abuse rules: PLAN 9.3.
+Gemini reads and words; code decides. Spend and abuse guardrails are listed below.
 
 ## What Gemini does, and does not do
 
@@ -33,7 +33,7 @@ Model: `gemini-3.5-flash-lite` only (`ALLOWED_LLM_MODEL`, env refuses anything e
 - Output is schema-validated and each reason must be short and free of money, contact details, links and instruction words, else the **template** is used: `Line cook, 2.4 mi away, 14 shifts here`.
 - **Never blocks the page.** The endpoint returns the cached reason or the template at once; misses are filled by one batched background call. Cache key: slot + worker + score version (weights, rank, role, distance band, shifts here, reliability tier, rounded scores). The cache is in memory (one web instance); a restart costs one call per gap. A failed call is not retried for 60 seconds, so the 3 second poll cannot hammer the API.
 
-## Caps and kill switch (PLAN 9.3)
+## Caps and kill switch
 
 | Control                   | Where                                   | Value                                                                                                                                                                                            |
 | ------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |

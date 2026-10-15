@@ -1,6 +1,6 @@
 # Gate 1 UI mapping: screens and states to API fields
 
-Every screen reads the public API shapes in [`api-m1.md`](api-m1.md) (PLAN.md 10.6 plus the listed additive fields). No screen
+Every screen reads the public API shapes in [`api-m1.md`](api-m1.md) (the contract in `api-contract-10-6.md` plus the listed additive fields). No screen
 holds a money figure of its own: amounts come from the API or are recomputed with the same integer functions
 (`src/domain/money.ts`) from `GET /api/manager/me` config. Status styling goes through one table, `STATUS` in
 [`roster-model.ts`](../src/features/manager/roster-model.ts). States below are the `/review` scene ids

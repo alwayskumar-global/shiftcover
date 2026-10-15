@@ -1,10 +1,10 @@
 # M1 API (headless core loop)
 
-Public JSON follows **PLAN.md Section 10.6 exactly**: snake_case fields, lowercase status values, money as integer
+Public JSON follows **the contract in [`api-contract-10-6.md`](api-contract-10-6.md) exactly**: snake_case fields, lowercase status values, money as integer
 cents (USD), timestamps ISO-8601 UTC. DTOs live in [`src/api/dto.ts`](../src/api/dto.ts) (Zod, `.strict()`), the
 internal-to-public mapping in [`src/api/adapters.ts`](../src/api/adapters.ts) and
 [`src/services/read-models.ts`](../src/services/read-models.ts). `test/contract-10-6.test.ts` reads Section 10.6 from
-PLAN.md and fails if a DTO drifts or gains an unlisted field. Internal code keeps camelCase/UPPERCASE; only the
+that contract and fails if a DTO drifts or gains an unlisted field. Internal code keeps camelCase/UPPERCASE; only the
 adapters produce the public shape.
 
 **Errors** always use `{ "error": { "code": string, "message": string } }`: `unauthenticated` 401, `forbidden` /
