@@ -105,7 +105,9 @@ describe.skipIf(!hasTestDb)(
       expect(known.sent).toBe(true);
       expect((await viewOffer(s.deps, oldToken)).state).toBe('invalid');
       const msgs = (await db().select().from(notifications)).filter(
-        (n) => (n.payload as { kind?: string }).kind === 'offer_link_resent',
+        (n) =>
+          (n.payload as { kind?: string; slotId?: string }).kind === 'offer_link_resent' &&
+          (n.payload as { slotId?: string }).slotId === s.slotId, // this test's slot: other files run in parallel
       );
       expect(msgs).toHaveLength(1);
       const fresh = (msgs[0]!.payload as { link: string }).link.split('/c/')[1]!;

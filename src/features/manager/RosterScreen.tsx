@@ -208,8 +208,11 @@ export function RosterScreen() {
                 : 'No gaps this week'}
             </span>
             <span className="sc-banner__text">
-              All {tiles!.shifts} shifts have someone on them. If someone calls in, report it and
-              we&apos;ll start offering the shift.
+              All {tiles!.shifts} {tiles!.shifts === 1 ? 'shift has' : 'shifts have'} someone on{' '}
+              {tiles!.shifts === 1 ? 'it' : 'them'}.
+              {tiles!.unassigned > 0 &&
+                ` ${tiles!.unassigned} planned ${tiles!.unassigned === 1 ? 'shift has' : 'shifts have'} no one assigned yet.`}{' '}
+              If someone calls in, report it and we&apos;ll start offering the shift.
             </span>
           </div>
         </div>
